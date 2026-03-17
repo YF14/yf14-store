@@ -4,9 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
-import AdminLayout from '../../components/admin/AdminLayout';
-import useAuthStore from '../../store/authStore';
-import api from '../../lib/api';
+import AdminLayout from '../../../components/admin/AdminLayout';
+import useAuthStore from '../../../store/authStore';
+import api from '../../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function AdminProductsPage() {

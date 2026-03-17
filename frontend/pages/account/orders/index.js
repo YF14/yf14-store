@@ -4,9 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
-import Layout from '../../components/layout/Layout';
-import useAuthStore from '../../store/authStore';
-import api from '../../lib/api';
+import Layout from '../../../components/layout/Layout';
+import useAuthStore from '../../../store/authStore';
+import api from '../../../lib/api';
 
 const STATUS_COLORS = {
   pending: 'text-amber-600 bg-amber-50',
