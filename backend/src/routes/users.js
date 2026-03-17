@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
 const User = require('../models/User');
-const { uploadAvatar } = require('../config/cloudinary');
+const { uploadAvatar, uploadToImageKit } = require('../config/imagekit');
 
 router.use(protect);
 
@@ -22,9 +22,12 @@ router.put('/profile', async (req, res) => {
 });
 
 router.put('/avatar', uploadAvatar.single('avatar'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const user = await User.findByIdAndUpdate(req.user.id, { avatar: req.file.path }, { new: true });
-  res.json({ avatar: user.avatar });
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const result = await uploadToImageKit(req.file.buffer, req.file.originalname, '/yf14-store/avatars');
+    const user = await User.findByIdAndUpdate(req.user.id, { avatar: result.url }, { new: true });
+    res.json({ avatar: user.avatar });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/change-password', async (req, res) => {
