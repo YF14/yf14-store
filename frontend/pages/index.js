@@ -6,6 +6,7 @@ import { NextSeo } from 'next-seo';
 import Layout from '../components/layout/Layout';
 import ProductCard from '../components/product/ProductCard';
 import api from '../lib/api';
+import { useLang } from '../contexts/LanguageContext';
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -14,23 +15,34 @@ const fadeUp = {
   transition: { duration: 0.7 },
 };
 
-const categories = [
-  { name: 'Evening Dresses', slug: 'evening-dresses', img: 'https://images.unsplash.com/photo-1566479179817-0b2d6ff88b2f?w=600&q=80' },
-  { name: 'Cocktail Dresses', slug: 'cocktail-dresses', img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80' },
-  { name: 'Maxi Dresses', slug: 'maxi-dresses', img: 'https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=600&q=80' },
-  { name: 'Mini Dresses', slug: 'mini-dresses', img: 'https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80' },
-];
-
 export default function HomePage() {
+  const { t, isRTL } = useLang();
   const { data: featuredData } = useQuery('featured', () => api.get('/products/featured').then(r => r.data));
   const { data: newData } = useQuery('new-arrivals', () => api.get('/products/new-arrivals').then(r => r.data));
 
   const featured = featuredData?.products || [];
   const newArrivals = newData?.products || [];
 
+  const categories = [
+    { name: t.home.catEvening, slug: 'evening-dresses', img: 'https://images.unsplash.com/photo-1566479179817-0b2d6ff88b2f?w=600&q=80' },
+    { name: t.home.catCocktail, slug: 'cocktail-dresses', img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80' },
+    { name: t.home.catMaxi, slug: 'maxi-dresses', img: 'https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=600&q=80' },
+    { name: t.home.catMini, slug: 'mini-dresses', img: 'https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80' },
+  ];
+
+  const perks = [
+    { icon: '🚚', title: t.home.perkShipping, desc: t.home.perkShippingDesc },
+    { icon: '↩', title: t.home.perkReturns, desc: t.home.perkReturnsDesc },
+    { icon: '🔒', title: t.home.perkPayment, desc: t.home.perkPaymentDesc },
+    { icon: '✦', title: t.home.perkQuality, desc: t.home.perkQualityDesc },
+  ];
+
   return (
     <Layout>
-      <NextSeo title="YF14 Store — The Art of Feminine Elegance" titleTemplate="%s" />
+      <NextSeo
+        title={`${t.siteName} — ${t.home.heroTitle} ${t.home.heroTitleEm}`}
+        titleTemplate="%s"
+      />
 
       {/* ── HERO ─────────────────────────── */}
       <section className="relative h-screen min-h-[600px] flex items-end pb-24 overflow-hidden">
@@ -42,36 +54,37 @@ export default function HomePage() {
             priority
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          <div className={`absolute inset-0 ${isRTL ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-black/70 via-black/40 to-transparent`} />
         </div>
 
         <div className="container-luxury relative z-10">
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
+            initial={{ opacity: 0, x: isRTL ? 40 : -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.2 }}
-            className="max-w-xl"
+            className={`max-w-xl ${isRTL ? 'mr-0 ml-auto md:ml-0' : ''}`}
           >
-            <p className="text-white/60 text-xs tracking-[0.4em] uppercase mb-4">New Season Collection</p>
+            <p className="text-white/60 text-sm mb-4">{t.home.heroSeason}</p>
             <h1 className="font-display text-6xl md:text-8xl text-white font-light leading-none mb-6">
-              Dressed in<br />
-              <em>Elegance</em>
+              {t.home.heroTitle}<br />
+              <em className="bg-gradient-to-r from-brand-gold to-brand-pink bg-clip-text text-transparent">
+                {t.home.heroTitleEm}
+              </em>
             </h1>
             <p className="text-white/80 font-body font-light text-lg mb-10 max-w-sm leading-relaxed">
-              Discover our curated collection of luxury women's dresses crafted for the modern muse.
+              {t.home.heroSubtitle}
             </p>
             <div className="flex flex-wrap gap-4">
               <Link href="/products" className="btn-primary">
-                Explore Collection
+                {t.home.heroCta}
               </Link>
               <Link href="/products?filter=new" className="btn-outline border-white text-white hover:bg-white hover:text-brand-black">
-                New Arrivals
+                {t.home.heroCta2}
               </Link>
             </div>
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
         <motion.div
           animate={{ y: [0, 12, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
@@ -82,11 +95,11 @@ export default function HomePage() {
       </section>
 
       {/* ── MARQUEE ─────────────────────── */}
-      <div className="bg-brand-black py-4 overflow-hidden">
-        <div className="flex animate-marquee whitespace-nowrap">
+      <div className="py-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1025, #3b1d6e)' }}>
+        <div className={`flex ${isRTL ? 'animate-marquee-rtl' : 'animate-marquee'} whitespace-nowrap`}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="text-white/40 text-xs tracking-[0.3em] uppercase mx-8">
-              Timeless Elegance ✦ Premium Quality ✦ Free Shipping $100+ ✦ New Arrivals Weekly ✦
+            <span key={i} className="text-white/50 text-xs mx-8">
+              {t.home.marquee}
             </span>
           ))}
         </div>
@@ -96,8 +109,8 @@ export default function HomePage() {
       <section className="py-24">
         <div className="container-luxury">
           <motion.div {...fadeUp} className="text-center mb-16">
-            <p className="section-subtitle text-brand-warm-gray mb-3">Browse by Category</p>
-            <h2 className="section-title">Our Collections</h2>
+            <p className="section-subtitle text-brand-warm-gray mb-3">{t.home.browseCategory}</p>
+            <h2 className="section-title">{t.home.ourCollections}</h2>
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -120,8 +133,8 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
                   <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4">
                     <h3 className="font-display text-xl text-white text-center font-light">{cat.name}</h3>
-                    <span className="text-white/60 text-xs tracking-widest uppercase mt-1 group-hover:text-brand-gold transition-colors">
-                      Shop Now →
+                    <span className="text-white/60 text-xs mt-1 group-hover:text-brand-gold transition-colors">
+                      {t.home.shopNow}
                     </span>
                   </div>
                 </Link>
@@ -137,11 +150,11 @@ export default function HomePage() {
           <div className="container-luxury">
             <motion.div {...fadeUp} className="flex items-end justify-between mb-12">
               <div>
-                <p className="section-subtitle text-brand-warm-gray mb-3">Hand-Picked</p>
-                <h2 className="section-title">Featured Pieces</h2>
+                <p className="section-subtitle text-brand-warm-gray mb-3">{t.home.handPicked}</p>
+                <h2 className="section-title">{t.home.featuredTitle}</h2>
               </div>
               <Link href="/products?filter=featured" className="btn-ghost hidden md:flex">
-                View All →
+                {t.home.viewAll}
               </Link>
             </motion.div>
 
@@ -152,7 +165,7 @@ export default function HomePage() {
             </div>
 
             <div className="text-center mt-10 md:hidden">
-              <Link href="/products" className="btn-outline">View All</Link>
+              <Link href="/products" className="btn-outline">{t.common.viewAll}</Link>
             </div>
           </div>
         </section>
@@ -169,15 +182,15 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="container-luxury relative z-10 text-center">
           <motion.div {...fadeUp}>
-            <p className="text-white/60 text-xs tracking-[0.4em] uppercase mb-4">Limited Edition</p>
-            <h2 className="font-display text-5xl md:text-7xl text-white font-light mb-6">
-              The Evening<br />Collection
+            <p className="text-white/60 text-xs tracking-widest uppercase mb-4">{t.home.limitedEdition}</p>
+            <h2 className="font-display text-5xl md:text-7xl text-white font-light mb-6 whitespace-pre-line">
+              {t.home.editorialTitle}
             </h2>
             <p className="text-white/70 font-body font-light max-w-md mx-auto mb-10">
-              Crafted for moments that matter. Where luxury meets artistry.
+              {t.home.editorialDesc}
             </p>
             <Link href="/products?category=evening-dresses" className="btn-primary">
-              Discover Now
+              {t.home.discoverNow}
             </Link>
           </motion.div>
         </div>
@@ -189,10 +202,10 @@ export default function HomePage() {
           <div className="container-luxury">
             <motion.div {...fadeUp} className="flex items-end justify-between mb-12">
               <div>
-                <p className="section-subtitle text-brand-warm-gray mb-3">Just In</p>
-                <h2 className="section-title">New Arrivals</h2>
+                <p className="section-subtitle text-brand-warm-gray mb-3">{t.home.justIn}</p>
+                <h2 className="section-title">{t.home.newArrivalsTitle}</h2>
               </div>
-              <Link href="/products?filter=new" className="btn-ghost hidden md:flex">View All →</Link>
+              <Link href="/products?filter=new" className="btn-ghost hidden md:flex">{t.home.viewAll}</Link>
             </motion.div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -205,18 +218,13 @@ export default function HomePage() {
       )}
 
       {/* ── PERKS ────────────────────────── */}
-      <section className="py-16 bg-brand-cream border-y border-brand-black/10">
+      <section className="py-16 bg-brand-cream border-y border-brand-gold/20">
         <div className="container-luxury">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { icon: '🚚', title: 'Free Shipping', desc: 'On orders over $100' },
-              { icon: '↩', title: 'Easy Returns', desc: '30-day return policy' },
-              { icon: '🔒', title: 'Secure Payment', desc: 'SSL encrypted checkout' },
-              { icon: '✦', title: 'Luxury Quality', desc: 'Premium materials only' },
-            ].map((perk) => (
+            {perks.map((perk) => (
               <motion.div key={perk.title} {...fadeUp} className="flex flex-col items-center gap-3">
                 <span className="text-3xl">{perk.icon}</span>
-                <h4 className="font-body text-sm font-medium tracking-wider uppercase">{perk.title}</h4>
+                <h4 className="font-body text-sm font-medium text-brand-black">{perk.title}</h4>
                 <p className="text-xs text-brand-warm-gray">{perk.desc}</p>
               </motion.div>
             ))}
