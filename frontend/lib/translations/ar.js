@@ -61,17 +61,18 @@ const ar = {
   },
 
   home: {
-    heroTitle: 'فن الأناقة الأنثوية',
-    heroSubtitle: 'اكتشفي مجموعتنا المنتقاة من الفساتين الفاخرة، حيث تلتقي الأناقة الخالدة مع الحرفية الراقية',
+    heroTitle: 'أجعلي أطلالتكِ مميزة',
+    heroSubtitle: 'أجمل الفساتين العصرية بأسعار تناسبك — التوصيل لبغداد وجميع المحافظات',
     heroCta: 'تسوقي الآن',
     heroCta2: 'استكشفي المجموعات',
     featuredTitle: 'اختيارات مميزة',
-    featuredSubtitle: 'قطع أنيقة بحرفية لا مثيل لها',
+    featuredSubtitle: 'أجمل الفساتين لكل مناسبة',
     newArrivalsTitle: 'وصل حديثاً',
     newArrivalsSubtitle: 'أحدث الإضافات إلى مجموعتنا',
     saleTitle: 'عروض خاصة',
     viewCollection: 'عرض المجموعة',
     discoverMore: 'اكتشفي المزيد',
+    deliveryNote: 'التوصيل لبغداد و5 محافظات',
   },
 
   product: {
@@ -191,7 +192,7 @@ const ar = {
   },
 
   footer: {
-    tagline: 'فن الأناقة الأنثوية',
+    tagline: 'أجعلي أطلالتكِ مميزة مع YF14',
     shop: 'تسوقي',
     help: 'المساعدة',
     follow: 'تابعينا',

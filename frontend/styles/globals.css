@@ -5,12 +5,14 @@
 @tailwind utilities;
 
 :root {
-  --black: #0a0a0a;
-  --gold: #c9a96e;
-  --gold-light: #e8d5b0;
-  --cream: #faf9f7;
-  --warm-gray: #8c8c8c;
-  --border: #e8e4e0;
+  --black: #1a1025;
+  --gold: #9333ea;
+  --gold-light: #e9d5ff;
+  --cream: #fdf8ff;
+  --warm-gray: #9171b8;
+  --border: #e8d5ff;
+  --pink: #db2777;
+  --purple-dark: #6b21a8;
 }
 
 * { box-sizing: border-box; }
@@ -68,16 +70,18 @@ h1, h2, h3, h4 {
 @layer components {
   /* Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-brand-black text-white text-xs tracking-widest uppercase font-body font-medium transition-all duration-300;
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 text-white text-xs tracking-widest uppercase font-body font-medium transition-all duration-300;
+    background: linear-gradient(135deg, #9333ea, #db2777);
   }
   .btn-primary:hover {
-    @apply bg-brand-gold;
+    background: linear-gradient(135deg, #7e22ce, #be185d);
+    @apply shadow-lg;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 border border-brand-black text-brand-black text-xs tracking-widest uppercase font-body font-medium transition-all duration-300;
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-brand-gold text-brand-gold text-xs tracking-widest uppercase font-body font-medium transition-all duration-300;
   }
   .btn-outline:hover {
-    @apply bg-brand-black text-white;
+    @apply bg-brand-gold text-white;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 text-brand-black text-xs tracking-widest uppercase font-body font-medium transition-all duration-300 hover:text-brand-gold;

@@ -9,11 +9,15 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          black: '#0a0a0a',
-          gold: '#c9a96e',
-          'gold-light': '#e8d5b0',
-          cream: '#faf9f7',
-          'warm-gray': '#8c8c8c',
+          black: '#1a1025',
+          gold: '#9333ea',
+          'gold-light': '#e9d5ff',
+          cream: '#fdf8ff',
+          'warm-gray': '#9171b8',
+          pink: '#db2777',
+          purple: '#9333ea',
+          'purple-dark': '#6b21a8',
+          'purple-light': '#f3e8ff',
         },
       },
       fontFamily: {

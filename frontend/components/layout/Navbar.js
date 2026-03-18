@@ -123,8 +123,11 @@ export default function Navbar({ scrolled }) {
             </nav>
 
             {/* Logo */}
-            <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <h1 className="font-display text-2xl md:text-3xl tracking-[0.2em] text-brand-black font-light uppercase">
+            <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, #9333ea, #db2777)' }}>
+                YF
+              </span>
+              <h1 className="font-display text-2xl md:text-3xl tracking-[0.15em] font-semibold uppercase bg-gradient-to-r from-brand-gold to-brand-pink bg-clip-text text-transparent">
                 YF14 Store
               </h1>
             </Link>

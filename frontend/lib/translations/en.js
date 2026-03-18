@@ -61,17 +61,18 @@ const en = {
   },
 
   home: {
-    heroTitle: 'The Art of Feminine Elegance',
-    heroSubtitle: 'Discover our curated collection of luxury women\'s dresses, where timeless elegance meets impeccable craftsmanship',
+    heroTitle: 'Your Outfit, Your Story',
+    heroSubtitle: 'Discover the latest dresses for every occasion — delivery across Baghdad & all provinces',
     heroCta: 'Shop Now',
     heroCta2: 'Explore Collections',
     featuredTitle: 'Featured Picks',
-    featuredSubtitle: 'Elegant pieces with unmatched craftsmanship',
+    featuredSubtitle: 'Beautiful dresses for every occasion',
     newArrivalsTitle: 'New Arrivals',
     newArrivalsSubtitle: 'The latest additions to our collection',
     saleTitle: 'Special Offers',
     viewCollection: 'View Collection',
     discoverMore: 'Discover More',
+    deliveryNote: 'Delivery to Baghdad & 5 provinces',
   },
 
   product: {
@@ -191,7 +192,7 @@ const en = {
   },
 
   footer: {
-    tagline: 'The Art of Feminine Elegance',
+    tagline: 'Your outfit, your story — YF14 Store',
     shop: 'Shop',
     help: 'Help',
     follow: 'Follow Us',
