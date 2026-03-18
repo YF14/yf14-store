@@ -6,6 +6,7 @@ import '../styles/globals.css';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
 import useWishlistStore from '../store/wishlistStore';
+import { LanguageProvider, useLang } from '../contexts/LanguageContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,11 +14,12 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function App({ Component, pageProps }) {
+function AppInner({ Component, pageProps }) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const user = useAuthStore((s) => s.user);
   const fetchCart = useCartStore((s) => s.fetchCart);
   const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
+  const { t, locale, isRTL } = useLang();
 
   useEffect(() => {
     fetchMe();
@@ -35,32 +37,41 @@ export default function App({ Component, pageProps }) {
   return (
     <QueryClientProvider client={queryClient}>
       <DefaultSeo
-        defaultTitle="YF14 Store — The Art of Feminine Elegance"
-        titleTemplate="%s | YF14 Store"
-        description="Discover YF14 Store's curated collection of luxury women's dresses. Timeless elegance, impeccable craftsmanship."
+        defaultTitle={`${t.siteName} — ${t.home.heroTitle}`}
+        titleTemplate={`%s | ${t.siteName}`}
+        description={t.home.heroSubtitle}
         openGraph={{
           type: 'website',
-          locale: 'en_US',
+          locale: locale === 'ar' ? 'ar_SA' : 'en_US',
           url: process.env.NEXT_PUBLIC_SITE_URL,
-          siteName: 'YF14 Store',
+          siteName: t.siteName,
         }}
       />
       {getLayout(<Component {...pageProps} />)}
       <Toaster
-        position="top-right"
+        position={isRTL ? 'top-left' : 'top-right'}
         toastOptions={{
           style: {
-            fontFamily: 'Jost, sans-serif',
+            fontFamily: isRTL ? 'Tajawal, sans-serif' : 'Jost, sans-serif',
             fontSize: '13px',
-            letterSpacing: '0.02em',
+            letterSpacing: isRTL ? '0' : '0.02em',
             borderRadius: '2px',
             background: '#0a0a0a',
             color: '#fff',
+            direction: isRTL ? 'rtl' : 'ltr',
           },
           success: { iconTheme: { primary: '#c9a96e', secondary: '#fff' } },
           error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
         }}
       />
     </QueryClientProvider>
+  );
+}
+
+export default function App({ Component, pageProps }) {
+  return (
+    <LanguageProvider>
+      <AppInner Component={Component} pageProps={pageProps} />
+    </LanguageProvider>
   );
 }

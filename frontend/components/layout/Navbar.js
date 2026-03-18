@@ -5,23 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
 import useWishlistStore from '../../store/wishlistStore';
-
-const navLinks = [
-  { label: 'New Arrivals', href: '/products?filter=new' },
-  {
-    label: 'Collections',
-    href: '/products',
-    children: [
-      { label: 'Evening Dresses', href: '/products?category=evening-dresses' },
-      { label: 'Cocktail Dresses', href: '/products?category=cocktail-dresses' },
-      { label: 'Maxi Dresses', href: '/products?category=maxi-dresses' },
-      { label: 'Mini Dresses', href: '/products?category=mini-dresses' },
-      { label: 'Casual Dresses', href: '/products?category=casual-dresses' },
-      { label: 'Summer Dresses', href: '/products?category=summer-dresses' },
-    ],
-  },
-  { label: 'Sale', href: '/products?filter=sale' },
-];
+import { useLang } from '../../contexts/LanguageContext';
 
 export default function Navbar({ scrolled }) {
   const router = useRouter();
@@ -35,6 +19,24 @@ export default function Navbar({ scrolled }) {
   const logout = useAuthStore((s) => s.logout);
   const itemCount = useCartStore((s) => s.itemCount());
   const setCartOpen = useCartStore((s) => s.setOpen);
+  const { t, locale, setLocale, isRTL } = useLang();
+
+  const navLinks = [
+    { label: t.nav.newArrivals, href: '/products?filter=new' },
+    {
+      label: t.nav.collections,
+      href: '/products',
+      children: [
+        { label: t.nav.evening, href: '/products?category=evening-dresses' },
+        { label: t.nav.cocktail, href: '/products?category=cocktail-dresses' },
+        { label: t.nav.maxi, href: '/products?category=maxi-dresses' },
+        { label: t.nav.mini, href: '/products?category=mini-dresses' },
+        { label: t.nav.casual, href: '/products?category=casual-dresses' },
+        { label: t.nav.summer, href: '/products?category=summer-dresses' },
+      ],
+    },
+    { label: t.nav.sale, href: '/products?filter=sale' },
+  ];
 
   useEffect(() => {
     setMobileOpen(false);
@@ -146,16 +148,16 @@ export default function Navbar({ scrolled }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </Link>
-                  <div className="absolute right-0 top-full hidden group-hover:block bg-white border border-brand-black/10 shadow-xl py-2 min-w-[160px] z-50">
-                    <Link href="/account" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">My Account</Link>
-                    <Link href="/account/orders" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">Orders</Link>
-                    <Link href="/account/wishlist" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">Wishlist</Link>
+                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full hidden group-hover:block bg-white border border-brand-black/10 shadow-xl py-2 min-w-[160px] z-50`}>
+                    <Link href="/account" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.myAccount}</Link>
+                    <Link href="/account/orders" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.orders}</Link>
+                    <Link href="/account/wishlist" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.wishlist}</Link>
                     {user.role === 'admin' && (
-                      <Link href="/admin" className="block px-5 py-2 text-xs tracking-wider text-brand-gold">Admin Panel</Link>
+                      <Link href="/admin" className="block px-5 py-2 text-xs tracking-wider text-brand-gold">{t.nav.adminPanel}</Link>
                     )}
                     <hr className="my-1 border-brand-black/10" />
                     <button onClick={logout} className="block w-full text-left px-5 py-2 text-xs tracking-wider hover:text-brand-gold">
-                      Sign Out
+                      {t.nav.signOut}
                     </button>
                   </div>
                 </div>
@@ -166,6 +168,16 @@ export default function Navbar({ scrolled }) {
                   </svg>
                 </Link>
               )}
+
+              {/* Language switcher */}
+              <button
+                onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+                className="text-brand-black hover:text-brand-gold transition-colors text-xs font-medium tracking-wide border border-brand-black/20 hover:border-brand-gold px-2 py-1 rounded"
+                aria-label="Switch language"
+                title={locale === 'ar' ? 'English' : 'العربية'}
+              >
+                {locale === 'ar' ? 'EN' : 'ع'}
+              </button>
 
               <button
                 onClick={() => setCartOpen(true)}
@@ -204,7 +216,7 @@ export default function Navbar({ scrolled }) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     type="text"
-                    placeholder="Search dresses, styles, occasions..."
+                    placeholder={t.common.searchPlaceholder}
                     className="flex-1 text-sm font-body tracking-wide bg-transparent border-none outline-none text-brand-black placeholder-brand-warm-gray"
                   />
                   <button
@@ -212,7 +224,7 @@ export default function Navbar({ scrolled }) {
                     onClick={() => setSearchOpen(false)}
                     className="text-brand-warm-gray hover:text-brand-black text-xs tracking-widest uppercase"
                   >
-                    Close
+                    {t.common.close}
                   </button>
                 </div>
               </form>
@@ -258,15 +270,22 @@ export default function Navbar({ scrolled }) {
               <div className="mt-6 flex flex-col gap-3">
                 {user ? (
                   <>
-                    <Link href="/account" className="btn-outline text-center">My Account</Link>
-                    <button onClick={logout} className="btn-ghost text-center">Sign Out</button>
+                    <Link href="/account" className="btn-outline text-center">{t.nav.myAccount}</Link>
+                    <button onClick={logout} className="btn-ghost text-center">{t.nav.signOut}</button>
                   </>
                 ) : (
                   <>
-                    <Link href="/login" className="btn-primary text-center">Sign In</Link>
-                    <Link href="/register" className="btn-outline text-center">Create Account</Link>
+                    <Link href="/login" className="btn-primary text-center">{t.nav.signIn}</Link>
+                    <Link href="/register" className="btn-outline text-center">{t.nav.createAccount}</Link>
                   </>
                 )}
+                {/* Language toggle in mobile menu */}
+                <button
+                  onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+                  className="btn-ghost text-center text-sm"
+                >
+                  {locale === 'ar' ? '🌐 English' : '🌐 العربية'}
+                </button>
               </div>
             </nav>
           </motion.div>

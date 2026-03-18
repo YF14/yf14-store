@@ -28,6 +28,28 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Arabic language overrides */
+html.font-arabic body,
+html[lang="ar"] body {
+  font-family: 'Tajawal', 'Jost', system-ui, sans-serif;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+html[dir="rtl"] .tracking-widest,
+html[dir="rtl"] .tracking-wider,
+html[dir="rtl"] .tracking-wide {
+  letter-spacing: 0 !important;
+}
+
+html[dir="rtl"] .uppercase {
+  text-transform: none;
+}
+
+html[dir="rtl"] .container-luxury {
+  direction: rtl;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--cream); }

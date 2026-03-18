@@ -4,10 +4,12 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { NextSeo } from 'next-seo';
 import useAuthStore from '../store/authStore';
+import { useLang } from '../contexts/LanguageContext';
 
 export default function RegisterPage() {
   const router = useRouter();
   const register = useAuthStore((s) => s.register);
+  const { t, isRTL } = useLang();
   const isLoading = useAuthStore((s) => s.isLoading);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
@@ -29,60 +31,58 @@ export default function RegisterPage() {
 
   return (
     <>
-      <NextSeo title="Create Account" />
+      <NextSeo title={t.auth.register} />
       <div className="min-h-screen grid md:grid-cols-2">
-        {/* Left image */}
-        <div className="hidden md:block relative">
+        <div className={`hidden md:block relative ${isRTL ? 'order-2' : 'order-1'}`}>
           <Image src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&q=80" alt="Fashion" fill className="object-cover" />
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-end pb-16 px-12">
             <Link href="/" className="text-white font-display text-4xl tracking-[0.2em] mb-4">YF14 Store</Link>
-            <p className="text-white/70 text-sm tracking-wider text-center">Join Our Exclusive Community</p>
+            <p className="text-white/70 text-sm tracking-wider text-center">{t.auth.registerSubtitle}</p>
           </div>
         </div>
 
-        {/* Form */}
-        <div className="flex items-center justify-center p-8 bg-brand-cream">
+        <div className={`flex items-center justify-center p-8 bg-brand-cream ${isRTL ? 'order-1' : 'order-2'}`}>
           <div className="w-full max-w-md">
-            <h1 className="font-display text-4xl font-light mb-2">Create Account</h1>
-            <p className="text-sm text-brand-warm-gray mb-10">Join YF14 Store and discover timeless elegance</p>
+            <h1 className="font-display text-4xl font-light mb-2">{t.auth.registerTitle}</h1>
+            <p className="text-sm text-brand-warm-gray mb-10">{t.auth.registerSubtitle}</p>
 
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs tracking-widest uppercase mb-2">First Name</label>
-                  <input type="text" value={form.firstName} onChange={update('firstName')} className="input-luxury" placeholder="Jane" required autoComplete="given-name" />
+                  <label className="block text-xs tracking-widest uppercase mb-2">{t.auth.firstName}</label>
+                  <input type="text" value={form.firstName} onChange={update('firstName')} className="input-luxury" required autoComplete="given-name" />
                 </div>
                 <div>
-                  <label className="block text-xs tracking-widest uppercase mb-2">Last Name</label>
-                  <input type="text" value={form.lastName} onChange={update('lastName')} className="input-luxury" placeholder="Doe" required autoComplete="family-name" />
+                  <label className="block text-xs tracking-widest uppercase mb-2">{t.auth.lastName}</label>
+                  <input type="text" value={form.lastName} onChange={update('lastName')} className="input-luxury" required autoComplete="family-name" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs tracking-widest uppercase mb-2">Email</label>
-                <input type="email" value={form.email} onChange={update('email')} className="input-luxury" placeholder="your@email.com" required autoComplete="email" />
+                <label className="block text-xs tracking-widest uppercase mb-2">{t.auth.email}</label>
+                <input type="email" value={form.email} onChange={update('email')} className="input-luxury" placeholder="your@email.com" required autoComplete="email" dir="ltr" />
               </div>
               <div>
-                <label className="block text-xs tracking-widest uppercase mb-2">Password</label>
-                <input type="password" value={form.password} onChange={update('password')} className="input-luxury" placeholder="Min. 8 characters" required autoComplete="new-password" />
+                <label className="block text-xs tracking-widest uppercase mb-2">{t.auth.password}</label>
+                <input type="password" value={form.password} onChange={update('password')} className="input-luxury" required autoComplete="new-password" dir="ltr" />
               </div>
               <div>
-                <label className="block text-xs tracking-widest uppercase mb-2">Confirm Password</label>
-                <input type="password" value={form.confirmPassword} onChange={update('confirmPassword')} className="input-luxury" placeholder="Repeat password" required autoComplete="new-password" />
+                <label className="block text-xs tracking-widest uppercase mb-2">{t.auth.confirmPassword}</label>
+                <input type="password" value={form.confirmPassword} onChange={update('confirmPassword')} className="input-luxury" required autoComplete="new-password" dir="ltr" />
               </div>
               <p className="text-xs text-brand-warm-gray">
-                By creating an account, you agree to our{' '}
-                <Link href="/terms" className="underline hover:text-brand-gold">Terms</Link>{' '}and{' '}
-                <Link href="/privacy" className="underline hover:text-brand-gold">Privacy Policy</Link>.
+                {t.auth.agreeToTerms}{' '}
+                <Link href="/terms" className="underline hover:text-brand-gold">{t.auth.terms}</Link>{' '}{t.auth.and}{' '}
+                <Link href="/privacy" className="underline hover:text-brand-gold">{t.auth.privacy}</Link>.
               </p>
               <button type="submit" disabled={isLoading} className="btn-primary w-full mt-2">
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? t.common.loading : t.auth.register}
               </button>
             </form>
 
             <div className="divider-luxury my-8">
-              <span className="text-xs text-brand-warm-gray tracking-widest uppercase">or</span>
+              <span className="text-xs text-brand-warm-gray tracking-widest uppercase">{t.common.or}</span>
             </div>
 
             <a
@@ -95,12 +95,12 @@ export default function RegisterPage() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              Continue with Google
+              {t.auth.continueWithGoogle}
             </a>
 
             <p className="text-center text-sm text-brand-warm-gray mt-8">
-              Already have an account?{' '}
-              <Link href="/login" className="text-brand-black hover:text-brand-gold transition-colors underline">Sign in</Link>
+              {t.auth.hasAccount}{' '}
+              <Link href="/login" className="text-brand-black hover:text-brand-gold transition-colors underline">{t.auth.signInLink}</Link>
             </p>
           </div>
         </div>
