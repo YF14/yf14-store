@@ -47,9 +47,12 @@ function CheckoutForm({ cart, subtotal }) {
   });
 
   const applyPromo = useCartStore((s) => s.applyPromo);
+  const removePromo = useCartStore((s) => s.removePromo);
 
   const shipping = subtotal >= 100 ? 0 : 9.99;
   const tax = subtotal * 0.08;
+  // Use cart store promo (applied from CartDrawer) or local state
+  const activePromoCode = cart?.promoCode || promoApplied;
   const promoDiscount = cart?.promoDiscount || 0;
   const total = subtotal + shipping + tax - promoDiscount;
 
@@ -59,8 +62,10 @@ function CheckoutForm({ cart, subtotal }) {
     e.preventDefault();
     if (!promoInput.trim()) return;
     const result = await applyPromo(promoInput.trim());
-    if (result.success) setPromoApplied(promoInput.toUpperCase());
-    setPromoInput('');
+    if (result.success) {
+      setPromoApplied(promoInput.toUpperCase());
+      setPromoInput('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -78,7 +83,7 @@ function CheckoutForm({ cart, subtotal }) {
       const { data: orderData } = await api.post('/orders', {
         items: orderItems,
         shippingAddress: address,
-        promoCode: promoApplied,
+        promoCode: activePromoCode,
       });
 
       // 2. Create payment intent
@@ -254,27 +259,29 @@ function CheckoutForm({ cart, subtotal }) {
             </div>
 
             {/* Promo code */}
-            <form onSubmit={handlePromo} className="flex gap-2 mb-6">
-              <input
-                value={promoInput}
-                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                placeholder="Promo code"
-                className="input-luxury flex-1 text-xs py-2"
-                disabled={!!promoApplied}
-              />
-              <button
-                type="submit"
-                disabled={!!promoApplied}
-                className="px-4 py-2 border border-brand-black text-xs tracking-widest uppercase hover:bg-brand-black hover:text-white transition-colors disabled:opacity-40"
-              >
-                Apply
-              </button>
-            </form>
-
-            {promoApplied && (
-              <p className="text-xs text-green-600 mb-4 flex items-center gap-1.5">
-                ✓ Promo code <strong>{promoApplied}</strong> applied
-              </p>
+            {activePromoCode ? (
+              <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2 mb-6">
+                <p className="text-xs text-green-700 flex items-center gap-1.5">
+                  ✓ Coupon <strong>{activePromoCode}</strong> applied — saving ${promoDiscount.toFixed(2)}
+                </p>
+                <button onClick={removePromo} className="text-xs text-green-600 hover:text-red-500">Remove</button>
+              </div>
+            ) : (
+              <form onSubmit={handlePromo} className="flex gap-2 mb-6">
+                <input
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder="Coupon / promo code"
+                  className="input-luxury flex-1 text-xs py-2"
+                  dir="ltr"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-brand-black text-xs tracking-widest uppercase hover:bg-brand-black hover:text-white transition-colors"
+                >
+                  Apply
+                </button>
+              </form>
             )}
 
             {/* Totals */}

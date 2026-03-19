@@ -1,12 +1,40 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import useCartStore from '../../store/cartStore';
+import useAuthStore from '../../store/authStore';
+import { useLang } from '../../contexts/LanguageContext';
 
 export default function CartDrawer() {
-  const { cart, isOpen, setOpen, updateItem, removeItem } = useCartStore();
+  const { cart, isOpen, setOpen, updateItem, removeItem, applyPromo, removePromo } = useCartStore();
   const subtotal = useCartStore((s) => s.subtotal());
+  const user = useAuthStore((s) => s.user);
+  const { t, isRTL } = useLang();
+
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   const shipping = subtotal >= 100 ? 0 : 9.99;
+  const discount = cart?.promoDiscount || 0;
+  const total = subtotal + shipping - discount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    if (!user) {
+      import('react-hot-toast').then(({ default: toast }) =>
+        toast.error(isRTL ? 'يجب تسجيل الدخول لاستخدام الكوبون' : 'Please sign in to apply a coupon')
+      );
+      return;
+    }
+    setCouponLoading(true);
+    const result = await applyPromo(couponCode.trim());
+    if (result.success) setCouponCode('');
+    setCouponLoading(false);
+  };
+
+  const slideDir = isRTL ? { initial: { x: '-100%' }, animate: { x: 0 }, exit: { x: '-100%' } }
+                         : { initial: { x: '100%' }, animate: { x: 0 }, exit: { x: '100%' } };
 
   return (
     <AnimatePresence>
@@ -20,16 +48,14 @@ export default function CartDrawer() {
             className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            {...slideDir}
             transition={{ type: 'tween', duration: 0.35 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 flex flex-col shadow-2xl"
+            className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-full w-full max-w-md bg-white z-50 flex flex-col shadow-2xl`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-brand-black/10">
               <h2 className="font-display text-xl font-light tracking-wide">
-                Shopping Bag
+                {t.cart.title}
                 {cart?.items?.length > 0 && (
                   <span className="ml-2 font-body text-sm text-brand-warm-gray">({cart.items.length})</span>
                 )}
@@ -45,16 +71,16 @@ export default function CartDrawer() {
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {!cart?.items?.length ? (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-6">
-                  <div className="w-20 h-20 border border-brand-black/10 rounded-full flex items-center justify-center">
+                  <div className="w-20 h-20 border-2 border-brand-gold/30 rounded-full flex items-center justify-center">
                     <svg className="w-8 h-8 text-brand-warm-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-display text-xl mb-2">Your bag is empty</p>
-                    <p className="text-sm text-brand-warm-gray mb-6">Discover our collection of luxury dresses</p>
+                    <p className="font-display text-xl mb-2">{t.cart.empty}</p>
+                    <p className="text-sm text-brand-warm-gray mb-6">{t.cart.emptyText}</p>
                     <Link href="/products" onClick={() => setOpen(false)} className="btn-primary">
-                      Shop Now
+                      {t.home.heroCta}
                     </Link>
                   </div>
                 </div>
@@ -62,7 +88,7 @@ export default function CartDrawer() {
                 <div className="space-y-6">
                   {cart.items.map((item) => (
                     <div key={item._id} className="flex gap-4">
-                      <div className="w-20 h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden">
+                      <div className="w-20 h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden rounded">
                         {item.product?.images?.[0]?.url && (
                           <Image
                             src={item.product.images[0].url}
@@ -85,27 +111,20 @@ export default function CartDrawer() {
                           {item.size} · {item.color}
                         </p>
                         <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center border border-brand-black/20">
+                          <div className="flex items-center border border-brand-black/20 rounded">
                             <button
                               onClick={() => updateItem(item._id, item.quantity - 1)}
-                              className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors text-sm"
-                            >
-                              −
-                            </button>
+                              className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors"
+                            >−</button>
                             <span className="w-8 text-center text-xs font-medium">{item.quantity}</span>
                             <button
                               onClick={() => updateItem(item._id, item.quantity + 1)}
-                              className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors text-sm"
-                            >
-                              +
-                            </button>
+                              className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors"
+                            >+</button>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</span>
-                            <button
-                              onClick={() => removeItem(item._id)}
-                              className="text-brand-warm-gray hover:text-red-500 transition-colors"
-                            >
+                            <span className="text-sm font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                            <button onClick={() => removeItem(item._id)} className="text-brand-warm-gray hover:text-red-500 transition-colors">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
@@ -121,44 +140,83 @@ export default function CartDrawer() {
 
             {/* Footer */}
             {cart?.items?.length > 0 && (
-              <div className="border-t border-brand-black/10 px-6 py-6 space-y-4">
+              <div className="border-t border-brand-black/10 px-6 py-5 space-y-4">
+
+                {/* Coupon input */}
+                {cart.promoCode ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-medium text-green-700">{cart.promoCode}</span>
+                      {cart.promoType === 'percentage' && (
+                        <span className="text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                          {cart.promoValue}% {isRTL ? 'خصم' : 'off'}
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={removePromo} className="text-green-600 hover:text-red-500 transition-colors text-xs">
+                      {t.common.remove}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      placeholder={isRTL ? 'كود الخصم' : 'Coupon code'}
+                      className="flex-1 px-3 py-2.5 border border-brand-black/20 text-sm focus:outline-none focus:border-brand-gold transition-colors rounded"
+                      dir="ltr"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-4 py-2.5 text-white text-xs font-medium rounded disabled:opacity-50 transition-all"
+                      style={{ background: 'linear-gradient(135deg, #9333ea, #db2777)' }}
+                    >
+                      {couponLoading ? '...' : (isRTL ? 'تطبيق' : 'Apply')}
+                    </button>
+                  </div>
+                )}
+
+                {/* Totals */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-brand-warm-gray">
-                    <span>Subtotal</span>
+                    <span>{t.cart.subtotal}</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-brand-warm-gray">
-                    <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                    <span>{t.cart.shipping}</span>
+                    <span>{shipping === 0 ? (isRTL ? 'مجاني' : 'Free') : `$${shipping.toFixed(2)}`}</span>
                   </div>
-                  {cart.promoDiscount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount ({cart.promoCode})</span>
-                      <span>−${cart.promoDiscount.toFixed(2)}</span>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>{isRTL ? 'الخصم' : 'Discount'} ({cart.promoCode})</span>
+                      <span>−${discount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-medium text-brand-black pt-2 border-t border-brand-black/10">
-                    <span className="text-xs tracking-widest uppercase">Estimated Total</span>
-                    <span>${(subtotal + shipping - (cart.promoDiscount || 0)).toFixed(2)}</span>
+                  <div className="flex justify-between font-semibold text-brand-black pt-2 border-t border-brand-black/10">
+                    <span className="text-xs uppercase tracking-wider">{t.cart.total}</span>
+                    <span className="text-base">${total.toFixed(2)}</span>
                   </div>
                 </div>
+
                 {subtotal < 100 && (
                   <p className="text-xs text-brand-warm-gray text-center">
-                    Add ${(100 - subtotal).toFixed(2)} more for free shipping
+                    {isRTL
+                      ? `أضيفي $${(100 - subtotal).toFixed(2)} للحصول على شحن مجاني`
+                      : `Add $${(100 - subtotal).toFixed(2)} more for free shipping`}
                   </p>
                 )}
-                <Link
-                  href="/checkout"
-                  onClick={() => setOpen(false)}
-                  className="btn-primary w-full text-center"
-                >
-                  Proceed to Checkout
+
+                <Link href="/checkout" onClick={() => setOpen(false)} className="btn-primary w-full text-center block">
+                  {t.checkout.title} →
                 </Link>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="btn-ghost w-full text-center text-brand-warm-gray"
-                >
-                  Continue Shopping
+                <button onClick={() => setOpen(false)} className="w-full text-center text-sm text-brand-warm-gray hover:text-brand-black transition-colors py-1">
+                  {t.cart.continueShopping}
                 </button>
               </div>
             )}

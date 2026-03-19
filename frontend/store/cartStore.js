@@ -59,21 +59,33 @@ const useCartStore = create((set, get) => ({
 
   applyPromo: async (code) => {
     try {
-      const { data } = await api.post('/cart/promo', { code });
-      set((state) => ({ cart: { ...state.cart, ...data } }));
-      toast.success(`Promo applied! Saved $${data.promoDiscount.toFixed(2)}`);
-      return { success: true };
+      const subtotal = get().subtotal();
+      const { data } = await api.post('/promos/validate', { code, orderAmount: subtotal });
+      set((state) => ({
+        cart: {
+          ...state.cart,
+          promoCode: data.code,
+          promoDiscount: data.discount,
+          promoType: data.type,
+          promoValue: data.value,
+        },
+      }));
+      const saved = data.type === 'percentage'
+        ? `${data.value}% off`
+        : `$${data.discount.toFixed(2)} off`;
+      toast.success(`Coupon applied! ${saved}`);
+      return { success: true, discount: data.discount };
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Invalid promo code');
+      toast.error(err.response?.data?.error || 'Invalid coupon code');
       return { success: false };
     }
   },
 
-  removePromo: async () => {
-    try {
-      await api.delete('/cart/promo');
-      set((state) => ({ cart: { ...state.cart, promoCode: null, promoDiscount: 0 } }));
-    } catch {}
+  removePromo: () => {
+    set((state) => ({
+      cart: { ...state.cart, promoCode: null, promoDiscount: 0, promoType: null, promoValue: null },
+    }));
+    toast.success('Coupon removed');
   },
 
   itemCount: () => {
