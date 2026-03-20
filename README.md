@@ -8,7 +8,7 @@ A production-ready, full-stack e-commerce platform for a premium women's dress b
 maison-elara/
 ├── backend/          # Node.js + Express + MongoDB API
 │   └── src/
-│       ├── config/   # DB, Cloudinary, Logger
+│       ├── config/   # DB, ImageKit, Logger
 │       ├── controllers/
 │       ├── middleware/
 │       ├── models/   # Mongoose schemas
@@ -35,8 +35,8 @@ maison-elara/
 ### Prerequisites
 - Node.js 18+
 - MongoDB Atlas account
-- Cloudinary account
-- Stripe account
+- ImageKit account (uploads)
+- Stripe account (optional for cash-on-delivery flows)
 
 ### Backend Setup
 
@@ -61,22 +61,33 @@ npm run dev     # Start on :3000
 
 ## 🔑 Environment Variables
 
-### Backend (.env)
+Copy `backend/.env.example` → `backend/.env` and `frontend/.env.example` → `frontend/.env.local`.
+
+### Backend (.env) — also set these on **Railway**
 | Variable | Description |
 |----------|-------------|
-| MONGODB_URI | MongoDB Atlas connection string |
-| JWT_SECRET | Strong random string (32+ chars) |
-| CLOUDINARY_* | Cloudinary credentials |
-| STRIPE_SECRET_KEY | Stripe secret key |
-| STRIPE_WEBHOOK_SECRET | Stripe webhook secret |
-| EMAIL_* | SMTP credentials |
-| TELEGRAM_BOT_TOKEN | Optional Telegram bot |
+| `MONGODB_URI` | MongoDB Atlas connection string (**required**) |
+| `BACKEND_URL` | Public API URL, no trailing slash (e.g. `https://xxx.up.railway.app`) — used for Telegram webhook + OAuth |
+| `JWT_SECRET` | Strong random string (32+ chars) |
+| `JWT_REFRESH_SECRET` | Refresh token secret |
+| `IMAGEKIT_*` | ImageKit credentials |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `EMAIL_*` | SMTP credentials |
+| `TELEGRAM_BOT_TOKEN` | From @BotFather |
+| `TELEGRAM_CHAT_ID` | Group/channel ID for order alerts |
+| `TELEGRAM_WEBHOOK_SECRET` | Random string; protects `GET /api/telegram/set-webhook` |
+| `FRONTEND_URL` | Your Next.js URL (CORS + email links) |
+
+**Telegram:** After deploy, call once (replace secret and host):  
+`https://YOUR-BACKEND/api/telegram/set-webhook?secret=YOUR_TELEGRAM_WEBHOOK_SECRET`
 
 ### Frontend (.env.local)
 | Variable | Description |
 |----------|-------------|
-| NEXT_PUBLIC_API_URL | Backend API URL |
-| NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY | Stripe publishable key |
+| `NEXT_PUBLIC_API_URL` | Backend API URL ending in `/api` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
+| `NEXT_PUBLIC_SITE_URL` | Canonical frontend URL |
 
 ## 📦 Features
 
@@ -110,9 +121,10 @@ npm run dev     # Start on :3000
 
 ### Backend → Railway / Render
 1. Push to GitHub
-2. Connect repo
-3. Set environment variables
+2. Connect repo (set **root directory** to `backend` if the repo is the monorepo)
+3. Copy every variable from `backend/.env.example` into the platform’s env UI (**including** `BACKEND_URL`, `TELEGRAM_*`, `FRONTEND_URL`)
 4. Deploy
+5. Register Telegram webhook (see table above)
 
 ### Stripe Webhook
 After deploying backend, register the webhook:

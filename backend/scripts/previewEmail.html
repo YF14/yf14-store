@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Email Preview — YF14 Store</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #e5e5e5; padding: 40px; }
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tab { padding: 10px 20px; cursor: pointer; border-radius: 6px; border: 2px solid #9333ea; color: #9333ea; font-weight: bold; }
+  .tab.active { background: #9333ea; color: white; }
+  .preview { display: none; }
+  .preview.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('confirmed')">✅ Confirmed (موافقة)</div>
+  <div class="tab" onclick="show('cancelled')">❌ Cancelled (رفض)</div>
+  <div class="tab" onclick="show('shipped')">🚚 Shipped (شحن)</div>
+</div>
+
+<!-- CONFIRMED -->
+<div class="preview active" id="confirmed">
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+  body { font-family: 'Georgia', serif; background: #faf9f7; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 2px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+  .header { background: #1a1a1a; padding: 40px; text-align: center; }
+  .header h1 { background: linear-gradient(135deg,#9333ea,#db2777); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size: 28px; margin: 0; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
+  .header p { color: #888; margin: 8px 0 0; font-size: 12px; letter-spacing: 2px; }
+  .body { padding: 40px; }
+  .footer { background: #f5f5f5; padding: 20px 40px; text-align: center; color: #999; font-size: 12px; }
+  .btn { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg,#9333ea,#db2777); color: white !important; text-decoration: none; font-size: 13px; border-radius: 4px; }
+</style></head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>YF14 STORE</h1>
+    <p>أجعلي أطلالتكِ مميزة</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;padding:20px 0 10px;"><span style="font-size:48px;">✅</span></div>
+    <h2 style="color:#16a34a;font-weight:600;text-align:center;margin:0 0 8px;">تم تأكيد طلبك!</h2>
+    <p style="color:#666;text-align:center;margin:0 0 24px;font-size:13px;">Order Confirmed!</p>
+    <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin:20px 0;">
+      <p style="color:#333;margin:0 0 8px;text-align:right;direction:rtl;">تمت الموافقة على طلبك وسيتم التواصل معك قريباً للتوصيل.</p>
+      <p style="color:#555;margin:0;font-size:13px;">Your order has been approved and we will contact you soon for delivery.</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">رقم الطلب / Order #</td>
+        <td style="padding:10px;font-weight:600;">YF14-2026-A1B2C3D4</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-size:12px;color:#888;">الإجمالي / Total</td>
+        <td style="padding:10px;font-weight:600;">$85.00</td>
+      </tr>
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">الحالة / Status</td>
+        <td style="padding:10px;font-weight:600;color:#16a34a;">تم تأكيد طلبك! — Order Confirmed!</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="#" class="btn">عرض الطلب / View Order</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>© 2026 YF14 Store. All rights reserved.</p>
+    <p>Questions? Contact us at <a href="#">your.gmail@gmail.com</a></p>
+  </div>
+</div>
+</body></html>
+</div>
+
+<!-- CANCELLED -->
+<div class="preview" id="cancelled">
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+  body { font-family: 'Georgia', serif; background: #faf9f7; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 2px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+  .header { background: #1a1a1a; padding: 40px; text-align: center; }
+  .header h1 { background: linear-gradient(135deg,#9333ea,#db2777); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size: 28px; margin: 0; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
+  .header p { color: #888; margin: 8px 0 0; font-size: 12px; letter-spacing: 2px; }
+  .body { padding: 40px; }
+  .footer { background: #f5f5f5; padding: 20px 40px; text-align: center; color: #999; font-size: 12px; }
+  .btn { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg,#9333ea,#db2777); color: white !important; text-decoration: none; font-size: 13px; border-radius: 4px; }
+</style></head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>YF14 STORE</h1>
+    <p>أجعلي أطلالتكِ مميزة</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;padding:20px 0 10px;"><span style="font-size:48px;">❌</span></div>
+    <h2 style="color:#dc2626;font-weight:600;text-align:center;margin:0 0 8px;">تم إلغاء طلبك</h2>
+    <p style="color:#666;text-align:center;margin:0 0 24px;font-size:13px;">Order Cancelled</p>
+    <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin:20px 0;">
+      <p style="color:#333;margin:0 0 8px;text-align:right;direction:rtl;">نأسف، تعذّر تأكيد طلبك. يرجى التواصل معنا إذا كان لديك أي استفسار.</p>
+      <p style="color:#555;margin:0;font-size:13px;">Sorry, your order could not be confirmed. Please contact us if you have any questions.</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">رقم الطلب / Order #</td>
+        <td style="padding:10px;font-weight:600;">YF14-2026-A1B2C3D4</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-size:12px;color:#888;">الإجمالي / Total</td>
+        <td style="padding:10px;font-weight:600;">$85.00</td>
+      </tr>
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">الحالة / Status</td>
+        <td style="padding:10px;font-weight:600;color:#dc2626;">تم إلغاء طلبك — Order Cancelled</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="#" class="btn">تواصل معنا / Contact Us</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>© 2026 YF14 Store. All rights reserved.</p>
+    <p>Questions? Contact us at <a href="#">your.gmail@gmail.com</a></p>
+  </div>
+</div>
+</body></html>
+</div>
+
+<!-- SHIPPED -->
+<div class="preview" id="shipped">
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+  body { font-family: 'Georgia', serif; background: #faf9f7; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 2px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+  .header { background: #1a1a1a; padding: 40px; text-align: center; }
+  .header h1 { background: linear-gradient(135deg,#9333ea,#db2777); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size: 28px; margin: 0; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
+  .header p { color: #888; margin: 8px 0 0; font-size: 12px; letter-spacing: 2px; }
+  .body { padding: 40px; }
+  .footer { background: #f5f5f5; padding: 20px 40px; text-align: center; color: #999; font-size: 12px; }
+  .btn { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg,#9333ea,#db2777); color: white !important; text-decoration: none; font-size: 13px; border-radius: 4px; }
+</style></head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>YF14 STORE</h1>
+    <p>أجعلي أطلالتكِ مميزة</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;padding:20px 0 10px;"><span style="font-size:48px;">🚚</span></div>
+    <h2 style="color:#2563eb;font-weight:600;text-align:center;margin:0 0 8px;">طلبك في الطريق!</h2>
+    <p style="color:#666;text-align:center;margin:0 0 24px;font-size:13px;">Order Shipped!</p>
+    <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin:20px 0;">
+      <p style="color:#333;margin:0 0 8px;text-align:right;direction:rtl;">طلبك على الطريق إليك! رقم التتبع: <strong>IQ123456789</strong></p>
+      <p style="color:#555;margin:0;font-size:13px;">Your order is on its way! Tracking: <strong>IQ123456789</strong></p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">رقم الطلب / Order #</td>
+        <td style="padding:10px;font-weight:600;">YF14-2026-A1B2C3D4</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-size:12px;color:#888;">الإجمالي / Total</td>
+        <td style="padding:10px;font-weight:600;">$85.00</td>
+      </tr>
+      <tr style="background:#f5f5f5;">
+        <td style="padding:10px;font-size:12px;color:#888;">الحالة / Status</td>
+        <td style="padding:10px;font-weight:600;color:#2563eb;">طلبك في الطريق! — Order Shipped!</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="#" class="btn">تتبع الطلب / Track Order</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>© 2026 YF14 Store. All rights reserved.</p>
+    <p>Questions? Contact us at <a href="#">your.gmail@gmail.com</a></p>
+  </div>
+</div>
+</body></html>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.preview').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

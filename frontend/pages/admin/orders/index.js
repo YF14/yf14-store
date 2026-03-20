@@ -106,8 +106,13 @@ export default function AdminOrdersPage() {
                     <p className="text-xs text-brand-warm-gray">{order.items?.length} item{order.items?.length !== 1 ? 's' : ''}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    <p className="text-sm">{order.user?.firstName} {order.user?.lastName}</p>
-                    <p className="text-xs text-brand-warm-gray">{order.user?.email}</p>
+                    <p className="text-sm">
+                      {order.guestInfo?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'زائر'}
+                      {order.guestInfo && <span className="ml-1 text-xs bg-amber-100 text-amber-700 px-1 rounded">Guest</span>}
+                    </p>
+                    <p className="text-xs text-brand-warm-gray">
+                      {order.guestInfo?.email || order.guestInfo?.phone || order.user?.email}
+                    </p>
                   </td>
                   <td className="px-4 py-3 text-brand-warm-gray text-xs hidden md:table-cell">
                     {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

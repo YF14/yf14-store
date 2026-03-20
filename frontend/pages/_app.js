@@ -18,11 +18,13 @@ function AppInner({ Component, pageProps }) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const user = useAuthStore((s) => s.user);
   const fetchCart = useCartStore((s) => s.fetchCart);
+  const initGuest = useCartStore((s) => s.initGuest);
   const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
   const { t, locale, isRTL } = useLang();
 
   useEffect(() => {
     fetchMe();
+    initGuest(); // load guest cart from localStorage
   }, []);
 
   useEffect(() => {

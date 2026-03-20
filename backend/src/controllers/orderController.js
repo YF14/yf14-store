@@ -98,6 +98,117 @@ exports.createOrder = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.createGuestOrder = async (req, res, next) => {
+  try {
+    const { guestInfo, items, promoCode } = req.body;
+
+    if (!guestInfo?.name || !guestInfo?.phone || !guestInfo?.city || !guestInfo?.town) {
+      return res.status(400).json({ error: 'Name, phone, city and town are required.' });
+    }
+    const phoneClean = guestInfo.phone.replace(/\s|-/g, '');
+    if (!/^(07\d{9}|7\d{9})$/.test(phoneClean)) {
+      return res.status(400).json({ error: 'Invalid phone number. Must be 07xxxxxxxxx or 7xxxxxxxxx.' });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty.' });
+    }
+
+    // Validate & reserve stock
+    const validatedItems = [];
+    let subtotal = 0;
+
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product || !product.isActive) return res.status(400).json({ error: `Product not available.` });
+
+      const variant = product.variants.id(item.variantId);
+      if (!variant) return res.status(400).json({ error: `Variant not found for ${product.name}.` });
+      if (variant.stock < item.quantity) return res.status(400).json({ error: `Only ${variant.stock} left for ${product.name} (${variant.size}/${variant.color}).` });
+
+      const price = variant.price || product.price;
+      subtotal += price * item.quantity;
+
+      validatedItems.push({
+        product: product._id,
+        name: product.name,
+        image: product.images[0]?.url || '',
+        price,
+        size: variant.size,
+        color: variant.color,
+        colorCode: variant.colorCode,
+        quantity: item.quantity,
+        variantId: variant._id,
+      });
+    }
+
+    // Apply promo
+    let promoDiscount = 0;
+    let appliedPromoCode = null;
+    if (promoCode) {
+      const promo = await PromoCode.findOne({ code: promoCode.toUpperCase() });
+      if (promo) {
+        const validity = promo.isValid(null, subtotal);
+        if (validity.valid) {
+          promoDiscount = promo.calculateDiscount(subtotal);
+          appliedPromoCode = promo.code;
+          promo.usedCount += 1;
+          await promo.save();
+        }
+      }
+    }
+
+    const shippingCost = 0;
+    const tax = 0;
+    const total = subtotal + shippingCost - promoDiscount;
+
+    const order = await Order.create({
+      user: null,
+      guestInfo,
+      items: validatedItems,
+      shippingAddress: {
+        firstName: guestInfo.name.split(' ')[0] || guestInfo.name,
+        lastName: guestInfo.name.split(' ').slice(1).join(' ') || '',
+        city: guestInfo.city,
+        state: guestInfo.town || '',
+        phone: guestInfo.phone,
+        country: 'IQ',
+      },
+      subtotal,
+      shippingCost,
+      tax,
+      promoCode: appliedPromoCode,
+      promoDiscount,
+      total,
+      paymentMethod: 'cash',
+      statusHistory: [{ status: 'pending', note: 'Guest order placed' }],
+    });
+
+    // Deduct stock
+    for (const item of validatedItems) {
+      await Product.updateOne(
+        { _id: item.product, 'variants._id': item.variantId },
+        { $inc: { 'variants.$.stock': -item.quantity, totalSold: item.quantity } }
+      );
+    }
+
+    // Telegram notification (adapt for guest)
+    const orderForNotify = {
+      ...order.toObject(),
+      user: { firstName: guestInfo.name, lastName: '', email: guestInfo.email || guestInfo.phone },
+    };
+    await telegramService.notifyNewOrder(orderForNotify);
+
+    // Email if provided
+    if (guestInfo.email) {
+      const populatedOrder = { ...order.toObject(), user: { firstName: guestInfo.name, lastName: '', email: guestInfo.email } };
+      emailService.sendOrderConfirmation(populatedOrder).catch(() => {});
+    }
+
+    res.status(201).json({ order, orderNumber: order.orderNumber });
+  } catch (err) { next(err); }
+};
+
 exports.getMyOrders = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;

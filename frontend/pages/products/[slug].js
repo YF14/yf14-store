@@ -11,6 +11,7 @@ import useCartStore from '../../store/cartStore';
 import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
+import { useLang } from '../../contexts/LanguageContext';
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function ProductDetailPage() {
   const toggle = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.isWishlisted);
   const user = useAuthStore((s) => s.user);
+  const { isRTL } = useLang();
 
   const { data, isLoading, refetch } = useQuery(
     ['product', slug],
@@ -78,11 +80,18 @@ export default function ProductDetailPage() {
   const isLowStock = selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 3;
 
   const handleAddToCart = async () => {
-    if (!user) { router.push('/login'); return; }
-    if (!selectedSize || !selectedColor) { toast.error('Please select size and color'); return; }
-    if (!selectedVariant) { toast.error('Variant not available'); return; }
-    if (selectedVariant.stock < qty) { toast.error('Not enough stock'); return; }
-    await addToCart(product._id, selectedVariant._id, qty);
+    if (!selectedSize || !selectedColor) { toast.error(isRTL ? 'اختاري المقاس والألوان' : 'Please select size and color'); return; }
+    if (!selectedVariant) { toast.error(isRTL ? 'هذا الاختيار غير متاح' : 'Variant not available'); return; }
+    if (selectedVariant.stock < qty) { toast.error(isRTL ? 'الكمية المطلوبة غير متوفرة' : 'Not enough stock'); return; }
+    await addToCart(product._id, selectedVariant._id, qty, {
+      name: product.name,
+      image: product.images?.[0]?.url || '',
+      price: selectedVariant.price || product.price,
+      size: selectedVariant.size,
+      color: selectedVariant.color,
+      colorCode: selectedVariant.colorCode,
+      stock: selectedVariant.stock,
+    });
   };
 
   const handleReviewSubmit = async (e) => {
@@ -125,7 +134,7 @@ export default function ProductDetailPage() {
           <span className="text-brand-black">{product.name}</span>
         </nav>
 
-        <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
+        <div className={`grid md:grid-cols-2 gap-12 lg:gap-20 ${isRTL ? 'direction-ltr' : ''}`} dir="ltr">
           {/* Images */}
           <div className="flex gap-4">
             {/* Thumbnails */}
@@ -144,7 +153,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Main image */}
-            <div className="flex-1 relative aspect-[3/4] bg-gray-50">
+            <div className="flex-1 relative aspect-[3/4] bg-gray-50 overflow-hidden">
               <Image
                 src={product.images[activeImg]?.url || product.images[0]?.url}
                 alt={product.name}
@@ -153,8 +162,10 @@ export default function ProductDetailPage() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              {discount > 0 && <span className="absolute top-4 left-4 badge badge-sale">−{discount}%</span>}
-              {product.isNewArrival && <span className="absolute top-4 left-4 mt-7 badge badge-new">New</span>}
+              <div className="absolute top-4 left-4 flex flex-col gap-2">
+                {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
+                {product.isNewArrival && <span className="badge badge-new">New</span>}
+              </div>
             </div>
           </div>
 
@@ -164,6 +175,7 @@ export default function ProductDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             className="py-4"
+            dir={isRTL ? 'rtl' : 'ltr'}
           >
             {product.category && (
               <p className="section-subtitle text-brand-warm-gray mb-3">{product.category.name}</p>
@@ -260,12 +272,26 @@ export default function ProductDetailPage() {
             {/* Quantity */}
             <div className="flex items-center gap-6 mb-8">
               <div className="flex items-center border border-brand-black/20">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-10 h-10 hover:bg-gray-50 transition-colors text-sm">−</button>
+                <button
+                  onClick={() => setQty(q => Math.max(1, q - 1))}
+                  className="w-10 h-10 hover:bg-gray-50 transition-colors text-sm"
+                >−</button>
                 <span className="w-10 text-center text-sm font-medium">{qty}</span>
-                <button onClick={() => setQty(q => q + 1)} className="w-10 h-10 hover:bg-gray-50 transition-colors text-sm">+</button>
+                <button
+                  onClick={() => setQty(q => {
+                    const maxStock = selectedVariant ? selectedVariant.stock : 99;
+                    return Math.min(maxStock, q + 1);
+                  })}
+                  disabled={selectedVariant && qty >= selectedVariant.stock}
+                  className="w-10 h-10 hover:bg-gray-50 transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                >+</button>
               </div>
               {selectedVariant && (
-                <span className="text-xs text-brand-warm-gray">{selectedVariant.stock} available</span>
+                <span className={`text-xs ${selectedVariant.stock <= 5 ? 'text-amber-600 font-medium' : 'text-brand-warm-gray'}`}>
+                  {selectedVariant.stock <= 5
+                    ? `${isRTL ? 'آخر' : 'Only'} ${selectedVariant.stock} ${isRTL ? 'قطعة!' : 'left!'}`
+                    : `${selectedVariant.stock} ${isRTL ? 'متوفر' : 'in stock'}`}
+                </span>
               )}
             </div>
 
@@ -286,34 +312,42 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
-            {/* Details accordion */}
-            <div className="border-t border-brand-black/10 pt-6 space-y-4 text-sm">
+            {/* Details */}
+            <div className="border-t border-brand-black/10 pt-6 space-y-3 text-sm" dir="ltr">
               {product.material && (
-                <div className="flex gap-4">
-                  <span className="text-brand-warm-gray w-28 flex-shrink-0 text-xs tracking-wider uppercase">Material</span>
-                  <span>{product.material}</span>
+                <div className="flex gap-4 items-start">
+                  <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
+                    {isRTL ? 'الخامة' : 'Material'}
+                  </span>
+                  <span className="text-brand-black">{product.material}</span>
                 </div>
               )}
               {product.careInstructions && (
-                <div className="flex gap-4">
-                  <span className="text-brand-warm-gray w-28 flex-shrink-0 text-xs tracking-wider uppercase">Care</span>
-                  <span>{product.careInstructions}</span>
+                <div className="flex gap-4 items-start">
+                  <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
+                    {isRTL ? 'العناية' : 'Care'}
+                  </span>
+                  <span className="text-brand-black">{product.careInstructions}</span>
                 </div>
               )}
-              <div className="flex gap-4">
-                <span className="text-brand-warm-gray w-28 flex-shrink-0 text-xs tracking-wider uppercase">Shipping</span>
-                <span>Free over $100 · 3-5 business days</span>
+              <div className="flex gap-4 items-start">
+                <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
+                  {isRTL ? 'الشحن' : 'Shipping'}
+                </span>
+                <span className="text-brand-black">{isRTL ? 'مجاني فوق $100 · 3-5 أيام' : 'Free over $100 · 3-5 business days'}</span>
               </div>
-              <div className="flex gap-4">
-                <span className="text-brand-warm-gray w-28 flex-shrink-0 text-xs tracking-wider uppercase">Returns</span>
-                <span>30-day free returns</span>
+              <div className="flex gap-4 items-start">
+                <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
+                  {isRTL ? 'الإرجاع' : 'Returns'}
+                </span>
+                <span className="text-brand-black">{isRTL ? 'إرجاع مجاني خلال 30 يوماً' : '30-day free returns'}</span>
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* Full Description */}
-        <section className="mt-20 border-t border-brand-black/10 pt-16">
+        <section className="mt-20 border-t border-brand-black/10 pt-16" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="grid md:grid-cols-2 gap-16">
             <div>
               <h2 className="font-display text-3xl mb-6 font-light">Product Details</h2>

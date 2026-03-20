@@ -26,6 +26,7 @@ const promoRoutes = require('./routes/promos');
 const uploadRoutes = require('./routes/upload');
 const stripeRoutes = require('./routes/stripe');
 const analyticsRoutes = require('./routes/analytics');
+const telegramRoutes = require('./routes/telegram');
 
 const app = express();
 
@@ -39,7 +40,7 @@ app.use(mongoSanitize());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 500,
   message: { error: 'Too many requests, please try again later.' }
 });
 const authLimiter = rateLimit({
@@ -91,6 +92,7 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/telegram', telegramRoutes);
 
 // 404 handler
 app.use((req, res) => {

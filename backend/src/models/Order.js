@@ -14,19 +14,26 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 const shippingAddressSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  street: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  zipCode: { type: String, required: true },
-  country: { type: String, required: true },
-  phone: String,
+  firstName: String,
+  lastName:  String,
+  street:    String,
+  city:      String,
+  state:     String,
+  zipCode:   String,
+  country:   String,
+  phone:     String,
 });
 
 const orderSchema = new mongoose.Schema({
   orderNumber: { type: String, unique: true },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  guestInfo: {
+    name:  String,
+    phone: String,
+    email: String,
+    city:  String,
+    town:  String,
+  },
   items: [orderItemSchema],
   shippingAddress: shippingAddressSchema,
   status: {

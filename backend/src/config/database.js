@@ -5,11 +5,8 @@ const connectDB = async () => {
   try {
     let mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
-      // Local-dev convenience: if no MongoDB URI is configured, spin up an in-memory MongoDB.
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mem = await MongoMemoryServer.create();
-      mongoUri = mem.getUri();
-      logger.warn('MONGODB_URI not set. Using in-memory MongoDB for local development.');
+      logger.error('MONGODB_URI is not set. Please configure MongoDB connection.');
+      process.exit(1);
     }
 
     const conn = await mongoose.connect(mongoUri, {

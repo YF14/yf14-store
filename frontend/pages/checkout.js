@@ -176,14 +176,28 @@ function CheckoutForm({ cart, subtotal }) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs tracking-widest uppercase mb-2">Phone</label>
-                <input value={address.phone} onChange={updateAddress('phone')} type="tel" className="input-luxury" autoComplete="tel" />
+                <label className="block text-xs tracking-widest uppercase mb-2">
+                  WhatsApp / Phone <span className="text-red-400">*</span>
+                </label>
+                <input
+                  value={address.phone}
+                  onChange={updateAddress('phone')}
+                  type="tel"
+                  placeholder="07xxxxxxxxx"
+                  required
+                  className="input-luxury"
+                  autoComplete="tel"
+                  dir="ltr"
+                />
+                <p className="text-xs text-brand-warm-gray mt-1">
+                  {`سيتم التواصل معك على هذا الرقم / We'll contact you on this number`}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (!address.firstName || !address.lastName || !address.street || !address.city || !address.state || !address.zipCode) {
-                    toast.error('Please fill all required fields');
+                  if (!address.firstName || !address.lastName || !address.street || !address.city || !address.state || !address.zipCode || !address.phone) {
+                    toast.error('Please fill all required fields including phone number');
                     return;
                   }
                   setStep(2);
@@ -315,14 +329,22 @@ function CheckoutForm({ cart, subtotal }) {
 export default function CheckoutPage() {
   const router = useRouter();
   const cart = useCartStore((s) => s.cart);
+  const guestItems = useCartStore((s) => s.guestItems);
   const subtotal = useCartStore((s) => s.subtotal());
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (!user) router.push('/login?redirect=/checkout');
+    // If not logged in, redirect to guest checkout
+    if (!user) {
+      router.replace('/guest-checkout');
+    }
   }, [user]);
 
-  if (!cart?.items?.length) {
+  const hasItems = cart?.items?.length > 0;
+
+  if (!user) return null; // redirecting
+
+  if (!hasItems) {
     return (
       <Layout>
         <div className="container-luxury py-24 text-center">
