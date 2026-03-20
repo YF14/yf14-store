@@ -199,11 +199,8 @@ exports.createGuestOrder = async (req, res, next) => {
     };
     await telegramService.notifyNewOrder(orderForNotify);
 
-    // Email if provided
-    if (guestInfo.email) {
-      const populatedOrder = { ...order.toObject(), user: { firstName: guestInfo.name, lastName: '', email: guestInfo.email } };
-      emailService.sendOrderConfirmation(populatedOrder).catch(() => {});
-    }
+    // Confirmation email: customer + BCC store (or store-only if guest left no email)
+    await emailService.sendOrderConfirmation(order);
 
     res.status(201).json({ order, orderNumber: order.orderNumber });
   } catch (err) { next(err); }

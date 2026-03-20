@@ -84,23 +84,57 @@ exports.sendOrderConfirmation = async (order) => {
     </tr>
   `).join('');
 
+  const customerEmail =
+    (order.user && order.user.email) || (order.guestInfo && order.guestInfo.email);
+  const firstName =
+    (order.user && order.user.firstName) ||
+    (order.guestInfo && order.guestInfo.name && order.guestInfo.name.trim().split(/\s+/)[0]) ||
+    'Customer';
+  const storeInbox =
+    process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
+
+  // Customer gets the main email; store gets BCC. If guest left no email, only store receives it.
+  const to = customerEmail || storeInbox;
+  if (!to) {
+    logger.warn('sendOrderConfirmation: no customer email and no ORDER_NOTIFY_EMAIL/EMAIL_USER');
+    return;
+  }
+  const subject = customerEmail
+    ? `Order received — ${order.orderNumber}`
+    : `[Store] New guest order — ${order.orderNumber} (no customer email)`;
+  const bcc =
+    customerEmail && storeInbox && customerEmail !== storeInbox ? storeInbox : undefined;
+
+  const isGuest = !order.user;
+  const trackUrl = isGuest
+    ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/`
+    : `${process.env.FRONTEND_URL || 'http://localhost:3000'}/account/orders/${order._id}`;
+  const trackLabel = isGuest ? 'Visit store' : 'Track order';
+
+  const guestBlock =
+    order.guestInfo &&
+    `<p style="color:#555;font-size:14px;"><strong>Phone:</strong> ${order.guestInfo.phone || '—'}<br/>
+    <strong>City / area:</strong> ${order.guestInfo.city || '—'} — ${order.guestInfo.town || '—'}</p>`;
+
   await sendEmail({
-    to: order.user.email,
-    subject: `Order Confirmed — ${order.orderNumber}`,
+    to,
+    bcc,
+    subject,
     html: baseTemplate(`
-      <h2 style="color:#1a1a1a;font-weight:300;letter-spacing:2px;">Order Confirmed</h2>
-      <p style="color:#555;">Thank you, ${order.user.firstName}! Your order <strong>${order.orderNumber}</strong> has been received.</p>
+      <h2 style="color:#1a1a1a;font-weight:300;letter-spacing:2px;">Order received</h2>
+      <p style="color:#555;">Thank you, ${firstName}! Your order <strong>${order.orderNumber}</strong> has been received.</p>
+      ${guestBlock || ''}
       <table class="order-table">
         <thead><tr><th>Item</th><th>Variant</th><th>Qty</th><th>Price</th></tr></thead>
         <tbody>
           ${itemsHtml}
-          <tr><td colspan="3">Shipping</td><td>$${order.shippingCost.toFixed(2)}</td></tr>
-          <tr><td colspan="3">Tax</td><td>$${order.tax.toFixed(2)}</td></tr>
+          <tr><td colspan="3">Shipping</td><td>$${(order.shippingCost ?? 0).toFixed(2)}</td></tr>
+          <tr><td colspan="3">Tax</td><td>$${(order.tax ?? 0).toFixed(2)}</td></tr>
           ${order.promoDiscount ? `<tr><td colspan="3">Discount (${order.promoCode})</td><td>-$${order.promoDiscount.toFixed(2)}</td></tr>` : ''}
           <tr class="total-row"><td colspan="3">Total</td><td>$${order.total.toFixed(2)}</td></tr>
         </tbody>
       </table>
-      <a href="${process.env.FRONTEND_URL}/account/orders/${order._id}" class="btn">Track Order</a>
+      <a href="${trackUrl}" class="btn">${trackLabel}</a>
     `),
   });
 };
