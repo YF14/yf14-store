@@ -44,6 +44,15 @@ const sendEmail = async ({ to, subject, html, bcc }) => {
   }
 };
 
+function withTimeout(promise, ms, errMsg) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(errMsg)), ms);
+    }),
+  ]);
+}
+
 /** For Railway logs / dashboard: which env keys are missing, and can SMTP connect */
 exports.getSmtpStatus = async () => {
   const required = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM'];
@@ -52,7 +61,11 @@ exports.getSmtpStatus = async () => {
     return { ok: false, smtpConfigured: false, missingEnv: missing };
   }
   try {
-    await getTransporter().verify();
+    await withTimeout(
+      getTransporter().verify(),
+      12000,
+      'SMTP verify timed out (blocked port 587/465, firewall, or wrong host)'
+    );
     return { ok: true, smtpConfigured: true, verify: 'success' };
   } catch (e) {
     return {
