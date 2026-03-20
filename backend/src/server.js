@@ -28,6 +28,7 @@ const uploadRoutes = require('./routes/upload');
 const stripeRoutes = require('./routes/stripe');
 const analyticsRoutes = require('./routes/analytics');
 const telegramRoutes = require('./routes/telegram');
+const colorRoutes = require('./routes/colors');
 
 const app = express();
 
@@ -128,6 +129,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/colors', colorRoutes);
 
 // 404 handler
 app.use((req, res) => {

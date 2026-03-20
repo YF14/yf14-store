@@ -21,7 +21,7 @@ const reviewSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   slug: { type: String, required: true, unique: true, lowercase: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   shortDescription: { type: String },
   price: { type: Number, required: true, min: 0 },
   comparePrice: { type: Number }, // original price (for sale)
@@ -30,8 +30,14 @@ const productSchema = new mongoose.Schema({
   images: [{
     url: { type: String, required: true },
     publicId: String,
+    fileId: String,
     alt: String,
     isPrimary: { type: Boolean, default: false },
+  }],
+  videos: [{
+    url: { type: String, required: true },
+    fileId: String,
+    thumbnail: String,
   }],
   variants: [variantSchema],
   reviews: [reviewSchema],

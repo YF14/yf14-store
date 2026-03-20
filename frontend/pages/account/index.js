@@ -6,6 +6,7 @@ import { NextSeo } from 'next-seo';
 import Layout from '../../components/layout/Layout';
 import useAuthStore from '../../store/authStore';
 import api from '../../lib/api';
+import { formatIQD } from '../../lib/currency';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -123,7 +124,7 @@ export default function AccountPage() {
                         <span className={`text-xs px-2 py-1 rounded-sm font-medium ${statusColor[order.status] || 'text-gray-600 bg-gray-50'}`}>
                           {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                         </span>
-                        <p className="text-sm font-medium mt-1">${order.total.toFixed(2)}</p>
+                        <p className="text-sm font-medium mt-1">{formatIQD(order.total)}</p>
                       </div>
                     </Link>
                   ))}

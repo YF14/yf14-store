@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
+  nameAr: { type: String, trim: true, default: '' },
   slug: { type: String, required: true, unique: true, lowercase: true },
   description: String,
   image: { url: String, publicId: String },

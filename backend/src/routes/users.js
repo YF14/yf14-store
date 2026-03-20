@@ -74,10 +74,33 @@ router.delete('/addresses/:addressId', async (req, res) => {
 
 // Admin: manage users
 router.get('/', adminOnly, async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
-  const users = await User.find({ role: 'user' }).sort('-createdAt').skip((page - 1) * limit).limit(+limit);
-  const total = await User.countDocuments({ role: 'user' });
-  res.json({ users, total, pages: Math.ceil(total / limit) });
+  try {
+    const { page = 1, limit = 20, search } = req.query;
+    const query = { role: 'user' };
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      query.$or = [{ firstName: regex }, { lastName: regex }, { email: regex }];
+    }
+    const total = await User.countDocuments(query);
+    const users = await User.find(query).sort('-createdAt').skip((page - 1) * limit).limit(+limit).lean();
+
+    const Order = require('../models/Order');
+    const userIds = users.map(u => u._id);
+    const orderCounts = await Order.aggregate([
+      { $match: { user: { $in: userIds } } },
+      { $group: { _id: '$user', count: { $sum: 1 }, totalSpent: { $sum: '$total' } } },
+    ]);
+    const countMap = {};
+    orderCounts.forEach(o => { countMap[o._id.toString()] = { count: o.count, totalSpent: o.totalSpent }; });
+
+    const enriched = users.map(u => ({
+      ...u,
+      ordersCount: countMap[u._id.toString()]?.count || 0,
+      totalSpent: countMap[u._id.toString()]?.totalSpent || 0,
+    }));
+
+    res.json({ users: enriched, total, pages: Math.ceil(total / limit) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.patch('/:id/status', adminOnly, async (req, res) => {

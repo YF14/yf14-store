@@ -3,8 +3,9 @@ const Order = require('../models/Order');
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, minPrice, maxPrice, sizes, colors, sort = '-createdAt', search } = req.query;
-    const query = { isActive: true };
+    const { page = 1, limit = 12, category, minPrice, maxPrice, sizes, colors, sort = '-createdAt', search, showAll } = req.query;
+    const query = {};
+    if (!showAll || !req.user || req.user.role !== 'admin') query.isActive = true;
 
     if (category) query.category = category;
     if (minPrice || maxPrice) query.price = {};
@@ -66,6 +67,15 @@ exports.searchProducts = async (req, res, next) => {
       .limit(20)
       .select('name slug images price averageRating');
     res.json({ products });
+  } catch (err) { next(err); }
+};
+
+exports.getProductById = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate('category', 'name slug');
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json({ product });
   } catch (err) { next(err); }
 };
 

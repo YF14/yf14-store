@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
+import { formatIQD } from '../../lib/currency';
 
 export default function ProductCard({ product, index = 0 }) {
-  const [imgIdx, setImgIdx] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const videoRef = useRef(null);
   const toggle = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.isWishlisted(product._id));
   const user = useAuthStore((s) => s.user);
 
   if (!product) return null;
-  const primaryImg = product.images?.[0]?.url;
+
+  const primaryImg = product.images?.find(img => img.isPrimary)?.url || product.images?.[0]?.url;
   const hoverImg = product.images?.[1]?.url;
+  const videoUrl = product.videos?.[0]?.url;
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
@@ -25,6 +29,21 @@ export default function ProductCard({ product, index = 0 }) {
     toggle(product._id);
   };
 
+  const handleMouseEnter = () => {
+    setHovered(true);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -33,29 +52,72 @@ export default function ProductCard({ product, index = 0 }) {
       transition={{ duration: 0.5, delay: index * 0.05 }}
     >
       <Link href={`/products/${product.slug}`} className="group block">
-        {/* Image */}
-        <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden mb-4 img-zoom">
+        <div
+          className="relative aspect-[3/4] bg-gray-50 overflow-hidden mb-4"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Base image */}
           {primaryImg && (
             <Image
-              src={imgIdx === 0 ? primaryImg : (hoverImg || primaryImg)}
+              src={primaryImg}
               alt={product.name}
               fill
-              className="object-cover transition-opacity duration-500"
+              className={`object-cover transition-all duration-700 ${
+                hovered && !videoUrl
+                  ? hoverImg
+                    ? 'opacity-0'
+                    : 'scale-110'
+                  : 'scale-100'
+              }`}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
           )}
 
+          {/* Hover image (when no video, swap to second image) */}
+          {hoverImg && !videoUrl && (
+            <Image
+              src={hoverImg}
+              alt={product.name}
+              fill
+              className={`object-cover transition-opacity duration-700 absolute inset-0 ${
+                hovered ? 'opacity-100' : 'opacity-0'
+              }`}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            />
+          )}
+
+          {/* Video overlay on hover */}
+          {videoUrl && (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                hovered ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          )}
+
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
             {product.isNewArrival && <span className="badge badge-new">New</span>}
             {product.isBestSeller && <span className="badge badge-bestseller">Best Seller</span>}
+            {videoUrl && (
+              <span className="text-[9px] bg-brand-black/70 text-white px-1.5 py-0.5 backdrop-blur-sm">
+                ▶ Video
+              </span>
+            )}
           </div>
 
           {/* Wishlist */}
           <button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 w-8 h-8 bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-black hover:text-white"
+            className="absolute top-3 right-3 w-8 h-8 bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-black hover:text-white z-10"
           >
             <svg
               className="w-4 h-4"
@@ -67,19 +129,10 @@ export default function ProductCard({ product, index = 0 }) {
             </svg>
           </button>
 
-          {/* Quick view hover */}
-          <div className="absolute bottom-0 left-0 right-0 bg-brand-black/90 py-3 text-center text-white text-xs tracking-widest uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+          {/* Quick view bar */}
+          <div className="absolute bottom-0 left-0 right-0 bg-brand-black/90 py-3 text-center text-white text-xs tracking-widest uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
             Quick View
           </div>
-
-          {/* Hover image toggle */}
-          {hoverImg && (
-            <div
-              className="absolute inset-0"
-              onMouseEnter={() => setImgIdx(1)}
-              onMouseLeave={() => setImgIdx(0)}
-            />
-          )}
         </div>
 
         {/* Info */}
@@ -100,9 +153,9 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </div>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-sm font-medium text-brand-black">${product.price.toFixed(2)}</span>
+            <span className="text-sm font-medium text-brand-black">{formatIQD(product.price)}</span>
             {product.comparePrice > product.price && (
-              <span className="text-xs text-brand-warm-gray line-through">${product.comparePrice.toFixed(2)}</span>
+              <span className="text-xs text-brand-warm-gray line-through">{formatIQD(product.comparePrice)}</span>
             )}
           </div>
           {/* Color swatches */}

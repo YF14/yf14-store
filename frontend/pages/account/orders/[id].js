@@ -8,6 +8,7 @@ import Layout from '../../../components/layout/Layout';
 import useAuthStore from '../../../store/authStore';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
+import { formatIQD } from '../../../lib/currency';
 
 const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 
@@ -146,7 +147,7 @@ export default function OrderDetailPage() {
                     <p className="font-medium text-sm">{item.name}</p>
                     <p className="text-xs text-brand-warm-gray mt-1">{item.size} · {item.color}</p>
                     <p className="text-xs text-brand-warm-gray">Qty: {item.quantity}</p>
-                    <p className="text-sm font-medium mt-2">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="text-sm font-medium mt-2">{formatIQD(item.price * item.quantity)}</p>
                   </div>
                 </div>
               ))}
@@ -159,15 +160,15 @@ export default function OrderDetailPage() {
             <div className="border border-brand-black/10 p-5">
               <h3 className="text-xs tracking-widest uppercase mb-4">Order Summary</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-brand-warm-gray"><span>Subtotal</span><span>${order.subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between text-brand-warm-gray"><span>Shipping</span><span>{order.shippingCost === 0 ? 'Free' : `$${order.shippingCost.toFixed(2)}`}</span></div>
-                <div className="flex justify-between text-brand-warm-gray"><span>Tax</span><span>${order.tax.toFixed(2)}</span></div>
+                <div className="flex justify-between text-brand-warm-gray"><span>Subtotal</span><span>{formatIQD(order.subtotal)}</span></div>
+                <div className="flex justify-between text-brand-warm-gray"><span>Shipping</span><span>{order.shippingCost === 0 ? 'Free' : formatIQD(order.shippingCost)}</span></div>
+                <div className="flex justify-between text-brand-warm-gray"><span>Tax</span><span>{formatIQD(order.tax)}</span></div>
                 {order.promoDiscount > 0 && (
-                  <div className="flex justify-between text-green-600"><span>Discount ({order.promoCode})</span><span>−${order.promoDiscount.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-green-600"><span>Discount ({order.promoCode})</span><span>−{formatIQD(order.promoDiscount)}</span></div>
                 )}
                 <div className="flex justify-between font-medium pt-3 border-t border-brand-black/10">
                   <span className="text-xs tracking-widest uppercase">Total</span>
-                  <span>${order.total.toFixed(2)}</span>
+                  <span>{formatIQD(order.total)}</span>
                 </div>
               </div>
             </div>

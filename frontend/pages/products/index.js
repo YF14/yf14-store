@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../../components/layout/Layout';
 import ProductCard from '../../components/product/ProductCard';
 import api from '../../lib/api';
+import { useLang } from '../../contexts/LanguageContext';
+import { catName } from '../../lib/currency';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const SORT_OPTIONS = [
@@ -28,6 +30,7 @@ function ProductSkeleton() {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { isRTL } = useLang();
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
     category: '',
@@ -106,7 +109,7 @@ export default function ProductsPage() {
               onClick={() => setFilters(f => ({ ...f, category: cat._id, page: 1 }))}
               className={`block text-sm w-full text-left py-1 transition-colors ${filters.category === cat._id ? 'text-brand-gold font-medium' : 'text-brand-warm-gray hover:text-brand-black'}`}
             >
-              {cat.name}
+              {catName(cat, isRTL)}
             </button>
           ))}
         </div>

@@ -6,23 +6,29 @@ import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import useAuthStore from '../../../store/authStore';
+import { useLang } from '../../../contexts/LanguageContext';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
+import { formatIQD } from '../../../lib/currency';
 
 export default function AdminProductsPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const { t } = useLang();
+  const a = t.admin;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { if (user && user.role !== 'admin') router.push('/'); }, [user]);
+  useEffect(() => {
+    if (user && user.role !== 'admin') router.push('/');
+  }, [user]);
 
   const { data, isLoading, refetch } = useQuery(
     ['admin-products', page, search],
     () => {
-      const params = new URLSearchParams({ page, limit: 15 });
+      const params = new URLSearchParams({ page, limit: 15, showAll: 1 });
       if (search) params.append('search', search);
-      return api.get(`/products?${params}`).then(r => r.data);
+      return api.get(`/products?${params}`).then((r) => r.data);
     },
     { enabled: !!user && user.role === 'admin', keepPreviousData: true }
   );
@@ -32,48 +38,48 @@ export default function AdminProductsPage() {
   const total = data?.total || 0;
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`Deactivate "${name}"?`)) return;
+    if (!confirm(`${a.deactivate} "${name}"?`)) return;
     try {
       await api.delete(`/products/${id}`);
-      toast.success('Product deactivated');
+      toast.success(a.productDeactivated);
       refetch();
-    } catch { toast.error('Failed'); }
+    } catch {
+      toast.error(a.failedUpdate);
+    }
   };
 
   if (!user || user.role !== 'admin') return null;
 
   return (
     <AdminLayout>
-      <NextSeo title="Products — Admin" />
+      <NextSeo title={`${a.products} — Admin`} />
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-display text-3xl font-light">Products</h1>
-          <p className="text-sm text-brand-warm-gray">{total} total products</p>
+          <h1 className="font-display text-3xl font-light">{a.products}</h1>
+          <p className="text-sm text-brand-warm-gray">{total} {a.totalProducts}</p>
         </div>
-        <Link href="/admin/products/new" className="btn-primary">+ Add Product</Link>
+        <Link href="/admin/products/new" className="btn-primary">{a.addProduct}</Link>
       </div>
 
-      {/* Search */}
       <div className="mb-6">
         <input
           value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Search products..."
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder={a.searchProducts}
           className="input-luxury max-w-xs"
         />
       </div>
 
-      {/* Table */}
       <div className="bg-white border border-brand-black/10 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-brand-black/10">
             <tr>
-              <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">Product</th>
-              <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden md:table-cell">Category</th>
-              <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">Price</th>
-              <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden sm:table-cell">Stock</th>
-              <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden lg:table-cell">Status</th>
-              <th className="text-right px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">Actions</th>
+              <th className="text-start px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">{a.product}</th>
+              <th className="text-start px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden md:table-cell">{a.category}</th>
+              <th className="text-start px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">{a.price}</th>
+              <th className="text-start px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden sm:table-cell">{a.stock}</th>
+              <th className="text-start px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium hidden lg:table-cell">{a.statusLabel}</th>
+              <th className="text-end px-4 py-3 text-xs tracking-widest uppercase text-brand-warm-gray font-medium">{a.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -84,11 +90,11 @@ export default function AdminProductsPage() {
                 </tr>
               ))
             ) : products.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-brand-warm-gray">No products found</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-brand-warm-gray">{a.noProductsFound}</td></tr>
             ) : (
-              products.map(product => {
+              products.map((product) => {
                 const totalStock = product.variants?.reduce((s, v) => s + v.stock, 0) || 0;
-                const hasLowStock = product.variants?.some(v => v.stock <= 5);
+                const hasLowStock = product.variants?.some((v) => v.stock <= 5);
                 return (
                   <tr key={product._id} className="border-b border-brand-black/5 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
@@ -104,13 +110,11 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-brand-warm-gray hidden md:table-cell">
-                      {product.category?.name || '—'}
-                    </td>
+                    <td className="px-4 py-3 text-brand-warm-gray hidden md:table-cell">{product.category?.name || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="font-medium">${product.price.toFixed(2)}</span>
+                      <span className="font-medium">{formatIQD(product.price)}</span>
                       {product.comparePrice > product.price && (
-                        <span className="text-xs text-brand-warm-gray line-through ml-1">${product.comparePrice.toFixed(2)}</span>
+                        <span className="text-xs text-brand-warm-gray line-through ms-1">{formatIQD(product.comparePrice)}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
@@ -120,20 +124,18 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
-                        {product.isFeatured && <span className="text-xs px-2 py-0.5 bg-brand-gold/10 text-brand-gold">Featured</span>}
-                        {product.isNewArrival && <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600">New</span>}
-                        {product.isBestSeller && <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600">Best Seller</span>}
+                        {product.isFeatured && <span className="text-xs px-2 py-0.5 bg-brand-gold/10 text-brand-gold">{a.featured}</span>}
+                        {product.isNewArrival && <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600">{a.newArrival}</span>}
+                        {product.isBestSeller && <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600">{a.bestSeller}</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/products/${product._id}/edit`}
-                          className="text-xs px-3 py-1 border border-brand-black/20 hover:border-brand-gold text-brand-warm-gray hover:text-brand-gold transition-colors">
-                          Edit
+                        <Link href={`/admin/products/${product._id}/edit`} className="text-xs px-3 py-1 border border-brand-black/20 hover:border-brand-gold text-brand-warm-gray hover:text-brand-gold transition-colors">
+                          {a.edit}
                         </Link>
-                        <button onClick={() => handleDelete(product._id, product.name)}
-                          className="text-xs px-3 py-1 border border-red-200 text-red-400 hover:border-red-400 hover:text-red-600 transition-colors">
-                          Deactivate
+                        <button onClick={() => handleDelete(product._id, product.name)} className="text-xs px-3 py-1 border border-red-200 text-red-400 hover:border-red-400 hover:text-red-600 transition-colors">
+                          {a.deactivate}
                         </button>
                       </div>
                     </td>
@@ -145,12 +147,10 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       {pages > 1 && (
         <div className="flex justify-center gap-2 mt-6">
           {Array.from({ length: pages }, (_, i) => (
-            <button key={i} onClick={() => setPage(i + 1)}
-              className={`w-9 h-9 text-xs border transition-colors ${page === i + 1 ? 'bg-brand-black text-white border-brand-black' : 'border-brand-black/20 hover:border-brand-gold text-brand-warm-gray'}`}>
+            <button key={i} onClick={() => setPage(i + 1)} className={`w-9 h-9 text-xs border transition-colors ${page === i + 1 ? 'bg-brand-black text-white border-brand-black' : 'border-brand-black/20 hover:border-brand-gold text-brand-warm-gray'}`}>
               {i + 1}
             </button>
           ))}

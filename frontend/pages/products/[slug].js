@@ -12,6 +12,7 @@ import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { useLang } from '../../contexts/LanguageContext';
+import { formatIQD, catName } from '../../lib/currency';
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -135,7 +136,7 @@ export default function ProductDetailPage() {
         </nav>
 
         <div className={`grid md:grid-cols-2 gap-12 lg:gap-20 ${isRTL ? 'direction-ltr' : ''}`} dir="ltr">
-          {/* Images */}
+          {/* Images & Videos */}
           <div className="flex gap-4">
             {/* Thumbnails */}
             <div className="flex flex-col gap-3 w-16 flex-shrink-0">
@@ -150,18 +151,42 @@ export default function ProductDetailPage() {
                   <Image src={img.url} alt={img.alt || product.name} fill className="object-cover" sizes="64px" />
                 </button>
               ))}
+              {(product.videos || []).map((vid, i) => (
+                <button
+                  key={`v-${i}`}
+                  onClick={() => setActiveImg(product.images.length + i)}
+                  className={`relative aspect-square overflow-hidden border-2 transition-colors bg-gray-900 ${
+                    activeImg === product.images.length + i ? 'border-brand-gold' : 'border-transparent'
+                  }`}
+                >
+                  <video src={vid.url} className="w-full h-full object-cover" muted preload="metadata" />
+                  <span className="absolute inset-0 flex items-center justify-center text-white text-lg">▶</span>
+                </button>
+              ))}
             </div>
 
-            {/* Main image */}
+            {/* Main image / video */}
             <div className="flex-1 relative aspect-[3/4] bg-gray-50 overflow-hidden">
-              <Image
-                src={product.images[activeImg]?.url || product.images[0]?.url}
-                alt={product.name}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+              {activeImg < product.images.length ? (
+                <Image
+                  src={product.images[activeImg]?.url || product.images[0]?.url}
+                  alt={product.name}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              ) : (
+                <video
+                  src={product.videos?.[activeImg - product.images.length]?.url}
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              )}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
                 {product.isNewArrival && <span className="badge badge-new">New</span>}
@@ -178,7 +203,7 @@ export default function ProductDetailPage() {
             dir={isRTL ? 'rtl' : 'ltr'}
           >
             {product.category && (
-              <p className="section-subtitle text-brand-warm-gray mb-3">{product.category.name}</p>
+              <p className="section-subtitle text-brand-warm-gray mb-3">{catName(product.category, isRTL)}</p>
             )}
             <h1 className="font-display text-4xl font-light mb-4">{product.name}</h1>
 
@@ -198,9 +223,9 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-6">
-              <span className="font-display text-3xl">${product.price.toFixed(2)}</span>
+              <span className="font-display text-3xl">{formatIQD(product.price)}</span>
               {product.comparePrice > product.price && (
-                <span className="text-lg text-brand-warm-gray line-through">${product.comparePrice.toFixed(2)}</span>
+                <span className="text-lg text-brand-warm-gray line-through">{formatIQD(product.comparePrice)}</span>
               )}
             </div>
 
@@ -234,12 +259,10 @@ export default function ProductDetailPage() {
                 <Link href="/size-guide" className="text-xs text-brand-warm-gray underline hover:text-brand-gold">Size Guide</Link>
               </div>
               <div className="flex flex-wrap gap-2">
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => {
+                {sizes.map((size) => {
                   const available = !selectedColor
                     ? product.variants.some(v => v.size === size && v.stock > 0)
                     : product.variants.some(v => v.size === size && v.color === selectedColor && v.stock > 0);
-                  const exists = product.variants.some(v => v.size === size);
-                  if (!exists) return null;
 
                   return (
                     <button

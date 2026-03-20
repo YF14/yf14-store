@@ -7,6 +7,7 @@ import { NextSeo } from 'next-seo';
 import Layout from '../../../components/layout/Layout';
 import useAuthStore from '../../../store/authStore';
 import api from '../../../lib/api';
+import { formatIQD } from '../../../lib/currency';
 
 const STATUS_COLORS = {
   pending: 'text-amber-600 bg-amber-50',
@@ -71,7 +72,7 @@ export default function OrdersPage() {
                       <span className={`text-xs px-3 py-1 font-medium ${STATUS_COLORS[order.status] || ''}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </span>
-                      <p className="font-medium">${order.total.toFixed(2)}</p>
+                      <p className="font-medium">{formatIQD(order.total)}</p>
                     </div>
                   </div>
 

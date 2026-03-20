@@ -9,6 +9,7 @@ import useAuthStore from '../store/authStore';
 import { useLang } from '../contexts/LanguageContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { formatIQD } from '../lib/currency';
 
 const IRAQI_PROVINCES = [
   'بغداد', 'البصرة', 'نينوى', 'أربيل', 'السليمانية', 'كركوك',
@@ -361,7 +362,7 @@ export default function GuestCheckout() {
                         <div className="flex-1 min-w-0" dir={isRTL ? 'rtl' : 'ltr'}>
                           <p className="text-xs font-medium line-clamp-2 leading-snug">{item.name}</p>
                           <p className="text-xs text-brand-warm-gray mt-0.5">{item.size} · {item.color}</p>
-                          <p className="text-sm font-semibold mt-1">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-sm font-semibold mt-1">{formatIQD(item.price * item.quantity)}</p>
                         </div>
                       </div>
                     ))}
@@ -371,7 +372,7 @@ export default function GuestCheckout() {
                   <div className="space-y-2 text-sm border-t border-brand-black/10 pt-4" dir={isRTL ? 'rtl' : 'ltr'}>
                     <div className="flex justify-between text-brand-warm-gray">
                       <span>{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span>
-                      <span>${displaySubtotal.toFixed(2)}</span>
+                      <span>{formatIQD(displaySubtotal)}</span>
                     </div>
                     <div className="flex justify-between text-brand-warm-gray">
                       <span>{isRTL ? 'التوصيل (تُدفع للمندوب)' : 'Delivery (paid to driver)'}</span>
@@ -380,12 +381,12 @@ export default function GuestCheckout() {
                     {discount > 0 && (
                       <div className="flex justify-between text-green-600 font-medium">
                         <span>{isRTL ? 'خصم' : 'Discount'} ({promoCode})</span>
-                        <span>−${discount.toFixed(2)}</span>
+                        <span>−{formatIQD(discount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-semibold text-brand-black pt-3 border-t border-brand-black/10">
                       <span className="text-xs uppercase tracking-wider">{isRTL ? 'الإجمالي' : 'Total'}</span>
-                      <span className="text-lg">${total.toFixed(2)}</span>
+                      <span className="text-lg">{formatIQD(total)}</span>
                     </div>
                     <p className="text-xs text-brand-warm-gray pt-1" dir="rtl">
                       * رسوم التوصيل 5,000 د.ع تُضاف عند الاستلام

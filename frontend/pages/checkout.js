@@ -10,6 +10,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { formatIQD } from '../lib/currency';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -237,7 +238,7 @@ function CheckoutForm({ cart, subtotal }) {
               </div>
 
               <button type="submit" disabled={loading || !stripe} className="btn-primary w-full text-center">
-                {loading ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+                {loading ? 'Processing...' : `Pay ${formatIQD(total)}`}
               </button>
 
               <p className="text-xs text-brand-warm-gray text-center">
@@ -266,7 +267,7 @@ function CheckoutForm({ cart, subtotal }) {
                   <div className="flex-1">
                     <p className="text-sm font-medium line-clamp-2">{item.name}</p>
                     <p className="text-xs text-brand-warm-gray">{item.size} · {item.color}</p>
-                    <p className="text-sm mt-1">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="text-sm mt-1">{formatIQD(item.price * item.quantity)}</p>
                   </div>
                 </div>
               ))}
@@ -276,7 +277,7 @@ function CheckoutForm({ cart, subtotal }) {
             {activePromoCode ? (
               <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2 mb-6">
                 <p className="text-xs text-green-700 flex items-center gap-1.5">
-                  ✓ Coupon <strong>{activePromoCode}</strong> applied — saving ${promoDiscount.toFixed(2)}
+                  ✓ Coupon <strong>{activePromoCode}</strong> applied — saving {formatIQD(promoDiscount)}
                 </p>
                 <button onClick={removePromo} className="text-xs text-green-600 hover:text-red-500">Remove</button>
               </div>
@@ -301,22 +302,22 @@ function CheckoutForm({ cart, subtotal }) {
             {/* Totals */}
             <div className="space-y-2 text-sm border-t border-brand-black/10 pt-4">
               <div className="flex justify-between text-brand-warm-gray">
-                <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
+                <span>Subtotal</span><span>{formatIQD(subtotal)}</span>
               </div>
               <div className="flex justify-between text-brand-warm-gray">
-                <span>Shipping</span><span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                <span>Shipping</span><span>{shipping === 0 ? 'Free' : formatIQD(shipping)}</span>
               </div>
               <div className="flex justify-between text-brand-warm-gray">
-                <span>Tax (8%)</span><span>${tax.toFixed(2)}</span>
+                <span>Tax (8%)</span><span>{formatIQD(tax)}</span>
               </div>
               {promoDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span><span>−${promoDiscount.toFixed(2)}</span>
+                  <span>Discount</span><span>−{formatIQD(promoDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between font-medium text-brand-black pt-3 border-t border-brand-black/10">
                 <span className="text-xs tracking-widest uppercase">Total</span>
-                <span className="text-lg">${total.toFixed(2)}</span>
+                <span className="text-lg">{formatIQD(total)}</span>
               </div>
             </div>
           </div>

@@ -76,4 +76,46 @@ router.get('/inventory', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/top-products', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const products = await Product.find({ totalSold: { $gt: 0 } })
+      .sort('-totalSold')
+      .limit(limit)
+      .select('name images price totalSold')
+      .lean();
+
+    const productIds = products.map(p => p._id);
+    const revenueData = await Order.aggregate([
+      { $match: { paymentStatus: 'paid' } },
+      { $unwind: '$items' },
+      { $match: { 'items.product': { $in: productIds } } },
+      { $group: { _id: '$items.product', revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },
+    ]);
+    const revenueMap = {};
+    revenueData.forEach(r => { revenueMap[r._id.toString()] = r.revenue; });
+
+    const result = products.map(p => ({
+      _id: p._id,
+      name: p.name,
+      image: p.images?.[0]?.url || '',
+      price: p.price,
+      unitsSold: p.totalSold,
+      revenue: revenueMap[p._id.toString()] || p.totalSold * p.price,
+    }));
+
+    res.json({ products: result });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/orders-by-status', async (req, res) => {
+  try {
+    const data = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+    res.json({ data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

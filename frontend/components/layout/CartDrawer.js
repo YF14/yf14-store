@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import useCartStore from '../../store/cartStore';
 import { useLang } from '../../contexts/LanguageContext';
+import { formatIQD } from '../../lib/currency';
 
 export default function CartDrawer() {
   const {
@@ -133,7 +134,7 @@ export default function CartDrawer() {
                               >+</button>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                              <span className="text-sm font-semibold">{formatIQD(item.price * item.quantity)}</span>
                               <button onClick={() => removeItem(item._id || item.variantId)} className="text-brand-warm-gray hover:text-red-500 transition-colors">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -192,7 +193,7 @@ export default function CartDrawer() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-brand-warm-gray">
                     <span>{t.cart.subtotal}</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>{formatIQD(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-brand-warm-gray">
                     <span>{t.cart.shipping}</span>
@@ -201,12 +202,12 @@ export default function CartDrawer() {
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600 font-medium">
                       <span>{isRTL ? 'الخصم' : 'Discount'} ({promoCode})</span>
-                      <span>−${discount.toFixed(2)}</span>
+                      <span>−{formatIQD(discount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-semibold text-brand-black pt-2 border-t border-brand-black/10">
                     <span className="text-xs uppercase tracking-wider">{t.cart.total}</span>
-                    <span className="text-base">${total.toFixed(2)}</span>
+                    <span className="text-base">{formatIQD(total)}</span>
                   </div>
                 </div>
 
