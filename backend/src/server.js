@@ -37,11 +37,14 @@ connectDB();
 app.use(helmet());
 app.use(mongoSanitize());
 
-// Rate limiting
+// Rate limiting (do not throttle Telegram — shared IPs / webhooks)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500,
-  message: { error: 'Too many requests, please try again later.' }
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) =>
+    req.originalUrl?.includes('/telegram/webhook') ||
+    req.path?.includes('/telegram/webhook'),
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

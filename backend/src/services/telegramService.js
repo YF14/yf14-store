@@ -68,11 +68,11 @@ exports.notifyNewOrder = async (order) => {
 // Edit the original message after manager acts
 exports.editOrderMessage = async (chatId, messageId, text) => {
   try {
+    // No parse_mode — customer/product names often break Telegram Markdown (_ * etc.)
     await call('editMessageText', {
       chat_id: chatId,
       message_id: messageId,
-      text,
-      parse_mode: 'Markdown',
+      text: String(text).slice(0, 4096),
     });
   } catch (err) {
     logger.error('Telegram editMessage error:', err);
@@ -80,9 +80,11 @@ exports.editOrderMessage = async (chatId, messageId, text) => {
 };
 
 // Answer a callback query (removes loading spinner on button)
+// Telegram limits callback answer text to ~200 chars
 exports.answerCallback = async (callbackQueryId, text) => {
   try {
-    await call('answerCallbackQuery', { callback_query_id: callbackQueryId, text });
+    const t = text ? String(text).slice(0, 200) : undefined;
+    await call('answerCallbackQuery', { callback_query_id: callbackQueryId, text: t });
   } catch (err) {
     logger.error('Telegram answerCallback error:', err);
   }
