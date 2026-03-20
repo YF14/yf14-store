@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
+const emailService = require('./services/emailService');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -81,6 +82,37 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// SMTP diagnostics (no secrets). Use to verify Railway Variables.
+app.get('/api/health/email', async (req, res) => {
+  try {
+    const status = await emailService.getSmtpStatus();
+    res.json(status);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Send one test email to EMAIL_USER — same secret as Telegram set-webhook
+app.get('/api/health/email/send-test', async (req, res) => {
+  if (req.query.secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const required = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    return res.status(400).json({ ok: false, missingEnv: missing });
+  }
+  try {
+    await emailService.sendTestEmail();
+    res.json({
+      ok: true,
+      message: 'Sent to EMAIL_USER. Check inbox + spam folder.',
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -108,6 +140,12 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  setTimeout(() => {
+    emailService.getSmtpStatus().then((s) => {
+      if (!s.ok) logger.warn('SMTP check:', JSON.stringify(s));
+      else logger.info('SMTP check: OK (connection verified)');
+    });
+  }, 2000);
 });
 
 // Handle unhandled promise rejections

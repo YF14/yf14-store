@@ -1,12 +1,22 @@
 const nodemailer = require('nodemailer');
 const logger = require('../config/logger');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-});
+/** Gmail app passwords are 16 chars — spaces in .env must be stripped */
+let mailTransporter;
+function getTransporter() {
+  if (!mailTransporter) {
+    const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
+    const pass = (process.env.EMAIL_PASSWORD || '').replace(/\s+/g, '');
+    mailTransporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port,
+      secure: port === 465,
+      requireTLS: port === 587,
+      auth: { user: process.env.EMAIL_USER, pass },
+    });
+  }
+  return mailTransporter;
+}
 
 const sendEmail = async ({ to, subject, html, bcc }) => {
   try {
@@ -14,17 +24,58 @@ const sendEmail = async ({ to, subject, html, bcc }) => {
       logger.warn('Email skipped: missing `to` address');
       return;
     }
-    await transporter.sendMail({
+    if (!process.env.EMAIL_FROM) {
+      logger.warn('Email skipped: EMAIL_FROM is not set');
+      return;
+    }
+    const info = await getTransporter().sendMail({
       from: process.env.EMAIL_FROM,
       to,
       subject,
       html,
       ...(bcc ? { bcc } : {}),
     });
-    logger.info(`Email sent: subject="${subject}" to=${to}${bcc ? ` bcc=${bcc}` : ''}`);
+    logger.info(`Email sent: subject="${subject}" to=${to}${bcc ? ` bcc=${bcc}` : ''} id=${info.messageId || 'n/a'}`);
   } catch (err) {
-    logger.error('Email send error:', err);
+    logger.error(
+      `Email send error: ${err.message} code=${err.code || 'n/a'} response=${err.response || 'n/a'}`
+    );
+    if (err.response) logger.error('SMTP response:', err.response);
   }
+};
+
+/** For Railway logs / dashboard: which env keys are missing, and can SMTP connect */
+exports.getSmtpStatus = async () => {
+  const required = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    return { ok: false, smtpConfigured: false, missingEnv: missing };
+  }
+  try {
+    await getTransporter().verify();
+    return { ok: true, smtpConfigured: true, verify: 'success' };
+  } catch (e) {
+    return {
+      ok: false,
+      smtpConfigured: true,
+      verify: 'failed',
+      error: e.message,
+      hint: 'Check Gmail app password, 2FA, and that EMAIL_FROM matches an address Gmail allows (often same as EMAIL_USER).',
+    };
+  }
+};
+
+/** Sends a single test mail to EMAIL_USER — throws on failure */
+exports.sendTestEmail = async () => {
+  const info = await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_USER,
+    subject: 'YF14 Store — SMTP test',
+    text: `If you see this, SMTP works. ${new Date().toISOString()}`,
+    html: `<p>If you see this, SMTP works.</p><p>${new Date().toISOString()}</p>`,
+  });
+  logger.info('SMTP test email sent, messageId:', info.messageId);
+  return info;
 };
 
 const baseTemplate = (content) => `
