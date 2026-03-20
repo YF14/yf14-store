@@ -1,22 +1,16 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const logger = require('../config/logger');
 
-/** Gmail app passwords are 16 chars — spaces in .env must be stripped */
-let mailTransporter;
-function getTransporter() {
-  if (!mailTransporter) {
-    const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
-    const pass = (process.env.EMAIL_PASSWORD || '').replace(/\s+/g, '');
-    mailTransporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port,
-      secure: port === 465,
-      requireTLS: port === 587,
-      auth: { user: process.env.EMAIL_USER, pass },
-    });
+let resendClient;
+function getResend() {
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
   }
-  return mailTransporter;
+  return resendClient;
 }
+
+const EMAIL_FROM = () => process.env.EMAIL_FROM || 'YF14 Store <orders@yf14.store>';
+const STORE_INBOX = () => process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
 
 const sendEmail = async ({ to, subject, html, bcc }) => {
   try {
@@ -24,71 +18,61 @@ const sendEmail = async ({ to, subject, html, bcc }) => {
       logger.warn('Email skipped: missing `to` address');
       return;
     }
-    if (!process.env.EMAIL_FROM) {
-      logger.warn('Email skipped: EMAIL_FROM is not set');
+    if (!process.env.RESEND_API_KEY) {
+      logger.warn('Email skipped: RESEND_API_KEY is not set');
       return;
     }
-    const info = await getTransporter().sendMail({
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      html,
-      ...(bcc ? { bcc } : {}),
-    });
-    logger.info(`Email sent: subject="${subject}" to=${to}${bcc ? ` bcc=${bcc}` : ''} id=${info.messageId || 'n/a'}`);
+
+    const payload = { from: EMAIL_FROM(), to: [to], subject, html };
+    if (bcc) payload.bcc = [bcc];
+
+    const { data, error } = await getResend().emails.send(payload);
+
+    if (error) {
+      logger.error(`Resend error: ${error.message} name=${error.name}`);
+      return;
+    }
+    logger.info(`Email sent: subject="${subject}" to=${to}${bcc ? ` bcc=${bcc}` : ''} id=${data?.id || 'n/a'}`);
   } catch (err) {
-    logger.error(
-      `Email send error: ${err.message} code=${err.code || 'n/a'} response=${err.response || 'n/a'}`
-    );
-    if (err.response) logger.error('SMTP response:', err.response);
+    logger.error(`Email send error: ${err.message}`);
   }
 };
 
-function withTimeout(promise, ms, errMsg) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(errMsg)), ms);
-    }),
-  ]);
-}
-
-/** For Railway logs / dashboard: which env keys are missing, and can SMTP connect */
 exports.getSmtpStatus = async () => {
-  const required = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM'];
-  const missing = required.filter((k) => !process.env[k]);
-  if (missing.length) {
-    return { ok: false, smtpConfigured: false, missingEnv: missing };
+  if (!process.env.RESEND_API_KEY) {
+    return { ok: false, provider: 'resend', missingEnv: ['RESEND_API_KEY'] };
   }
   try {
-    await withTimeout(
-      getTransporter().verify(),
-      12000,
-      'SMTP verify timed out (blocked port 587/465, firewall, or wrong host)'
-    );
-    return { ok: true, smtpConfigured: true, verify: 'success' };
-  } catch (e) {
+    const { data, error } = await getResend().domains.list();
+    if (error) {
+      return { ok: false, provider: 'resend', error: error.message };
+    }
+    const domains = (data?.data || []).map((d) => ({ name: d.name, status: d.status }));
+    const allVerified = domains.length > 0 && domains.every((d) => d.status === 'verified');
     return {
-      ok: false,
-      smtpConfigured: true,
-      verify: 'failed',
-      error: e.message,
-      hint: 'Check Gmail app password, 2FA, and that EMAIL_FROM matches an address Gmail allows (often same as EMAIL_USER).',
+      ok: allVerified,
+      provider: 'resend',
+      domains,
+      hint: allVerified ? 'Ready to send' : 'Verify your domain in Resend dashboard',
     };
+  } catch (e) {
+    return { ok: false, provider: 'resend', error: e.message };
   }
 };
 
-/** Sends a single test mail to EMAIL_USER — throws on failure */
 exports.sendTestEmail = async () => {
-  const info = await getTransporter().sendMail({
-    from: process.env.EMAIL_FROM,
-    to: process.env.EMAIL_USER,
-    subject: 'YF14 Store — SMTP test',
-    text: `If you see this, SMTP works. ${new Date().toISOString()}`,
-    html: `<p>If you see this, SMTP works.</p><p>${new Date().toISOString()}</p>`,
+  const to = process.env.EMAIL_USER || process.env.ORDER_NOTIFY_EMAIL;
+  if (!to) throw new Error('No EMAIL_USER or ORDER_NOTIFY_EMAIL to send test to');
+  const { data, error } = await getResend().emails.send({
+    from: EMAIL_FROM(),
+    to: [to],
+    subject: 'YF14 Store — email test',
+    text: `If you see this, Resend works. ${new Date().toISOString()}`,
+    html: `<p>If you see this, Resend works.</p><p>${new Date().toISOString()}</p>`,
   });
-  logger.info('SMTP test email sent, messageId:', info.messageId);
-  return info;
+  if (error) throw new Error(error.message);
+  logger.info('Test email sent, id:', data?.id);
+  return data;
 };
 
 const baseTemplate = (content) => `
@@ -120,7 +104,7 @@ const baseTemplate = (content) => `
   <div class="body">${content}</div>
   <div class="footer">
     <p>© ${new Date().getFullYear()} YF14 Store. All rights reserved.</p>
-    <p>Questions? Contact us at <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a></p>
+    <p>Questions? Contact us at <a href="mailto:${STORE_INBOX()}">${STORE_INBOX()}</a></p>
   </div>
 </div>
 </body>
@@ -129,10 +113,10 @@ const baseTemplate = (content) => `
 exports.sendWelcome = async (user) => {
   await sendEmail({
     to: user.email,
-    subject: 'Welcome to Maison Élara',
+    subject: 'Welcome to YF14 Store',
     html: baseTemplate(`
       <h2 style="color:#1a1a1a;font-weight:300;letter-spacing:2px;">Welcome, ${user.firstName}</h2>
-      <p style="color:#555;line-height:1.8;">Thank you for joining the Maison Élara family. Discover our curated collection of premium women's fashion.</p>
+      <p style="color:#555;line-height:1.8;">Thank you for joining YF14 Store. Discover our curated collection of premium women's fashion.</p>
       <a href="${process.env.FRONTEND_URL}/products" class="btn">Explore Collection</a>
     `),
   });
@@ -154,13 +138,11 @@ exports.sendOrderConfirmation = async (order) => {
     (order.user && order.user.firstName) ||
     (order.guestInfo && order.guestInfo.name && order.guestInfo.name.trim().split(/\s+/)[0]) ||
     'Customer';
-  const storeInbox =
-    process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
+  const storeInbox = STORE_INBOX();
 
-  // Customer gets the main email; store gets BCC. If guest left no email, only store receives it.
   const to = customerEmail || storeInbox;
   if (!to) {
-    logger.warn('sendOrderConfirmation: no customer email and no ORDER_NOTIFY_EMAIL/EMAIL_USER');
+    logger.warn('sendOrderConfirmation: no customer email and no store inbox');
     return;
   }
   const subject = customerEmail
@@ -260,17 +242,12 @@ exports.sendOrderStatusUpdate = async (order) => {
   const cfg = configs[order.status];
   if (!cfg) return;
 
-  // Registered user OR guest — never rely on order.user alone (guest orders use guestInfo.email)
   const customerEmail = (order.user && order.user.email) || (order.guestInfo && order.guestInfo.email);
-  const storeInbox =
-    process.env.ORDER_NOTIFY_EMAIL ||
-    process.env.EMAIL_USER ||
-    '';
+  const storeInbox = STORE_INBOX();
 
-  // If no customer email, still notify the store; if customer exists, BCC store so you get a copy
   const to = customerEmail || storeInbox;
   if (!to) {
-    logger.warn('sendOrderStatusUpdate: no customer email and no ORDER_NOTIFY_EMAIL/EMAIL_USER');
+    logger.warn('sendOrderStatusUpdate: no customer email and no store inbox');
     return;
   }
   const subject = customerEmail ? cfg.subject : `[متجر / Store] ${cfg.subject}`;
@@ -323,7 +300,7 @@ exports.sendOrderStatusUpdate = async (order) => {
 exports.sendPasswordReset = async (user, resetUrl) => {
   await sendEmail({
     to: user.email,
-    subject: 'Password Reset — Maison Élara',
+    subject: 'Password Reset — YF14 Store',
     html: baseTemplate(`
       <h2 style="color:#1a1a1a;font-weight:300;letter-spacing:2px;">Reset Password</h2>
       <p style="color:#555;">You requested a password reset. Click below to set a new password. This link expires in 1 hour.</p>
