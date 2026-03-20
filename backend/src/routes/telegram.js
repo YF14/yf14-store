@@ -55,12 +55,8 @@ router.post('/webhook', async (req, res) => {
       order.statusHistory.push({ status: 'confirmed', note: 'تم الموافقة عبر تيليغرام' });
       await order.save();
 
-      if (customerEmail) {
-        const emailOrder = customerEmail === order.user?.email
-          ? order
-          : { ...order.toObject(), user: { firstName: order.guestInfo.name, lastName: '', email: customerEmail } };
-        emailService.sendOrderStatusUpdate(emailOrder).catch(e => logger.error('Email error:', e));
-      }
+      // sendOrderStatusUpdate reads guestInfo.email OR user.email; BCC store (EMAIL_USER)
+      emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
       await telegramService.answerCallback(cbId, '✅ تمت الموافقة!');
       await telegramService.editOrderMessage(chatId, msgId,
@@ -84,12 +80,7 @@ router.post('/webhook', async (req, res) => {
 
       await order.save();
 
-      if (customerEmail) {
-        const emailOrder = customerEmail === order.user?.email
-          ? order
-          : { ...order.toObject(), user: { firstName: order.guestInfo.name, lastName: '', email: customerEmail } };
-        emailService.sendOrderStatusUpdate(emailOrder).catch(e => logger.error('Email error:', e));
-      }
+      emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
       await telegramService.answerCallback(cbId, '❌ تم رفض الطلب');
       await telegramService.editOrderMessage(chatId, msgId,

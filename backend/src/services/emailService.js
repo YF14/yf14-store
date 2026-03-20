@@ -8,9 +8,20 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
 });
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, bcc }) => {
   try {
-    await transporter.sendMail({ from: process.env.EMAIL_FROM, to, subject, html });
+    if (!to) {
+      logger.warn('Email skipped: missing `to` address');
+      return;
+    }
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html,
+      ...(bcc ? { bcc } : {}),
+    });
+    logger.info(`Email sent: subject="${subject}" to=${to}${bcc ? ` bcc=${bcc}` : ''}`);
   } catch (err) {
     logger.error('Email send error:', err);
   }
@@ -151,9 +162,27 @@ exports.sendOrderStatusUpdate = async (order) => {
   const cfg = configs[order.status];
   if (!cfg) return;
 
+  // Registered user OR guest — never rely on order.user alone (guest orders use guestInfo.email)
+  const customerEmail = (order.user && order.user.email) || (order.guestInfo && order.guestInfo.email);
+  const storeInbox =
+    process.env.ORDER_NOTIFY_EMAIL ||
+    process.env.EMAIL_USER ||
+    '';
+
+  // If no customer email, still notify the store; if customer exists, BCC store so you get a copy
+  const to = customerEmail || storeInbox;
+  if (!to) {
+    logger.warn('sendOrderStatusUpdate: no customer email and no ORDER_NOTIFY_EMAIL/EMAIL_USER');
+    return;
+  }
+  const subject = customerEmail ? cfg.subject : `[متجر / Store] ${cfg.subject}`;
+  const bcc =
+    customerEmail && storeInbox && customerEmail !== storeInbox ? storeInbox : undefined;
+
   await sendEmail({
-    to: order.user.email,
-    subject: cfg.subject,
+    to,
+    bcc,
+    subject,
     html: baseTemplate(`
       <div style="text-align:center;padding:20px 0 10px;">
         <span style="font-size:48px;">${cfg.emoji}</span>
