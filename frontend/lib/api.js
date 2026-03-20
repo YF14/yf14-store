@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   withCredentials: true,
+  timeout: 25000, // avoid infinite "loading" if API is down or wrong URL
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -19,6 +20,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    if (err.code === 'ECONNABORTED') {
+      err.message = 'انتهت مهلة الاتصال — تحقق من الإنترنت أو إعدادات API';
+    }
+    if (err.message === 'Network Error') {
+      err.message = 'تعذر الاتصال بالخادم — تحقق من الرابط أو أن الخادم يعمل';
+    }
     const original = err.config;
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
@@ -27,7 +34,8 @@ api.interceptors.response.use(
         if (refreshToken) {
           const { data } = await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
-            { refreshToken }
+            { refreshToken },
+            { timeout: 15000 }
           );
           localStorage.setItem('token', data.token);
           original.headers.Authorization = `Bearer ${data.token}`;

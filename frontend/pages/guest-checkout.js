@@ -111,7 +111,11 @@ export default function GuestCheckout() {
       setOrderNumber(data.orderNumber);
       setDone(true);
     } catch (err) {
-      toast.error(err.response?.data?.error || (isRTL ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Something went wrong, please try again'));
+      const msg =
+        err.response?.data?.error ||
+        err.message ||
+        (isRTL ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Something went wrong, please try again');
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
