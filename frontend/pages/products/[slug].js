@@ -357,7 +357,7 @@ export default function ProductDetailPage() {
                 <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
                   {isRTL ? 'الشحن' : 'Shipping'}
                 </span>
-                <span className="text-brand-black">{isRTL ? 'مجاني فوق $100 · 3-5 أيام' : 'Free over $100 · 3-5 business days'}</span>
+                <span className="text-brand-black">{isRTL ? 'مجاني فوق 100,000 IQD · 3-5 أيام' : 'Free over 100,000 IQD · 3-5 business days'}</span>
               </div>
               <div className="flex gap-4 items-start">
                 <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
