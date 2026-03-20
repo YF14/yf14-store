@@ -8,7 +8,6 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
 });
 
-// Use memory storage so we can pipe to ImageKit
 const memoryStorage = multer.memoryStorage();
 
 const imageFilter = (req, file, cb) => {
@@ -23,36 +22,35 @@ const videoFilter = (req, file, cb) => {
 
 const uploadProduct = multer({
   storage: memoryStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: imageFilter,
 });
 
 const uploadAvatar = multer({
   storage: memoryStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: imageFilter,
 });
 
 const uploadVideo = multer({
   storage: memoryStorage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: videoFilter,
 });
 
-// Upload a buffer to ImageKit and return { url, fileId }
-const uploadToImageKit = (buffer, originalName, folder) => {
+const uploadToImageKit = async (buffer, originalName, folder) => {
   const ext = path.extname(originalName) || '.jpg';
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-  return imagekit.upload({
-    file: buffer,
+  const result = await imagekit.files.upload({
+    file: buffer.toString('base64'),
     fileName,
     folder,
     useUniqueFileName: false,
   });
+  return result;
 };
 
-// Delete a file from ImageKit by its fileId
-const deleteFromImageKit = (fileId) => imagekit.deleteFile(fileId);
+const deleteFromImageKit = (fileId) => imagekit.files.delete(fileId);
 
 module.exports = {
   imagekit,
