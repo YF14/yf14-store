@@ -109,7 +109,7 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 text-brand-warm-gray hidden md:table-cell">{u.email}</td>
                   <td className="px-4 py-3 text-brand-warm-gray text-xs hidden sm:table-cell">
-                    {new Date(u.createdAt).toLocaleDateString(t.lang === 'ar' ? 'ar-IQ' : 'en-US')}
+                    {new Date(u.createdAt).toLocaleDateString('en-US')}
                   </td>
                   <td className="px-4 py-3"><span className="font-medium">{u.ordersCount}</span></td>
                   <td className="px-4 py-3 text-brand-warm-gray hidden lg:table-cell">{formatIQD(u.totalSpent)}</td>

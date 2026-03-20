@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <h1 className="font-display text-4xl font-light">{a.dashboard}</h1>
           <p className="text-sm text-brand-warm-gray">
-            {new Date().toLocaleDateString(t.lang === 'ar' ? 'ar-IQ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
 

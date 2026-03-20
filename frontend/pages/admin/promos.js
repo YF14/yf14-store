@@ -244,7 +244,7 @@ export default function AdminPromos() {
                         {promo.usageLimit ? <span className="text-brand-warm-gray"> / {promo.usageLimit}</span> : <span className="text-brand-warm-gray"> / ∞</span>}
                       </td>
                       <td className="px-5 py-4 hidden lg:table-cell text-brand-warm-gray">
-                        {promo.endDate ? new Date(promo.endDate).toLocaleDateString(t.lang === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : a.noExpiry}
+                        {promo.endDate ? new Date(promo.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : a.noExpiry}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor}`}>{statusLabel}</span>

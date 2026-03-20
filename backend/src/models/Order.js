@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
 
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -67,12 +66,16 @@ const orderSchema = new mongoose.Schema({
   giftMessage: String,
 }, { timestamps: true });
 
-// Generate order number before save
-orderSchema.pre('save', function (next) {
+// Generate simple sequential order number
+orderSchema.pre('save', async function (next) {
   if (!this.orderNumber) {
-    const year = new Date().getFullYear();
-    const uid = uuidv4().replace(/-/g, '').slice(0, 8).toUpperCase();
-    this.orderNumber = `ME-${year}-${uid}`;
+    const last = await mongoose.model('Order').findOne({}, { orderNumber: 1 }, { sort: { createdAt: -1 } });
+    let nextNum = 1001;
+    if (last?.orderNumber) {
+      const num = parseInt(last.orderNumber.replace('#', ''), 10);
+      if (!isNaN(num)) nextNum = num + 1;
+    }
+    this.orderNumber = `#${nextNum}`;
   }
   next();
 });

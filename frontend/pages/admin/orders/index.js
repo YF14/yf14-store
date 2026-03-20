@@ -135,7 +135,7 @@ export default function AdminOrdersPage() {
                     </p>
                   </td>
                   <td className="px-4 py-3 text-brand-warm-gray text-xs hidden md:table-cell">
-                    {new Date(order.createdAt).toLocaleDateString(t.lang === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-medium">{formatIQD(order.total)}</span>

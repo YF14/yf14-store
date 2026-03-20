@@ -6,23 +6,45 @@ const telegramService = require('../services/telegramService');
 const emailService = require('../services/emailService');
 const logger = require('../config/logger');
 
-// Telegram sends updates here
+function iqd(v) {
+  return `${Number(v || 0).toLocaleString('en-US')} IQD`;
+}
+
+function buildFullAddress(order) {
+  const guest = order.guestInfo;
+  const addr = order.shippingAddress;
+  const parts = [];
+  if (guest) {
+    if (guest.city) parts.push(guest.city);
+    if (guest.town) parts.push(guest.town);
+  } else if (addr) {
+    if (addr.street) parts.push(addr.street);
+    if (addr.city) parts.push(addr.city);
+    if (addr.state) parts.push(addr.state);
+    if (addr.country) parts.push(addr.country);
+    if (addr.zipCode) parts.push(addr.zipCode);
+  }
+  return parts.join(', ') || 'N/A';
+}
+
+function getPhone(order) {
+  return order.guestInfo?.phone || order.shippingAddress?.phone || 'N/A';
+}
+
 router.post('/webhook', async (req, res) => {
-  res.sendStatus(200); // always reply fast so Telegram doesn't retry
+  res.sendStatus(200);
 
   let cbId = null;
   try {
     const update = req.body;
-
     if (!update.callback_query) return;
 
     const query = update.callback_query;
-    const data = query.data; // "approve_<orderId>" or "decline_<orderId>"
+    const data = query.data;
     const chatId = query.message.chat.id;
     const msgId = query.message.message_id;
     cbId = query.id;
 
-    // ObjectId may contain only [a-f0-9]; split once: action_rest
     const firstUnderscore = data.indexOf('_');
     if (firstUnderscore < 1) {
       await telegramService.answerCallback(cbId, '❌ بيانات الزر غير صالحة');
@@ -49,13 +71,15 @@ router.post('/webhook', async (req, res) => {
 
     const customerName = order.guestInfo?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'زائر';
     const customerEmail = order.guestInfo?.email || order.user?.email;
+    const phone = getPhone(order);
+    const address = buildFullAddress(order);
+    const items = order.items.map(i => `  • ${i.name} (${i.size}/${i.color}) x${i.quantity} — ${iqd(i.price * i.quantity)}`).join('\n');
 
     if (action === 'approve') {
       order.status = 'confirmed';
       order.statusHistory.push({ status: 'confirmed', note: 'تم الموافقة عبر تيليغرام' });
       await order.save();
 
-      // sendOrderStatusUpdate reads guestInfo.email OR user.email; BCC store (EMAIL_USER)
       emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
       await telegramService.answerCallback(cbId, '✅ تمت الموافقة!');
@@ -63,8 +87,11 @@ router.post('/webhook', async (req, res) => {
         `✅ تمت الموافقة على الطلب\n\n` +
         `📦 ${order.orderNumber}\n` +
         `👤 ${customerName}\n` +
-        `📞/📧 ${customerEmail || order.guestInfo?.phone || 'N/A'}\n` +
-        `💵 $${order.total?.toFixed(2)}\n\n` +
+        `📞 الهاتف: ${phone}\n` +
+        `📧 الإيميل: ${customerEmail || 'N/A'}\n` +
+        `📍 العنوان: ${address}\n\n` +
+        `🧾 المنتجات:\n${items}\n\n` +
+        `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`
       );
     } else if (action === 'decline') {
@@ -87,8 +114,11 @@ router.post('/webhook', async (req, res) => {
         `❌ تم رفض الطلب\n\n` +
         `📦 ${order.orderNumber}\n` +
         `👤 ${customerName}\n` +
-        `📞/📧 ${customerEmail || order.guestInfo?.phone || 'N/A'}\n` +
-        `💵 $${order.total?.toFixed(2)}\n\n` +
+        `📞 الهاتف: ${phone}\n` +
+        `📧 الإيميل: ${customerEmail || 'N/A'}\n` +
+        `📍 العنوان: ${address}\n\n` +
+        `🧾 المنتجات:\n${items}\n\n` +
+        `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `تم إعادة المخزون${customerEmail ? ' وإخطار العميل' : ''}`
       );
     }
@@ -100,7 +130,6 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// Register the webhook URL with Telegram (run once after deploy)
 router.get('/set-webhook', async (req, res) => {
   if (req.query.secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
     return res.status(403).json({ error: 'Forbidden' });
