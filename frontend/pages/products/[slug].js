@@ -30,7 +30,7 @@ export default function ProductDetailPage() {
   const toggle = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.isWishlisted);
   const user = useAuthStore((s) => s.user);
-  const { isRTL } = useLang();
+  const { t, isRTL } = useLang();
 
   const { data, isLoading, refetch } = useQuery(
     ['product', slug],
@@ -58,9 +58,9 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <Layout>
-        <div className="container-luxury py-24 text-center">
-          <h1 className="font-display text-4xl mb-4">Product Not Found</h1>
-          <Link href="/products" className="btn-primary">Browse Collection</Link>
+        <div className="container-luxury py-24 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
+          <h1 className="font-display text-4xl mb-4">{t.product.productNotFound}</h1>
+          <Link href="/products" className="btn-primary">{t.product.browseCollection}</Link>
         </div>
       </Layout>
     );
@@ -81,9 +81,9 @@ export default function ProductDetailPage() {
   const isLowStock = selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 3;
 
   const handleAddToCart = async () => {
-    if (!selectedSize || !selectedColor) { toast.error(isRTL ? 'اختاري المقاس والألوان' : 'Please select size and color'); return; }
-    if (!selectedVariant) { toast.error(isRTL ? 'هذا الاختيار غير متاح' : 'Variant not available'); return; }
-    if (selectedVariant.stock < qty) { toast.error(isRTL ? 'الكمية المطلوبة غير متوفرة' : 'Not enough stock'); return; }
+    if (!selectedSize || !selectedColor) { toast.error(t.product.selectSizeColor); return; }
+    if (!selectedVariant) { toast.error(t.product.variantUnavailable); return; }
+    if (selectedVariant.stock < qty) { toast.error(t.product.notEnoughStock); return; }
     await addToCart(product._id, selectedVariant._id, qty, {
       name: product.name,
       image: product.images?.[0]?.url || '',
@@ -104,13 +104,13 @@ export default function ProductDetailPage() {
         title: reviewTitle,
         body: reviewText,
       });
-      toast.success('Review submitted!');
+      toast.success(t.product.reviewSubmitted);
       setReviewText('');
       setReviewTitle('');
       setReviewRating(5);
       refetch();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to submit review');
+      toast.error(err.response?.data?.error || t.product.reviewSubmitFailed);
     }
   };
 
@@ -127,10 +127,10 @@ export default function ProductDetailPage() {
 
       <div className="container-luxury py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-brand-warm-gray mb-8">
-          <Link href="/" className="hover:text-brand-gold transition-colors">Home</Link>
+        <nav className="flex items-center gap-2 text-xs text-brand-warm-gray mb-8" dir={isRTL ? 'rtl' : 'ltr'}>
+          <Link href="/" className="hover:text-brand-gold transition-colors">{t.product.home}</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-brand-gold transition-colors">Dresses</Link>
+          <Link href="/products" className="hover:text-brand-gold transition-colors">{t.product.shopBreadcrumb}</Link>
           <span>/</span>
           <span className="text-brand-black">{product.name}</span>
         </nav>
@@ -189,7 +189,7 @@ export default function ProductDetailPage() {
               )}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
-                {product.isNewArrival && <span className="badge badge-new">New</span>}
+                {product.isNewArrival && <span className="badge badge-new">{t.product.badgeNew}</span>}
               </div>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function ProductDetailPage() {
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-brand-warm-gray">{product.averageRating} ({product.reviewCount} reviews)</span>
+                <span className="text-sm text-brand-warm-gray">{product.averageRating} ({product.reviewCount} {t.product.reviewsWord})</span>
               </div>
             )}
 
@@ -234,7 +234,7 @@ export default function ProductDetailPage() {
             {/* Color selection */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs tracking-widest uppercase font-medium">Color</span>
+                <span className="text-xs tracking-widest uppercase font-medium">{t.common.color}</span>
                 {selectedColor && <span className="text-xs text-brand-warm-gray">{selectedColor}</span>}
               </div>
               <div className="flex gap-3 flex-wrap">
@@ -255,8 +255,8 @@ export default function ProductDetailPage() {
             {/* Size selection */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs tracking-widest uppercase font-medium">Size</span>
-                <Link href="/size-guide" className="text-xs text-brand-warm-gray underline hover:text-brand-gold">Size Guide</Link>
+                <span className="text-xs tracking-widest uppercase font-medium">{t.common.size}</span>
+                <Link href="/size-guide" className="text-xs text-brand-warm-gray underline hover:text-brand-gold">{t.product.sizeGuide}</Link>
               </div>
               <div className="flex flex-wrap gap-2">
                 {sizes.map((size) => {
@@ -288,7 +288,7 @@ export default function ProductDetailPage() {
             {isLowStock && (
               <p className="text-xs text-amber-600 mb-4 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-amber-600 rounded-full" />
-                Only {selectedVariant.stock} left in stock
+                {t.product.lowStockBanner.replace('{n}', String(selectedVariant.stock))}
               </p>
             )}
 
@@ -312,8 +312,8 @@ export default function ProductDetailPage() {
               {selectedVariant && (
                 <span className={`text-xs ${selectedVariant.stock <= 5 ? 'text-amber-600 font-medium' : 'text-brand-warm-gray'}`}>
                   {selectedVariant.stock <= 5
-                    ? `${isRTL ? 'آخر' : 'Only'} ${selectedVariant.stock} ${isRTL ? 'قطعة!' : 'left!'}`
-                    : `${selectedVariant.stock} ${isRTL ? 'متوفر' : 'in stock'}`}
+                    ? `${t.product.onlyLeftPrefix} ${selectedVariant.stock} ${t.product.onlyLeftSuffix}`
+                    : `${selectedVariant.stock} ${t.product.inStockLabel}`}
                 </span>
               )}
             </div>
@@ -325,22 +325,22 @@ export default function ProductDetailPage() {
                 disabled={isCartLoading || isOutOfStock}
                 className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCartLoading ? 'Adding...' : isOutOfStock ? 'Out of Stock' : 'Add to Bag'}
+                {isCartLoading ? t.product.adding : isOutOfStock ? t.product.outOfStock : t.product.addToBag}
               </button>
               <button
                 onClick={() => user ? toggle(product._id) : router.push('/login')}
                 className={`btn-outline w-full ${isWishlisted(product._id) ? 'bg-brand-black text-white' : ''}`}
               >
-                {isWishlisted(product._id) ? '♥ Saved to Wishlist' : '♡ Add to Wishlist'}
+                {isWishlisted(product._id) ? t.product.savedToWishlist : t.product.addToWishlistBtn}
               </button>
             </div>
 
             {/* Details */}
-            <div className="border-t border-brand-black/10 pt-6 space-y-3 text-sm" dir="ltr">
+            <div className="border-t border-brand-black/10 pt-6 space-y-3 text-sm" dir={isRTL ? 'rtl' : 'ltr'}>
               {product.material && (
                 <div className="flex gap-4 items-start">
                   <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
-                    {isRTL ? 'الخامة' : 'Material'}
+                    {t.product.materialLabel}
                   </span>
                   <span className="text-brand-black">{product.material}</span>
                 </div>
@@ -348,22 +348,22 @@ export default function ProductDetailPage() {
               {product.careInstructions && (
                 <div className="flex gap-4 items-start">
                   <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
-                    {isRTL ? 'العناية' : 'Care'}
+                    {t.product.careLabel}
                   </span>
                   <span className="text-brand-black">{product.careInstructions}</span>
                 </div>
               )}
               <div className="flex gap-4 items-start">
                 <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
-                  {isRTL ? 'الشحن' : 'Shipping'}
+                  {t.product.shippingLabel}
                 </span>
-                <span className="text-brand-black">{isRTL ? 'مجاني فوق 100,000 IQD · 3-5 أيام' : 'Free over 100,000 IQD · 3-5 business days'}</span>
+                <span className="text-brand-black">{t.product.shippingLine}</span>
               </div>
               <div className="flex gap-4 items-start">
                 <span className="text-brand-warm-gray w-24 flex-shrink-0 text-xs tracking-wider uppercase pt-0.5">
-                  {isRTL ? 'الإرجاع' : 'Returns'}
+                  {t.product.returnsLabel}
                 </span>
-                <span className="text-brand-black">{isRTL ? 'إرجاع مجاني خلال 30 يوماً' : '30-day free returns'}</span>
+                <span className="text-brand-black">{t.product.returnsLine}</span>
               </div>
             </div>
           </motion.div>
@@ -373,11 +373,11 @@ export default function ProductDetailPage() {
         <section className="mt-20 border-t border-brand-black/10 pt-16" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="grid md:grid-cols-2 gap-16">
             <div>
-              <h2 className="font-display text-3xl mb-6 font-light">Product Details</h2>
+              <h2 className="font-display text-3xl mb-6 font-light">{t.product.productDetailsSection}</h2>
               <p className="text-sm text-brand-warm-gray leading-relaxed">{product.description}</p>
             </div>
             <div>
-              <h2 className="font-display text-3xl mb-6 font-light">Reviews</h2>
+              <h2 className="font-display text-3xl mb-6 font-light">{t.product.reviews}</h2>
               {product.reviews?.length > 0 ? (
                 <div className="space-y-6">
                   {product.reviews.slice(0, 5).map((r) => (
@@ -391,7 +391,7 @@ export default function ProductDetailPage() {
                           ))}
                         </div>
                         <span className="text-xs font-medium">{r.user?.firstName} {r.user?.lastName}</span>
-                        {r.verified && <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5">✓ Verified</span>}
+                        {r.verified && <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5">{t.product.verifiedBadge}</span>}
                       </div>
                       {r.title && <p className="text-sm font-medium mb-1">{r.title}</p>}
                       <p className="text-sm text-brand-warm-gray">{r.body}</p>
@@ -399,12 +399,12 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-brand-warm-gray">No reviews yet. Be the first!</p>
+                <p className="text-sm text-brand-warm-gray">{t.product.noReviewsCta}</p>
               )}
 
               {user && (
                 <form onSubmit={handleReviewSubmit} className="mt-8 border-t border-brand-black/10 pt-8">
-                  <h3 className="font-display text-xl mb-4">Write a Review</h3>
+                  <h3 className="font-display text-xl mb-4">{t.product.writeReview}</h3>
                   <div className="flex gap-1 mb-4">
                     {[1,2,3,4,5].map((s) => (
                       <button key={s} type="button" onClick={() => setReviewRating(s)}>
@@ -414,9 +414,9 @@ export default function ProductDetailPage() {
                       </button>
                     ))}
                   </div>
-                  <input value={reviewTitle} onChange={e => setReviewTitle(e.target.value)} placeholder="Review title" className="input-luxury mb-3" />
-                  <textarea value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4} className="input-luxury resize-none mb-4" required />
-                  <button type="submit" className="btn-primary">Submit Review</button>
+                  <input value={reviewTitle} onChange={e => setReviewTitle(e.target.value)} placeholder={t.product.reviewTitlePlaceholder} className="input-luxury mb-3" />
+                  <textarea value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder={t.product.reviewBodyPlaceholder} rows={4} className="input-luxury resize-none mb-4" required />
+                  <button type="submit" className="btn-primary">{t.product.submitReview}</button>
                 </form>
               )}
             </div>

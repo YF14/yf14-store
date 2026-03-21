@@ -32,7 +32,6 @@ router.post('/webhook', async (req, res) => {
       const { metadata, id } = event.data.object;
       if (metadata.orderId) {
         await Order.findByIdAndUpdate(metadata.orderId, {
-          paymentStatus: 'paid',
           status: 'confirmed',
           stripePaymentIntentId: id,
           $push: { statusHistory: { status: 'confirmed', note: 'Payment confirmed via Stripe' } }
@@ -43,7 +42,9 @@ router.post('/webhook', async (req, res) => {
     case 'payment_intent.payment_failed': {
       const { metadata } = event.data.object;
       if (metadata.orderId) {
-        await Order.findByIdAndUpdate(metadata.orderId, { paymentStatus: 'failed' });
+        await Order.findByIdAndUpdate(metadata.orderId, {
+          $push: { statusHistory: { status: 'pending', note: 'Stripe payment failed' } }
+        });
       }
       break;
     }

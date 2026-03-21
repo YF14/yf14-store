@@ -7,7 +7,9 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { formatIQD } from '../../lib/currency';
 
-export default function ProductCard({ product, index = 0 }) {
+const DEFAULT_IMAGE_SIZES = '(max-width: 640px) 50vw, 33vw';
+
+export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_IMAGE_SIZES }) {
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef(null);
   const toggle = useWishlistStore((s) => s.toggle);
@@ -53,24 +55,24 @@ export default function ProductCard({ product, index = 0 }) {
     >
       <Link href={`/products/${product.slug}`} className="group block">
         <div
-          className="relative aspect-[3/4] bg-gray-50 overflow-hidden mb-4"
+          className="relative aspect-[2/3] bg-gray-100 overflow-hidden rounded-t-xl mb-0"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Base image */}
+          {/* Base image — tall portrait (≈2:3) like editorial lookbooks */}
           {primaryImg && (
             <Image
               src={primaryImg}
               alt={product.name}
               fill
-              className={`object-cover transition-all duration-700 ${
+              className={`object-cover object-top transition-all duration-700 ${
                 hovered && !videoUrl
                   ? hoverImg
                     ? 'opacity-0'
                     : 'scale-110'
                   : 'scale-100'
               }`}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes={imageSizes}
             />
           )}
 
@@ -80,10 +82,10 @@ export default function ProductCard({ product, index = 0 }) {
               src={hoverImg}
               alt={product.name}
               fill
-              className={`object-cover transition-opacity duration-700 absolute inset-0 ${
+              className={`object-cover object-top transition-opacity duration-700 absolute inset-0 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes={imageSizes}
             />
           )}
 
@@ -96,7 +98,7 @@ export default function ProductCard({ product, index = 0 }) {
               loop
               playsInline
               preload="metadata"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+              className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -129,14 +131,33 @@ export default function ProductCard({ product, index = 0 }) {
             </svg>
           </button>
 
-          {/* Quick view bar */}
-          <div className="absolute bottom-0 left-0 right-0 bg-brand-black/90 py-3 text-center text-white text-xs tracking-widest uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
-            Quick View
-          </div>
+          {/* Available sizes bar */}
+          {(() => {
+            const sizes = product.variants
+              ? [...new Set(product.variants.filter(v => v.stock > 0).map(v => v.size))]
+              : [];
+            const sizeOrder = ['XS','S','M','L','XL','XXL','XXXL'];
+            sizes.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b));
+            return (
+              <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
+                {sizes.length > 0 ? (
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                    {sizes.map(size => (
+                      <span key={size} className="text-[10px] font-medium text-brand-black tracking-wide border border-brand-black/20 px-1.5 py-0.5">
+                        {size}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">Out of Stock</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Info */}
-        <div>
+        {/* Info — soft lavender panel (name, price, swatches) */}
+        <div className="rounded-b-xl border border-brand-gold-light/35 bg-gradient-to-b from-brand-cream via-white to-brand-purple-light/60 px-3.5 pt-3 pb-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
           <h3 className="font-body text-sm font-medium text-brand-black group-hover:text-brand-gold transition-colors line-clamp-1">
             {product.name}
           </h3>
@@ -158,7 +179,6 @@ export default function ProductCard({ product, index = 0 }) {
               <span className="text-xs text-brand-warm-gray line-through">{formatIQD(product.comparePrice)}</span>
             )}
           </div>
-          {/* Color swatches */}
           {product.variants && (
             <div className="flex gap-1 mt-2">
               {[...new Map(product.variants.map(v => [v.color, v])).values()].slice(0, 5).map((v) => (

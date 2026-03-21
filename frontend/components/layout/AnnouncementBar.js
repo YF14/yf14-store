@@ -8,35 +8,41 @@ export default function AnnouncementBar() {
 
   const messages = isRTL
     ? [
-        '🚚 التوصيل لبغداد و5 محافظات',
-        '✨ وصلت مجموعات جديدة كل أسبوع',
-        '💜 للطلب راسلينا عبر الدايركت على إنستغرام',
+        'التوصيل لبغداد و5 محافظات',
+        'وصلت مجموعات جديدة كل أسبوع',
+        'للطلب راسلينا عبر الدايركت على إنستغرام',
       ]
     : [
-        '🚚 Delivery to Baghdad & 5 provinces',
-        '✨ New collections arrive every week',
-        '💜 Order via Instagram DM @yf14_store',
+        'Delivery to Baghdad & 5 provinces',
+        'New collections arrive every week',
+        'Order via Instagram DM — @yf14_store',
       ];
 
   if (!visible) return null;
 
+  const prev = () => setMsgIdx(i => (i - 1 + messages.length) % messages.length);
+  const next = () => setMsgIdx(i => (i + 1) % messages.length);
+
   return (
-    <div
-      className="text-white text-center py-2.5 px-4 text-xs font-medium relative"
-      style={{ background: 'linear-gradient(135deg, #7e22ce, #9333ea, #db2777)' }}
-    >
+    <div className="h-9 w-full max-w-full min-w-0 overflow-x-clip flex shrink-0 items-center justify-between bg-gradient-to-r from-[#8b2be2] via-[#7c3aed] to-[#8b2be2] px-4 md:px-8">
       <button
-        onClick={() => setMsgIdx((i) => (i + 1) % messages.length)}
-        className="hover:text-white/80 transition-colors"
+        onClick={isRTL ? next : prev}
+        className="text-white/70 hover:text-white transition-colors w-5 text-sm leading-none"
+        aria-label="Previous"
       >
-        {messages[msgIdx]}
+        ←
       </button>
+
+      <p className="text-[11px] tracking-widest text-white/95 uppercase font-body text-center flex-1 px-4 truncate">
+        {messages[msgIdx]}
+      </p>
+
       <button
-        onClick={() => setVisible(false)}
-        className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors text-base leading-none`}
-        aria-label="Close"
+        onClick={isRTL ? prev : next}
+        className="text-white/70 hover:text-white transition-colors w-5 text-sm leading-none"
+        aria-label="Next"
       >
-        ×
+        →
       </button>
     </div>
   );

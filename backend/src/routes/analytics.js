@@ -5,6 +5,9 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 
+/** Orders that count toward revenue (not cancelled / refunded) */
+const REVENUE_MATCH = { status: { $nin: ['cancelled', 'refunded'] } };
+
 router.use(protect, adminOnly);
 
 router.get('/dashboard', async (req, res) => {
@@ -20,9 +23,9 @@ router.get('/dashboard', async (req, res) => {
       totalUsers, monthUsers,
       recentOrders, bestSellers, lowStock
     ] = await Promise.all([
-      Order.aggregate([{ $match: { paymentStatus: 'paid' } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
-      Order.aggregate([{ $match: { paymentStatus: 'paid', createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
-      Order.aggregate([{ $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: REVENUE_MATCH }, { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: { ...REVENUE_MATCH, createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: { ...REVENUE_MATCH, createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
       Order.countDocuments(),
       Order.countDocuments({ createdAt: { $gte: startOfMonth } }),
       User.countDocuments({ role: 'user' }),
@@ -54,7 +57,7 @@ router.get('/revenue-chart', async (req, res) => {
     startDate.setDate(startDate.getDate() - days);
 
     const data = await Order.aggregate([
-      { $match: { paymentStatus: 'paid', createdAt: { $gte: startDate } } },
+      { $match: { ...REVENUE_MATCH, createdAt: { $gte: startDate } } },
       { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$total' }, orders: { $sum: 1 } } },
       { $sort: { _id: 1 } }
     ]);
@@ -87,7 +90,7 @@ router.get('/top-products', async (req, res) => {
 
     const productIds = products.map(p => p._id);
     const revenueData = await Order.aggregate([
-      { $match: { paymentStatus: 'paid' } },
+      { $match: REVENUE_MATCH },
       { $unwind: '$items' },
       { $match: { 'items.product': { $in: productIds } } },
       { $group: { _id: '$items.product', revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },

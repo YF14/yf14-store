@@ -16,7 +16,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 — refresh token or redirect
+/** Paths where 401 must NOT trigger refresh (wrong password, etc.) */
+function isAuthPublicPath(url) {
+  if (!url) return false;
+  const u = String(url);
+  return (
+    u.includes('/auth/login') ||
+    u.includes('/auth/register') ||
+    u.includes('/auth/refresh-token') ||
+    u.includes('/auth/forgot-password')
+  );
+}
+
+// Handle 401 — refresh token or redirect (never for login/register)
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
@@ -27,16 +39,20 @@ api.interceptors.response.use(
       err.message = 'تعذر الاتصال بالخادم — تحقق من الرابط أو أن الخادم يعمل';
     }
     const original = err.config;
-    if (err.response?.status === 401 && !original._retry) {
+    const requestUrl = original?.url || '';
+    const base = api.defaults.baseURL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+    if (
+      err.response?.status === 401 &&
+      !original?._retry &&
+      !isAuthPublicPath(requestUrl)
+    ) {
       original._retry = true;
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const { data } = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
-            { refreshToken },
-            { timeout: 15000 }
-          );
+          const refreshUrl = `${String(base).replace(/\/$/, '')}/auth/refresh-token`;
+          const { data } = await axios.post(refreshUrl, { refreshToken }, { timeout: 15000 });
           localStorage.setItem('token', data.token);
           original.headers.Authorization = `Bearer ${data.token}`;
           return api(original);

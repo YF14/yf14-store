@@ -22,7 +22,17 @@ const useAuthStore = create(
           set({ user: data.user, token: data.token, refreshToken: data.refreshToken });
           return { success: true };
         } catch (err) {
-          return { success: false, error: err.response?.data?.error || 'Login failed' };
+          const apiErr = err.response?.data?.error;
+          const validationDetail = err.response?.data?.details?.[0]?.message;
+          const fallback =
+            err.message && err.message !== 'Network Error'
+              ? err.message
+              : 'Login failed';
+          return {
+            success: false,
+            error: apiErr || validationDetail || fallback,
+            code: err.response?.data?.code,
+          };
         } finally {
           set({ isLoading: false });
         }

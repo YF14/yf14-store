@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
+const StoreSettings = require('../models/StoreSettings');
 const {
   uploadProduct,
   uploadAvatar,
+  uploadLogo,
   uploadVideo,
   uploadToImageKit,
   deleteFromImageKit,
@@ -26,6 +28,31 @@ router.post('/product', protect, adminOnly, uploadProduct.array('images', 10), a
       )
     );
     res.json({ images: uploads });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Store logo → ImageKit + MongoDB (replaces previous logo file when possible)
+router.post('/store-logo', protect, adminOnly, uploadLogo.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const prev = await StoreSettings.findOne({ key: 'site' });
+    if (prev?.logoFileId) {
+      try {
+        await deleteFromImageKit(prev.logoFileId);
+      } catch (e) {
+        // Old asset may already be deleted — continue
+      }
+    }
+    const result = await uploadToImageKit(req.file.buffer, req.file.originalname, '/yf14-store/branding');
+    const fileId = result.fileId || result.file_id;
+    await StoreSettings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: { logoUrl: result.url, logoFileId: fileId || '' } },
+      { upsert: true, new: true }
+    );
+    res.json({ logoUrl: result.url, fileId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,13 +1,30 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const Order = require('../models/Order');
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, minPrice, maxPrice, sizes, colors, sort = '-createdAt', search, showAll } = req.query;
+    const { page = 1, limit = 12, category, minPrice, maxPrice, sizes, colors, sort = '-createdAt', search, filter, showAll } = req.query;
     const query = {};
     if (!showAll || !req.user || req.user.role !== 'admin') query.isActive = true;
 
-    if (category) query.category = category;
+    if (filter === 'sale') {
+      query.$expr = { $gt: ['$comparePrice', '$price'] };
+    } else if (filter === 'new') {
+      query.isNewArrival = true;
+    } else if (filter === 'featured') {
+      query.isFeatured = true;
+    }
+
+    if (category) {
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        query.category = category;
+      } else {
+        const cat = await Category.findOne({ slug: category }).select('_id');
+        query.category = cat ? cat._id : new mongoose.Types.ObjectId();
+      }
+    }
     if (minPrice || maxPrice) query.price = {};
     if (minPrice) query.price.$gte = Number(minPrice);
     if (maxPrice) query.price.$lte = Number(maxPrice);
@@ -67,6 +84,57 @@ exports.searchProducts = async (req, res, next) => {
       .limit(20)
       .select('name slug images price averageRating');
     res.json({ products });
+  } catch (err) { next(err); }
+};
+
+exports.getProductPriceRange = async (req, res, next) => {
+  try {
+    const { filter } = req.query;
+    const match = { isActive: true };
+    if (filter === 'sale') match.$expr = { $gt: ['$comparePrice', '$price'] };
+    else if (filter === 'new') match.isNewArrival = true;
+    else if (filter === 'featured') match.isFeatured = true;
+
+    const result = await Product.aggregate([
+      { $match: match },
+      { $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } },
+    ]);
+    const { min = 0, max = 1000000 } = result[0] || {};
+    res.json({ min, max });
+  } catch (err) { next(err); }
+};
+
+exports.getProductColors = async (req, res, next) => {
+  try {
+    const { category, sizes, filter } = req.query;
+    const match = { isActive: true, 'variants.0': { $exists: true } };
+    if (filter === 'sale') match.$expr = { $gt: ['$comparePrice', '$price'] };
+    else if (filter === 'new') match.isNewArrival = true;
+    else if (filter === 'featured') match.isFeatured = true;
+
+    if (category) {
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        match.category = new mongoose.Types.ObjectId(category);
+      } else {
+        const cat = await Category.findOne({ slug: category }).select('_id');
+        match.category = cat ? cat._id : new mongoose.Types.ObjectId();
+      }
+    }
+    if (sizes) match['variants.size'] = { $in: sizes.split(',') };
+    const variantMatch = { 'variants.color': { $exists: true, $ne: '' } };
+    if (sizes) variantMatch['variants.size'] = { $in: sizes.split(',') };
+
+    const colors = await Product.aggregate([
+      { $match: match },
+      { $unwind: '$variants' },
+      { $match: variantMatch },
+      // one entry per (product, color) pair to count distinct products
+      { $group: { _id: { productId: '$_id', color: '$variants.color' }, colorCode: { $first: '$variants.colorCode' } } },
+      { $group: { _id: '$_id.color', colorCode: { $first: '$colorCode' }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, color: '$_id', colorCode: 1, count: 1 } },
+    ]);
+    res.json({ colors });
   } catch (err) { next(err); }
 };
 
@@ -130,7 +198,7 @@ exports.addReview = async (req, res, next) => {
     const order = await Order.findOne({
       user: req.user.id,
       'items.product': req.params.id,
-      paymentStatus: 'paid'
+      status: { $nin: ['cancelled', 'refunded'] },
     });
 
     const review = { user: req.user.id, rating: req.body.rating, title: req.body.title, body: req.body.body, verified: !!order };

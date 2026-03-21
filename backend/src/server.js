@@ -29,6 +29,7 @@ const stripeRoutes = require('./routes/stripe');
 const analyticsRoutes = require('./routes/analytics');
 const telegramRoutes = require('./routes/telegram');
 const colorRoutes = require('./routes/colors');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
@@ -130,6 +131,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/colors', colorRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -9,6 +9,8 @@ router.get('/featured', productController.getFeatured);
 router.get('/new-arrivals', productController.getNewArrivals);
 router.get('/best-sellers', productController.getBestSellers);
 router.get('/search', productController.searchProducts);
+router.get('/price-range', productController.getProductPriceRange);
+router.get('/colors', productController.getProductColors);
 router.get('/:slug', optionalAuth, productController.getProduct);
 
 // Reviews (protected)

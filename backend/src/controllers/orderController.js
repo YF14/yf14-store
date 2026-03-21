@@ -7,7 +7,7 @@ const telegramService = require('../services/telegramService');
 
 exports.createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress, promoCode, paymentMethod = 'stripe' } = req.body;
+    const { items, shippingAddress, promoCode, paymentMethod = 'cash' } = req.body;
 
     // Validate & reserve stock
     const validatedItems = [];
@@ -54,9 +54,8 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
-    const shippingCost = subtotal >= 100 ? 0 : 9.99;
-    const tax = subtotal * 0.08;
-    const total = subtotal + shippingCost + tax - promoDiscount;
+    const shippingCost = 0;
+    const total = subtotal + shippingCost - promoDiscount;
 
     // Create order
     const order = await Order.create({
@@ -65,7 +64,6 @@ exports.createOrder = async (req, res, next) => {
       shippingAddress,
       subtotal,
       shippingCost,
-      tax,
       promoCode: appliedPromoCode,
       promoDiscount,
       total,
@@ -94,7 +92,7 @@ exports.createOrder = async (req, res, next) => {
     await emailService.sendOrderConfirmation(populatedOrder);
     await telegramService.notifyNewOrder(populatedOrder);
 
-    res.status(201).json({ order });
+    res.status(201).json({ order, orderNumber: order.orderNumber });
   } catch (err) { next(err); }
 };
 
@@ -159,7 +157,6 @@ exports.createGuestOrder = async (req, res, next) => {
     }
 
     const shippingCost = 0;
-    const tax = 0;
     const total = subtotal + shippingCost - promoDiscount;
 
     const order = await Order.create({
@@ -176,7 +173,6 @@ exports.createGuestOrder = async (req, res, next) => {
       },
       subtotal,
       shippingCost,
-      tax,
       promoCode: appliedPromoCode,
       promoDiscount,
       total,

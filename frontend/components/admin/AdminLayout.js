@@ -17,6 +17,7 @@ export default function AdminLayout({ children }) {
     { href: '/admin/users', label: a.customers, icon: '👤' },
     { href: '/admin/promos', label: a.promoCodes, icon: '🏷️' },
     { href: '/admin/analytics', label: a.analytics, icon: '📈' },
+    { href: '/admin/settings', label: a.storeSettings, icon: '⚙️' },
   ];
 
   const toggleLang = () => setLocale(locale === 'ar' ? 'en' : 'ar');

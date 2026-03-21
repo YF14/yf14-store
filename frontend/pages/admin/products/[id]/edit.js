@@ -7,8 +7,10 @@ import AdminLayout from '../../../../components/admin/AdminLayout';
 import useAuthStore from '../../../../store/authStore';
 import { useLang } from '../../../../contexts/LanguageContext';
 import api from '../../../../lib/api';
+import { classifyProductMediaFile } from '../../../../lib/mediaClassify';
 import { catName } from '../../../../lib/currency';
 import toast from 'react-hot-toast';
+import VideoPreviewThumb from '../../../../components/admin/VideoPreviewThumb';
 
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 const DEFAULT_SIZES = ['M', 'L', 'XL', 'XXL'];
@@ -35,12 +37,12 @@ export default function EditProductPage() {
   const user = useAuthStore((s) => s.user);
   const { t, isRTL } = useLang();
   const a = t.admin;
-  const imgInputRef = useRef(null);
-  const vidInputRef = useRef(null);
+  const mediaInputRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
+  const [videoPending, setVideoPending] = useState(null);
   const [variants, setVariants] = useState([]);
   const [customColor, setCustomColor] = useState('');
   const [customColorCode, setCustomColorCode] = useState('#000000');
@@ -133,32 +135,69 @@ export default function EditProductPage() {
     setVariants(v => v.map((variant, i) => i === idx ? { ...variant, stock } : variant));
   };
 
-  const handleImageUpload = async (e) => {
-    const files = e.target.files;
-    if (!files?.length) return;
-    setUploading(true);
+  const commitImageFiles = async (imageFiles) => {
     try {
+      const started = performance.now();
       const formData = new FormData();
-      Array.from(files).forEach(f => formData.append('images', f));
+      imageFiles.forEach(f => formData.append('images', f));
       const { data } = await api.post('/upload/product', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 });
+      const secs = ((performance.now() - started) / 1000).toFixed(1);
       setImages(prev => [...prev, ...data.images.map((img, i) => ({ ...img, isPrimary: prev.length === 0 && i === 0 }))]);
-      toast.success(`${data.images.length} image(s) uploaded`);
-    } catch (err) { toast.error(err.response?.data?.error || 'Upload failed'); }
-    finally { setUploading(false); e.target.value = ''; }
+      const msg = (a.imagesUploadedIn || '{count} image(s) uploaded in {time}s')
+        .replace('{count}', String(data.images.length))
+        .replace('{time}', secs);
+      toast.success(msg);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Upload failed');
+      throw err;
+    }
   };
 
-  const handleVideoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+  const commitVideoFile = async (file) => {
+    const previewUrl = URL.createObjectURL(file);
+    setVideoPending({ url: previewUrl });
+    const started = performance.now();
     try {
       const formData = new FormData();
       formData.append('video', file);
       const { data } = await api.post('/upload/video', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+      const secs = ((performance.now() - started) / 1000).toFixed(1);
       setVideos(prev => [...prev, { url: data.url, fileId: data.fileId }]);
-      toast.success('Video uploaded');
-    } catch (err) { toast.error(err.response?.data?.error || 'Video upload failed'); }
-    finally { setUploading(false); e.target.value = ''; }
+      URL.revokeObjectURL(previewUrl);
+      setVideoPending(null);
+      toast.success(a.videoUploadedIn.replace('{time}', secs));
+    } catch (err) {
+      URL.revokeObjectURL(previewUrl);
+      setVideoPending(null);
+      toast.error(err.response?.data?.error || 'Video upload failed');
+      throw err;
+    }
+  };
+
+  const handleMediaUpload = async (e) => {
+    const fileList = e.target.files;
+    const input = e.target;
+    if (!fileList?.length) return;
+    const files = Array.from(fileList);
+    input.value = '';
+
+    const imageFiles = files.filter(f => classifyProductMediaFile(f) === 'image');
+    const videoFiles = files.filter(f => classifyProductMediaFile(f) === 'video');
+    const unknown = files.filter(f => classifyProductMediaFile(f) === 'unknown');
+    if (unknown.length) toast.error(a.unsupportedMediaType);
+    if (!imageFiles.length && !videoFiles.length) return;
+
+    setUploading(true);
+    try {
+      if (imageFiles.length) await commitImageFiles(imageFiles);
+      for (const vf of videoFiles) {
+        await commitVideoFile(vf);
+      }
+    } catch {
+      /* errors already toasted in commit* */
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeImage = async (idx) => {
@@ -232,16 +271,24 @@ export default function EditProductPage() {
           <div className="bg-white border border-brand-black/10 p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-medium text-sm tracking-wider uppercase">{a.images} & {a.videoBadge}</h2>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => imgInputRef.current?.click()} disabled={uploading} className="text-xs text-brand-gold hover:underline">{uploading ? '...' : a.uploadImages}</button>
-                <button type="button" onClick={() => vidInputRef.current?.click()} disabled={uploading} className="text-xs text-brand-gold hover:underline">{a.uploadVideo}</button>
+              <div>
+                <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading} className="text-xs text-brand-gold hover:underline">
+                  {uploading ? '...' : a.uploadPhotosOrVideo}
+                </button>
+                <input
+                  ref={mediaInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleMediaUpload}
+                />
               </div>
-              <input ref={imgInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-              <input ref={vidInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
             </div>
-            {images.length === 0 && videos.length === 0 ? (
-              <div className="border-2 border-dashed border-brand-black/10 p-8 text-center cursor-pointer hover:border-brand-gold transition-colors" onClick={() => imgInputRef.current?.click()}>
-                <p className="text-brand-warm-gray text-sm">{a.clickUpload}</p>
+            {images.length === 0 && videos.length === 0 && !videoPending ? (
+              <div className="border-2 border-dashed border-brand-black/10 p-8 text-center cursor-pointer hover:border-brand-gold transition-colors" onClick={() => mediaInputRef.current?.click()}>
+                <p className="text-brand-warm-gray text-sm">{a.clickUploadMedia}</p>
+                <p className="text-xs text-brand-warm-gray mt-1">{a.supportsFormatsMedia}</p>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3">
@@ -255,16 +302,25 @@ export default function EditProductPage() {
                     </div>
                   </div>
                 ))}
+                {videoPending && (
+                  <div key="video-pending" className="relative aspect-square bg-gray-900 overflow-hidden">
+                    <VideoPreviewThumb src={videoPending.url} className="w-full h-full object-cover" />
+                    <span className="absolute top-1 start-1 text-[9px] bg-blue-500 text-white px-1.5 py-0.5">{a.videoBadge}</span>
+                    <div className="absolute inset-0 bg-black/55 flex items-center justify-center px-2 text-center">
+                      <span className="text-white text-xs font-medium">{a.videoUploading}</span>
+                    </div>
+                  </div>
+                )}
                 {videos.map((vid, i) => (
-                  <div key={`v-${i}`} className="relative group aspect-square bg-gray-900">
-                    <video src={vid.url} className="w-full h-full object-cover" muted />
+                  <div key={`v-${i}`} className="relative group aspect-square bg-gray-900 overflow-hidden">
+                    <VideoPreviewThumb src={vid.url} className="w-full h-full object-cover" />
                     <span className="absolute top-1 start-1 text-[9px] bg-blue-500 text-white px-1.5 py-0.5">{a.videoBadge}</span>
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button type="button" onClick={() => removeVideo(i)} className="text-white text-xs bg-red-500 px-2 py-1">✕</button>
                     </div>
                   </div>
                 ))}
-                <div className="aspect-square border-2 border-dashed border-brand-black/10 flex items-center justify-center cursor-pointer hover:border-brand-gold transition-colors" onClick={() => imgInputRef.current?.click()}>
+                <div className="aspect-square border-2 border-dashed border-brand-black/10 flex items-center justify-center cursor-pointer hover:border-brand-gold transition-colors" onClick={() => mediaInputRef.current?.click()}>
                   <span className="text-2xl text-brand-warm-gray">+</span>
                 </div>
               </div>

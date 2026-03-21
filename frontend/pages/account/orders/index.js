@@ -8,6 +8,7 @@ import Layout from '../../../components/layout/Layout';
 import useAuthStore from '../../../store/authStore';
 import api from '../../../lib/api';
 import { formatIQD } from '../../../lib/currency';
+import { useLang } from '../../../contexts/LanguageContext';
 
 const STATUS_COLORS = {
   pending: 'text-amber-600 bg-amber-50',
@@ -23,6 +24,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [page, setPage] = useState(1);
+  const { t, isRTL } = useLang();
 
   useEffect(() => { if (!user) router.push('/login'); }, [user]);
 
@@ -35,16 +37,18 @@ export default function OrdersPage() {
   const orders = data?.orders || [];
   const pages = data?.pages || 1;
 
+  const statusLabel = (s) => (t.status[s] ? t.status[s] : s);
+
   if (!user) return null;
 
   return (
     <Layout>
-      <NextSeo title="My Orders" />
-      <div className="container-luxury py-12">
+      <NextSeo title={t.account.myOrdersNav} />
+      <div className="container-luxury py-12" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="flex items-center gap-3 mb-8">
-          <Link href="/account" className="text-brand-warm-gray hover:text-brand-gold transition-colors text-sm">← Account</Link>
+          <Link href="/account" className="text-brand-warm-gray hover:text-brand-gold transition-colors text-sm">← {t.account.backToAccount}</Link>
         </div>
-        <h1 className="font-display text-4xl font-light mb-10">My Orders</h1>
+        <h1 className="font-display text-4xl font-light mb-10">{t.account.myOrdersNav}</h1>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -52,8 +56,8 @@ export default function OrdersPage() {
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-20">
-            <p className="font-display text-3xl text-brand-warm-gray mb-6">No orders yet</p>
-            <Link href="/products" className="btn-primary">Discover Our Collection</Link>
+            <p className="font-display text-3xl text-brand-warm-gray mb-6">{t.account.noOrders}</p>
+            <Link href="/products" className="btn-primary">{t.account.discoverCollection}</Link>
           </div>
         ) : (
           <div className="space-y-4">
@@ -70,7 +74,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="text-right flex items-center gap-4">
                       <span className={`text-xs px-3 py-1 font-medium ${STATUS_COLORS[order.status] || ''}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {statusLabel(order.status)}
                       </span>
                       <p className="font-medium">{formatIQD(order.total)}</p>
                     </div>
@@ -89,9 +93,13 @@ export default function OrdersPage() {
                         +{order.items.length - 4}
                       </div>
                     )}
-                    <div className="ml-auto text-xs text-brand-warm-gray">
-                      {order.items.length} item{order.items.length > 1 ? 's' : ''}
-                      {order.trackingNumber && <span className="ml-3 text-brand-gold">Track: {order.trackingNumber}</span>}
+                    <div className={`ml-auto text-xs text-brand-warm-gray ${isRTL ? 'mr-auto ml-0' : ''}`}>
+                      {order.items.length} {order.items.length === 1 ? t.account.itemSingular : t.account.itemsPlural}
+                      {order.trackingNumber && (
+                        <span className="ml-3 text-brand-gold">
+                          {t.account.trackPrefix}: {order.trackingNumber}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -139,9 +139,6 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-medium">{formatIQD(order.total)}</span>
-                    <span className={`block text-xs mt-0.5 ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-amber-600'}`}>
-                      {order.paymentStatus}
-                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-1 font-medium ${STATUS_COLORS[order.status] || ''}`}>

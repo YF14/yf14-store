@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from './CartDrawer';
-import AnnouncementBar from './AnnouncementBar';
 
 export default function Layout({ children }) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const isHome = router.pathname === '/';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -14,10 +16,18 @@ export default function Layout({ children }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <AnnouncementBar />
-      <Navbar scrolled={scrolled} />
-      <main className="flex-1 pt-[72px]">{children}</main>
+    <div className="min-h-screen flex flex-col w-full max-w-[100%]">
+      {/* Announcement bar: homepage only (in-page under hero strip). */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex flex-col w-full overflow-x-clip">
+        <Navbar scrolled={scrolled} />
+      </div>
+      <main
+        className={`flex-1 min-w-0 w-full bg-page-lavender ${
+          isHome ? 'pt-0' : 'pt-[118px] lg:pt-[124px]'
+        }`}
+      >
+        {children}
+      </main>
       <Footer />
       <CartDrawer />
     </div>

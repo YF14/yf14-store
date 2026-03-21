@@ -86,7 +86,7 @@ exports.notifyNewOrder = async (order) => {
           await call('sendPhoto', {
             chat_id: CHAT_ID(),
             photo: item.image,
-            caption: `${item.name} — ${item.size} / ${item.color} x${item.quantity}`,
+            caption: `📦 ${order.orderNumber}\n${item.name} — ${item.size} / ${item.color} x${item.quantity}`,
           });
         } catch {}
       }

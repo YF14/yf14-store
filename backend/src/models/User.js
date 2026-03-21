@@ -41,8 +41,9 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Compare password
+// Compare password (Google-only accounts may have no password hash)
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 

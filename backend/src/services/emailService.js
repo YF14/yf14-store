@@ -175,7 +175,6 @@ exports.sendOrderConfirmation = async (order) => {
         <tbody>
           ${itemsHtml}
           <tr><td colspan="3">Shipping</td><td>$${(order.shippingCost ?? 0).toFixed(2)}</td></tr>
-          <tr><td colspan="3">Tax</td><td>$${(order.tax ?? 0).toFixed(2)}</td></tr>
           ${order.promoDiscount ? `<tr><td colspan="3">Discount (${order.promoCode})</td><td>-$${order.promoDiscount.toFixed(2)}</td></tr>` : ''}
           <tr class="total-row"><td colspan="3">Total</td><td>$${order.total.toFixed(2)}</td></tr>
         </tbody>

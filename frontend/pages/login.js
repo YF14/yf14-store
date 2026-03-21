@@ -29,6 +29,8 @@ export default function LoginPage() {
     const result = await login(form.email, form.password);
     if (result.success) {
       router.push(router.query.redirect || '/');
+    } else if (result.code === 'google_sign_in_only') {
+      setError(t.errors.googleSignInOnly);
     } else {
       setError(result.error || t.errors.loginFailed);
     }
@@ -48,7 +50,7 @@ export default function LoginPage() {
           />
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-end pb-16 px-12">
             <Link href="/" className="text-white font-display text-4xl tracking-[0.2em] mb-4">YF14 Store</Link>
-            <p className="text-white/70 text-sm tracking-wider text-center">{t.footer.tagline}</p>
+            <p className="text-white/75 font-display text-base md:text-lg tracking-wide text-center">{t.footer.tagline}</p>
           </div>
         </div>
 

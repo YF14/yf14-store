@@ -7,11 +7,13 @@ import Layout from '../../components/layout/Layout';
 import useAuthStore from '../../store/authStore';
 import api from '../../lib/api';
 import { formatIQD } from '../../lib/currency';
+import { useLang } from '../../contexts/LanguageContext';
 
 export default function AccountPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { t, isRTL } = useLang();
 
   useEffect(() => {
     if (!user) router.push('/login');
@@ -32,14 +34,15 @@ export default function AccountPage() {
     cancelled: 'text-red-600 bg-red-50',
   };
 
+  const statusLabel = (s) => (t.status[s] ? t.status[s] : s);
+
   if (!user) return null;
 
   return (
     <Layout>
-      <NextSeo title="My Account" />
-      <div className="container-luxury py-12">
+      <NextSeo title={t.account.title} />
+      <div className="container-luxury py-12" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="grid md:grid-cols-[240px_1fr] gap-10">
-          {/* Sidebar */}
           <aside>
             <div className="border border-brand-black/10 p-6 mb-4">
               <div className="w-16 h-16 bg-brand-cream rounded-full flex items-center justify-center mb-3 overflow-hidden">
@@ -54,17 +57,17 @@ export default function AccountPage() {
               <p className="font-medium text-sm">{user.firstName} {user.lastName}</p>
               <p className="text-xs text-brand-warm-gray">{user.email}</p>
               {user.role === 'admin' && (
-                <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-brand-gold text-white">Admin</span>
+                <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-brand-gold text-white">{t.account.adminBadge}</span>
               )}
             </div>
             <nav className="space-y-1">
               {[
-                { href: '/account', label: 'Overview' },
-                { href: '/account/orders', label: 'My Orders' },
-                { href: '/account/wishlist', label: 'Wishlist' },
-                { href: '/account/profile', label: 'Profile Settings' },
-                { href: '/account/addresses', label: 'Addresses' },
-                ...(user.role === 'admin' ? [{ href: '/admin', label: '⚡ Admin Panel' }] : []),
+                { href: '/account', label: t.account.overview },
+                { href: '/account/orders', label: t.account.myOrdersNav },
+                { href: '/account/wishlist', label: t.account.wishlist },
+                { href: '/account/profile', label: t.account.profileSettings },
+                { href: '/account/addresses', label: t.account.addressesNav },
+                ...(user.role === 'admin' ? [{ href: '/admin', label: t.account.adminPanelLink }] : []),
               ].map(link => (
                 <Link key={link.href} href={link.href}
                   className={`block px-4 py-2.5 text-sm transition-colors ${
@@ -77,21 +80,19 @@ export default function AccountPage() {
               ))}
               <button onClick={logout}
                 className="block w-full text-left px-4 py-2.5 text-sm text-brand-warm-gray hover:text-red-500 transition-colors">
-                Sign Out
+                {t.account.signOut}
               </button>
             </nav>
           </aside>
 
-          {/* Main */}
           <div>
-            <h1 className="font-display text-4xl font-light mb-8">Welcome back, {user.firstName}</h1>
+            <h1 className="font-display text-4xl font-light mb-8">{t.account.welcomeBack}, {user.firstName}</h1>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-10">
               {[
-                { label: 'Total Orders', value: ordersData?.total || 0 },
-                { label: 'Wishlist Items', value: '—' },
-                { label: 'Member Since', value: new Date(user.createdAt).toLocaleDateString('en', { month: 'short', year: 'numeric' }) },
+                { label: t.account.totalOrdersStat, value: ordersData?.total || 0 },
+                { label: t.account.wishlistItemsStat, value: '—' },
+                { label: t.account.memberSince, value: new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) },
               ].map(stat => (
                 <div key={stat.label} className="border border-brand-black/10 p-5 text-center">
                   <p className="font-display text-3xl font-light mb-1">{stat.value}</p>
@@ -100,16 +101,15 @@ export default function AccountPage() {
               ))}
             </div>
 
-            {/* Recent Orders */}
             <div>
               <div className="flex justify-between items-center mb-5">
-                <h2 className="font-display text-2xl font-light">Recent Orders</h2>
-                <Link href="/account/orders" className="btn-ghost text-xs">View All →</Link>
+                <h2 className="font-display text-2xl font-light">{t.account.recentOrdersTitle}</h2>
+                <Link href="/account/orders" className="btn-ghost text-xs">{t.account.viewAllArrow}</Link>
               </div>
               {recentOrders.length === 0 ? (
                 <div className="border border-brand-black/10 p-10 text-center">
-                  <p className="text-brand-warm-gray mb-4">No orders yet</p>
-                  <Link href="/products" className="btn-primary">Start Shopping</Link>
+                  <p className="text-brand-warm-gray mb-4">{t.account.noOrders}</p>
+                  <Link href="/products" className="btn-primary">{t.account.startShopping}</Link>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -118,11 +118,14 @@ export default function AccountPage() {
                       className="flex items-center justify-between border border-brand-black/10 p-4 hover:border-brand-gold transition-colors group">
                       <div>
                         <p className="text-sm font-medium group-hover:text-brand-gold transition-colors">{order.orderNumber}</p>
-                        <p className="text-xs text-brand-warm-gray">{new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-brand-warm-gray">
+                          {new Date(order.createdAt).toLocaleDateString('en-US')} · {order.items.length}{' '}
+                          {order.items.length === 1 ? t.account.itemSingular : t.account.itemsPlural}
+                        </p>
                       </div>
                       <div className="text-right">
                         <span className={`text-xs px-2 py-1 rounded-sm font-medium ${statusColor[order.status] || 'text-gray-600 bg-gray-50'}`}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          {statusLabel(order.status)}
                         </span>
                         <p className="text-sm font-medium mt-1">{formatIQD(order.total)}</p>
                       </div>

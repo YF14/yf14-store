@@ -10,14 +10,29 @@ const imagekit = new ImageKit({
 
 const memoryStorage = multer.memoryStorage();
 
+const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.heic', '.heif', '.bmp', '.svg', '.tif', '.tiff']);
+const VIDEO_EXT = new Set(['.mp4', '.m4v', '.webm', '.mov', '.mkv', '.avi', '.ogv', '.flv', '.wmv']);
+
 const imageFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) cb(null, true);
-  else cb(new Error('Only image files are allowed'), false);
+  const mime = (file.mimetype || '').toLowerCase();
+  if (mime.startsWith('video/')) {
+    return cb(new Error('Only image files are allowed'), false);
+  }
+  if (mime.startsWith('image/')) return cb(null, true);
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  if (IMAGE_EXT.has(ext)) return cb(null, true);
+  cb(new Error('Only image files are allowed'), false);
 };
 
 const videoFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('video/')) cb(null, true);
-  else cb(new Error('Only video files are allowed'), false);
+  const mime = (file.mimetype || '').toLowerCase();
+  if (mime.startsWith('image/')) {
+    return cb(new Error('Only video files are allowed'), false);
+  }
+  if (mime.startsWith('video/')) return cb(null, true);
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  if (VIDEO_EXT.has(ext)) return cb(null, true);
+  cb(new Error('Only video files are allowed'), false);
 };
 
 const uploadProduct = multer({
@@ -29,6 +44,13 @@ const uploadProduct = multer({
 const uploadAvatar = multer({
   storage: memoryStorage,
   limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: imageFilter,
+});
+
+/** Store logo / branding (larger than avatar). */
+const uploadLogo = multer({
+  storage: memoryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: imageFilter,
 });
 
@@ -56,6 +78,7 @@ module.exports = {
   imagekit,
   uploadProduct,
   uploadAvatar,
+  uploadLogo,
   uploadVideo,
   uploadToImageKit,
   deleteFromImageKit,
