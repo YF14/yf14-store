@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, requireAdminOrPermission } = require('../middleware/auth');
 const Color = require('../models/Color');
 
 router.get('/', async (req, res) => {
@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', protect, adminOnly, async (req, res) => {
+router.post('/', protect, requireAdminOrPermission('products'), async (req, res) => {
   try {
     const { name, code } = req.body;
     if (!name || !code) return res.status(400).json({ error: 'Name and code are required' });
@@ -21,7 +21,7 @@ router.post('/', protect, adminOnly, async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.delete('/:id', protect, adminOnly, async (req, res) => {
+router.delete('/:id', protect, requireAdminOrPermission('products'), async (req, res) => {
   try {
     await Color.findByIdAndDelete(req.params.id);
     res.json({ message: 'Color deleted from palette' });

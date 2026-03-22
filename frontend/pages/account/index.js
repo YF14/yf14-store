@@ -6,6 +6,7 @@ import { NextSeo } from 'next-seo';
 import Layout from '../../components/layout/Layout';
 import useAuthStore from '../../store/authStore';
 import api from '../../lib/api';
+import { canAccessAdmin, getDefaultAdminPath } from '../../lib/adminAccess';
 import { formatIQD } from '../../lib/currency';
 import { useLang } from '../../contexts/LanguageContext';
 
@@ -59,6 +60,9 @@ export default function AccountPage() {
               {user.role === 'admin' && (
                 <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-brand-gold text-white">{t.account.adminBadge}</span>
               )}
+              {user.role === 'staff' && (
+                <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-indigo-700 text-white">{t.account.staffBadge}</span>
+              )}
             </div>
             <nav className="space-y-1">
               {[
@@ -67,7 +71,7 @@ export default function AccountPage() {
                 { href: '/account/wishlist', label: t.account.wishlist },
                 { href: '/account/profile', label: t.account.profileSettings },
                 { href: '/account/addresses', label: t.account.addressesNav },
-                ...(user.role === 'admin' ? [{ href: '/admin', label: t.account.adminPanelLink }] : []),
+                ...(canAccessAdmin(user) ? [{ href: getDefaultAdminPath(user), label: t.account.adminPanelLink }] : []),
               ].map(link => (
                 <Link key={link.href} href={link.href}
                   className={`block px-4 py-2.5 text-sm transition-colors ${

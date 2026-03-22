@@ -7,6 +7,7 @@ import { NextSeo } from 'next-seo';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import AdminLayout from '../../components/admin/AdminLayout';
 import useAuthStore from '../../store/authStore';
+import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import { formatIQD } from '../../lib/currency';
@@ -42,15 +43,16 @@ export default function AdminDashboard() {
   const st = t.status;
 
   useEffect(() => {
-    if (user && user.role !== 'admin') router.push('/');
     if (!user) router.push('/login');
-  }, [user]);
+    else if (!canAccessAdmin(user)) router.push('/');
+    else if (!hasAdminPermission(user, 'dashboard')) router.replace(getDefaultAdminPath(user));
+  }, [user, router]);
 
-  const enabled = !!user && user.role === 'admin';
+  const enabled = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'dashboard');
   const { data } = useQuery('admin-dashboard', () => api.get('/analytics/dashboard').then((r) => r.data), { enabled });
   const { data: chartData } = useQuery('revenue-chart', () => api.get('/analytics/revenue-chart?days=30').then((r) => r.data), { enabled });
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'dashboard')) return null;
 
   const stats = data || {};
   const chart = chartData?.data || [];
@@ -160,7 +162,7 @@ export default function AdminDashboard() {
               {stats.lowStock.slice(0, 6).map((product) => (
                 <Link
                   key={product._id}
-                  href={`/admin/products/${product._id}/edit`}
+                  href="/admin/stock"
                   className="flex items-center gap-3 bg-white border border-amber-200 p-3 hover:border-amber-400 transition-colors"
                 >
                   <span className="text-amber-600 text-lg">⚠</span>

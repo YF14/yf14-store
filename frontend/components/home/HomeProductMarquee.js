@@ -1,20 +1,39 @@
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from 'react-query';
 import api from '../../lib/api';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
+import { pickListingImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
 
 function MarqueeCard({ product }) {
-  const primaryImg =
-    product.images?.find((img) => img.isPrimary)?.url || product.images?.[0]?.url;
+  const [hovered, setHovered] = useState(false);
+  const videoRef = useRef(null);
+  const primaryImg = pickListingImageUrl(product);
+  const videoUrl = pickListingVideoUrl(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
 
+  const handleMouseEnter = () => {
+    setHovered(true);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (videoRef.current) videoRef.current.pause();
+  };
+
   return (
     <Link
       href={`/products/${product.slug}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="group flex-shrink-0 w-[170px] h-[240px] rounded-xl overflow-hidden relative bg-[#0f0f1a] block ring-1 ring-white/10 hover:ring-[#c084fc]/30 transition-all duration-300"
     >
       <div className="absolute inset-0">
@@ -23,14 +42,29 @@ function MarqueeCard({ product }) {
             src={primaryImg}
             alt={product.name}
             fill
-            className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+            className={`object-cover object-top transition-transform duration-500 ${
+              videoUrl ? 'scale-100' : 'group-hover:scale-[1.04]'
+            }`}
             sizes="170px"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />
         )}
+        {videoUrl && (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${
+              hovered ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        )}
       </div>
-      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-[2]">
         {discount > 0 && (
           <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#db2777] text-white">
             −{discount}%
@@ -46,8 +80,11 @@ function MarqueeCard({ product }) {
             Best seller
           </span>
         )}
+        {videoUrl && (
+          <span className="text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">▶ Video</span>
+        )}
       </div>
-      <div className="absolute bottom-0 left-0 right-0 z-10 pt-10 pb-2.5 px-2.5 bg-gradient-to-t from-black/75 via-black/35 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-[2] pt-10 pb-2.5 px-2.5 bg-gradient-to-t from-black/75 via-black/35 to-transparent">
         <p className="text-white text-xs font-medium line-clamp-2 leading-snug mb-0.5 group-hover:text-[#e9d5ff] transition-colors">
           {product.name}
         </p>
@@ -67,8 +104,10 @@ export default function HomeProductMarquee() {
   const h = t.home;
   const s = t.shop;
 
-  const { data, isLoading } = useQuery(['home-marquee-products'], () =>
-    api.get('/products?sort=-createdAt&page=1&limit=20').then((r) => r.data)
+  const { data, isLoading } = useQuery(['home-marquee-products', 'featured'], () =>
+    api
+      .get('/products?filter=featured&sort=featuredSortOrder&page=1&limit=24')
+      .then((r) => r.data)
   );
 
   const products = data?.products || [];
@@ -94,7 +133,7 @@ export default function HomeProductMarquee() {
             </span>
           )}
           <Link
-            href="/products"
+            href="/featured"
             className="inline-flex items-center rounded-lg bg-[#a855c8] px-5 py-2.5 text-xs font-body text-[#fdf0ff] tracking-wide hover:bg-[#9333b8] transition-colors shadow-sm"
           >
             {h.shopAllCta}

@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import AdminLayout from '../../components/admin/AdminLayout';
 import useAuthStore from '../../store/authStore';
+import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import { formatIQD } from '../../lib/currency';
@@ -31,10 +32,12 @@ export default function AdminAnalyticsPage() {
   const [days, setDays] = useState(30);
 
   useEffect(() => {
-    if (user && user.role !== 'admin') router.push('/');
-  }, [user]);
+    if (!user) router.push('/login');
+    else if (!canAccessAdmin(user)) router.push('/');
+    else if (!hasAdminPermission(user, 'analytics')) router.replace(getDefaultAdminPath(user));
+  }, [user, router]);
 
-  const enabled = !!user && user.role === 'admin';
+  const enabled = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'analytics');
 
   const { data: dashData } = useQuery('admin-dashboard', () => api.get('/analytics/dashboard').then((r) => r.data), { enabled });
   const { data: chartData } = useQuery(['chart', days], () => api.get(`/analytics/revenue-chart?days=${days}`).then((r) => r.data), { enabled });
@@ -59,7 +62,7 @@ export default function AdminAnalyticsPage() {
     { label: a.days90, value: 90 },
   ];
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'analytics')) return null;
 
   return (
     <AdminLayout>

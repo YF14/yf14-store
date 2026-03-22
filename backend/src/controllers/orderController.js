@@ -4,6 +4,7 @@ const PromoCode = require('../models/PromoCode');
 const Cart = require('../models/Cart');
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
+const { recordAudit } = require('../services/auditService');
 
 /** Flat delivery (IQD); optional env override. Frontend `lib/deliveryFee.js` should match. */
 const DELIVERY_FEE_IQD = Number(process.env.DELIVERY_FEE_IQD) || 5000;
@@ -277,10 +278,17 @@ exports.updateOrderStatus = async (req, res, next) => {
     const { status, note } = req.body;
     const order = await Order.findById(req.params.id).populate('user', 'firstName lastName email');
     if (!order) return res.status(404).json({ error: 'Order not found' });
+    const fromStatus = order.status;
     order.status = status;
     order.statusHistory.push({ status, note, updatedBy: req.user.id });
     if (status === 'delivered') order.deliveredAt = new Date();
     await order.save();
+    await recordAudit(req, 'order.status_updated', {
+      entityType: 'order',
+      entityId: order._id,
+      entityLabel: order.orderNumber,
+      details: { from: fromStatus, to: status, note: note || '' },
+    });
     await emailService.sendOrderStatusUpdate(order);
     res.json({ order });
   } catch (err) { next(err); }
@@ -289,8 +297,26 @@ exports.updateOrderStatus = async (req, res, next) => {
 exports.updateTracking = async (req, res, next) => {
   try {
     const { trackingNumber, shippingCarrier, estimatedDelivery } = req.body;
-    const order = await Order.findByIdAndUpdate(req.params.id, { trackingNumber, shippingCarrier, estimatedDelivery }, { new: true });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const prev = await Order.findById(req.params.id).select('orderNumber trackingNumber shippingCarrier estimatedDelivery').lean();
+    if (!prev) return res.status(404).json({ error: 'Order not found' });
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { trackingNumber, shippingCarrier, estimatedDelivery },
+      { new: true }
+    );
+    await recordAudit(req, 'order.tracking_updated', {
+      entityType: 'order',
+      entityId: order._id,
+      entityLabel: order.orderNumber,
+      details: {
+        before: {
+          trackingNumber: prev.trackingNumber,
+          shippingCarrier: prev.shippingCarrier,
+          estimatedDelivery: prev.estimatedDelivery,
+        },
+        after: { trackingNumber, shippingCarrier, estimatedDelivery },
+      },
+    });
     res.json({ order });
   } catch (err) { next(err); }
 };

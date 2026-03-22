@@ -1,16 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, requireAdminOrPermissionAny, requireAdminOrPermission } = require('../middleware/auth');
+const activityController = require('../controllers/activityController');
 
-// All admin routes require auth + admin role
-router.use(protect, adminOnly);
-
-// Re-export dashboard stats from analytics
-const analyticsRouter = require('./analytics');
-router.use('/analytics', analyticsRouter);
+router.use(
+  protect,
+  requireAdminOrPermissionAny(
+    'dashboard',
+    'analytics',
+    'products',
+    'categories',
+    'sales',
+    'featured',
+    'newArrivals',
+    'stock',
+    'orders',
+    'users',
+    'promos',
+    'settings',
+    'activity'
+  )
+);
 
 router.get('/health', (req, res) => {
   res.json({ status: 'Admin API OK', user: req.user.email });
 });
+
+router.get('/activity', requireAdminOrPermission('activity'), activityController.listActivity);
 
 module.exports = router;

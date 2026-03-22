@@ -1,27 +1,28 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLang } from '../../contexts/LanguageContext';
+import { useStoreSettings } from '../../hooks/useStoreSettings';
 
 export default function AnnouncementBar() {
-  const [visible, setVisible] = useState(true);
   const [msgIdx, setMsgIdx] = useState(0);
   const { isRTL } = useLang();
+  const { data, isFetched } = useStoreSettings();
 
-  const messages = isRTL
-    ? [
-        'التوصيل لبغداد و5 محافظات',
-        'وصلت مجموعات جديدة كل أسبوع',
-        'للطلب راسلينا عبر الدايركت على إنستغرام',
-      ]
-    : [
-        'Delivery to Baghdad & 5 provinces',
-        'New collections arrive every week',
-        'Order via Instagram DM — @yf14_store',
-      ];
+  /** After settings load: show API lines only. Empty (cleared in admin) = hide bar — no client fallback. */
+  const messages = useMemo(() => {
+    if (!isFetched) return [];
+    const raw = isRTL ? data?.announcementMessagesAr : data?.announcementMessagesEn;
+    if (!Array.isArray(raw)) return [];
+    return raw.map((s) => String(s).trim()).filter(Boolean);
+  }, [data, isRTL, isFetched]);
 
-  if (!visible) return null;
+  useEffect(() => {
+    setMsgIdx((i) => (messages.length ? Math.min(i, messages.length - 1) : 0));
+  }, [messages.length]);
 
-  const prev = () => setMsgIdx(i => (i - 1 + messages.length) % messages.length);
-  const next = () => setMsgIdx(i => (i + 1) % messages.length);
+  if (messages.length === 0) return null;
+
+  const prev = () => setMsgIdx((i) => (i - 1 + messages.length) % messages.length);
+  const next = () => setMsgIdx((i) => (i + 1) % messages.length);
 
   return (
     <div className="h-9 w-full max-w-full min-w-0 overflow-x-clip flex shrink-0 items-center justify-between bg-gradient-to-r from-[#8b2be2] via-[#7c3aed] to-[#8b2be2] px-4 md:px-8">

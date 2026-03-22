@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, requireAdminOrPermission } = require('../middleware/auth');
 const StoreSettings = require('../models/StoreSettings');
 const {
   uploadProduct,
@@ -12,7 +12,7 @@ const {
 } = require('../config/imagekit');
 
 // Upload up to 10 product images
-router.post('/product', protect, adminOnly, uploadProduct.array('images', 10), async (req, res) => {
+router.post('/product', protect, requireAdminOrPermission('products'), uploadProduct.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
@@ -34,7 +34,7 @@ router.post('/product', protect, adminOnly, uploadProduct.array('images', 10), a
 });
 
 // Store logo → ImageKit + MongoDB (replaces previous logo file when possible)
-router.post('/store-logo', protect, adminOnly, uploadLogo.single('logo'), async (req, res) => {
+router.post('/store-logo', protect, requireAdminOrPermission('settings'), uploadLogo.single('logo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const prev = await StoreSettings.findOne({ key: 'site' });
@@ -70,7 +70,7 @@ router.post('/avatar', protect, uploadAvatar.single('avatar'), async (req, res) 
 });
 
 // Upload a single product video
-router.post('/video', protect, adminOnly, uploadVideo.single('video'), async (req, res) => {
+router.post('/video', protect, requireAdminOrPermission('products'), uploadVideo.single('video'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const result = await uploadToImageKit(req.file.buffer, req.file.originalname, '/yf14-store/videos');
@@ -81,7 +81,7 @@ router.post('/video', protect, adminOnly, uploadVideo.single('video'), async (re
 });
 
 // Delete an image by fileId
-router.delete('/image', protect, adminOnly, async (req, res) => {
+router.delete('/image', protect, requireAdminOrPermission('products'), async (req, res) => {
   try {
     const { fileId } = req.body;
     if (!fileId) return res.status(400).json({ error: 'fileId required' });
@@ -93,7 +93,7 @@ router.delete('/image', protect, adminOnly, async (req, res) => {
 });
 
 // Delete a video by fileId
-router.delete('/video', protect, adminOnly, async (req, res) => {
+router.delete('/video', protect, requireAdminOrPermission('products'), async (req, res) => {
   try {
     const { fileId } = req.body;
     if (!fileId) return res.status(400).json({ error: 'fileId required' });

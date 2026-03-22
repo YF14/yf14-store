@@ -6,21 +6,24 @@ import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { formatIQD } from '../../lib/currency';
+import { pickListingImageUrl, pickListingSecondImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
+import { useLang } from '../../contexts/LanguageContext';
 
 const DEFAULT_IMAGE_SIZES = '(max-width: 640px) 50vw, 33vw';
 
 export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_IMAGE_SIZES }) {
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef(null);
+  const { t } = useLang();
   const toggle = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.isWishlisted(product._id));
   const user = useAuthStore((s) => s.user);
 
   if (!product) return null;
 
-  const primaryImg = product.images?.find(img => img.isPrimary)?.url || product.images?.[0]?.url;
-  const hoverImg = product.images?.[1]?.url;
-  const videoUrl = product.videos?.[0]?.url;
+  const primaryImg = pickListingImageUrl(product);
+  const hoverImg = pickListingSecondImageUrl(product);
+  const videoUrl = pickListingVideoUrl(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;

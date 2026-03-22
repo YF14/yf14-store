@@ -6,7 +6,13 @@ const categorySchema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true, lowercase: true },
   description: String,
   image: { url: String, publicId: String },
+  /** Optional emoji shown in admin category list */
+  icon: { type: String, default: '', trim: true },
   parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+  /** Short label shown in admin (e.g. SALE, NEW) — optional storefront use later */
+  flag: { type: String, default: '', trim: true, maxlength: 32 },
+  /** Highlight category in admin / future nav emphasis */
+  isFeatured: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
   seoTitle: String,

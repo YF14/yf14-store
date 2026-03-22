@@ -66,16 +66,16 @@ export default function CartDrawer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm touch-manipulation"
           />
           <motion.div
             {...slideDir}
             transition={{ type: 'tween', duration: 0.35 }}
             dir={isRTL ? 'rtl' : 'ltr'}
-            className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-full w-full max-w-md bg-white z-50 flex flex-col shadow-2xl`}
+            className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-[100dvh] max-h-[100dvh] w-full max-w-md bg-white z-50 flex flex-col shadow-2xl pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-manipulation`}
           >
             {/* Header — close always visible (incl. empty cart) */}
-            <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-brand-black/10 shrink-0">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-brand-black/10 shrink-0">
               <h2 className="font-display text-xl font-light tracking-wide min-w-0">
                 {t.cart.title}
                 {items.length > 0 && (

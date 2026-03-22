@@ -52,6 +52,9 @@ body {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(26, 26, 26, 0.35) transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(139, 43, 226, 0.12);
 }
 
 /* Next root — avoid horizontal scroll from transformed / w-max children (e.g. marquee) */
@@ -136,7 +139,12 @@ h1, h2, h3, h4 {
 
   /* ─ Container — wide layout so grid + nav use more of the viewport ─ */
   .container-luxury {
-    @apply w-full max-w-[min(100%,1920px)] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10;
+    @apply w-full max-w-[min(100%,1920px)] mx-auto px-3.5 sm:px-6 lg:px-8 xl:px-10;
+  }
+
+  /* Mobile: avoid 300ms click delay; comfortable tap targets in nav */
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 
   /* ─ Section titles ─ */
@@ -156,7 +164,7 @@ h1, h2, h3, h4 {
 
   /* ─ Input ─ */
   .input-luxury {
-    @apply w-full px-4 py-3 border bg-white text-sm font-body placeholder-brand-warm-gray focus:outline-none transition-all duration-200;
+    @apply w-full min-h-[44px] px-4 py-3 border bg-white text-base sm:text-sm font-body placeholder-brand-warm-gray focus:outline-none transition-all duration-200;
     border-color: var(--border);
     color: var(--black);
   }

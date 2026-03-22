@@ -61,7 +61,9 @@ export default function Footer() {
     { label: t.nav.maxi, href: '/products?category=maxi-dresses' },
     { label: t.nav.mini, href: '/products?category=mini-dresses' },
     { label: t.nav.summer, href: '/products?category=summer-dresses' },
-    { label: t.nav.newArrivals, href: '/products?filter=new' },
+    { label: t.nav.featured, href: '/featured' },
+    { label: t.nav.newArrivals, href: '/new-arrivals' },
+    { label: t.nav.sale, href: '/sale' },
   ];
 
   const careLinks = [
@@ -197,7 +199,7 @@ export default function Footer() {
           aria-hidden
         />
         <div
-          className={`container-luxury flex flex-col sm:flex-row items-center justify-between gap-3 py-4 md:py-5 ${
+          className={`container-luxury flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 md:pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] ${
             isRTL ? 'sm:flex-row-reverse' : ''
           }`}
         >

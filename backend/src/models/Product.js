@@ -26,6 +26,16 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true, min: 0 },
   comparePrice: { type: Number }, // original price (for sale)
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  /** Display order within category (lower = earlier). Used on shop when sorting by category order. */
+  categorySortOrder: { type: Number, default: 0 },
+  /** Order on /sale when sorting by sale order (admin “Sales” panel). */
+  saleSortOrder: { type: Number, default: 0 },
+  /** Order on /featured when sorting by curated order (admin Featured panel). */
+  featuredSortOrder: { type: Number, default: 0 },
+  /** Order on /new-arrivals when sorting by curated order (admin New arrivals panel). */
+  newArrivalSortOrder: { type: Number, default: 0 },
+  /** Set when any variant stock is updated (admin stock page ordering). */
+  lastStockUpdateAt: { type: Date },
   tags: [String],
   images: [{
     url: { type: String, required: true },
@@ -33,11 +43,14 @@ const productSchema = new mongoose.Schema({
     fileId: String,
     alt: String,
     isPrimary: { type: Boolean, default: false },
+    /** Empty = shared for all colors; otherwise must match variant `color` name. */
+    color: { type: String, default: '', trim: true },
   }],
   videos: [{
     url: { type: String, required: true },
     fileId: String,
     thumbnail: String,
+    color: { type: String, default: '', trim: true },
   }],
   variants: [variantSchema],
   reviews: [reviewSchema],
@@ -47,6 +60,8 @@ const productSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   isFeatured: { type: Boolean, default: false },
   isNewArrival: { type: Boolean, default: false },
+  /** Legacy; sale listing and badges use comparePrice > price only. */
+  isOnSale: { type: Boolean, default: false },
   isBestSeller: { type: Boolean, default: false },
   material: String,
   careInstructions: String,
@@ -58,6 +73,10 @@ const productSchema = new mongoose.Schema({
 // Indexes
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, isActive: 1 });
+productSchema.index({ category: 1, categorySortOrder: 1 });
+productSchema.index({ saleSortOrder: 1 });
+productSchema.index({ isFeatured: 1, featuredSortOrder: 1 });
+productSchema.index({ isNewArrival: 1, newArrivalSortOrder: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ averageRating: -1 });
 productSchema.index({ totalSold: -1 });

@@ -28,15 +28,43 @@ function isAuthPublicPath(url) {
   );
 }
 
+/** zustand persist key — must match authStore `name` */
+const AUTH_PERSIST_KEY = 'auth-store';
+
+function clearPersistedAuth() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem(AUTH_PERSIST_KEY);
+}
+
+/** Refresh failed before we got an HTTP response (timeout, offline, CORS, etc.) */
+function isRefreshLikelyTransient(err) {
+  if (!err) return true;
+  if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK') return true;
+  if (err.message === 'Network Error') return true;
+  if (!err.response) return true;
+  return false;
+}
+
 // Handle 401 — refresh token or redirect (never for login/register)
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    const baseHint =
+      typeof window !== 'undefined'
+        ? (api.defaults.baseURL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
+        : '';
     if (err.code === 'ECONNABORTED') {
-      err.message = 'انتهت مهلة الاتصال — تحقق من الإنترنت أو إعدادات API';
+      err.message =
+        'انتهت مهلة الاتصال — تحقق من الإنترنت أو أن الخادم يعمل.\nConnection timed out — check your network or that the server is running.' +
+        (baseHint ? `\nAPI: ${baseHint}` : '');
     }
     if (err.message === 'Network Error') {
-      err.message = 'تعذر الاتصال بالخادم — تحقق من الرابط أو أن الخادم يعمل';
+      err.message =
+        'تعذر الاتصال بالخادم — شغّل الواجهة الخلفية (مثلاً: مجلد backend ثم npm run dev) وتأكد من NEXT_PUBLIC_API_URL في .env.local\n' +
+        'Could not connect — start the API (backend: npm run dev on port 5000) and check NEXT_PUBLIC_API_URL in frontend/.env.local' +
+        (baseHint ? `\nTrying: ${baseHint}` : '');
     }
     const original = err.config;
     const requestUrl = original?.url || '';
@@ -57,10 +85,19 @@ api.interceptors.response.use(
           original.headers.Authorization = `Bearer ${data.token}`;
           return api(original);
         }
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        if (typeof window !== 'undefined') window.location.href = '/login';
+      } catch (refreshErr) {
+        // Never sign the user out on flaky network — only when refresh is explicitly rejected.
+        if (isRefreshLikelyTransient(refreshErr)) {
+          return Promise.reject(refreshErr);
+        }
+        const st = refreshErr.response?.status;
+        if (st === 401 || st === 403) {
+          clearPersistedAuth();
+          if (typeof window !== 'undefined') window.location.href = '/login';
+          return Promise.reject(refreshErr);
+        }
+        // 5xx or other — keep session; caller may retry
+        return Promise.reject(refreshErr);
       }
     }
     return Promise.reject(err);

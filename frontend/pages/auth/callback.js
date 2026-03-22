@@ -6,7 +6,6 @@ import { useLang } from '../../contexts/LanguageContext';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const setUser = useAuthStore((s) => s.setUser);
   const { t, isRTL } = useLang();
 
   useEffect(() => {
@@ -25,17 +24,23 @@ export default function AuthCallbackPage() {
       return;
     }
 
+    const rt = refreshToken || null;
     localStorage.setItem('token', token);
-    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    if (rt) localStorage.setItem('refreshToken', rt);
 
     api.get('/auth/me')
       .then(({ data }) => {
-        setUser(data.user);
+        useAuthStore.setState({
+          user: data.user,
+          token: String(token),
+          refreshToken: rt,
+        });
         router.replace('/');
       })
       .catch(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        useAuthStore.setState({ user: null, token: null, refreshToken: null });
         router.replace('/login?error=google_failed');
       });
   }, [router.isReady]);

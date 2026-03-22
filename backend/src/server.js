@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
@@ -11,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { requestContext, accessLog } = require('./middleware/requestLog');
 const emailService = require('./services/emailService');
 
 // Route imports
@@ -66,18 +66,39 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 
-// CORS
+// CORS — production: only FRONTEND_URL (comma-separated allowed). Dev: any localhost / 127.0.0.1 port
+// (Next often uses 3001 if 3000 is taken; a single fixed origin caused "Network Error" in the browser.)
+function buildCorsOrigin() {
+  const listed = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (listed.includes(origin)) return callback(null, true);
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const { hostname } = new URL(origin);
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return callback(null, true);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    callback(new Error('Not allowed by CORS'));
+  };
+}
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: buildCorsOrigin(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
 }));
 
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+app.use(requestContext);
+app.use(accessLog);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -135,7 +156,10 @@ app.use('/api/settings', settingsRoutes);
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({
+    error: 'Route not found',
+    ...(req.requestId && { requestId: req.requestId }),
+  });
 });
 
 // Global error handler
@@ -153,9 +177,22 @@ const server = app.listen(PORT, () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Rejection:', err);
+process.on('unhandledRejection', (reason) => {
+  logger.error({
+    message: 'Unhandled Rejection',
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
   server.close(() => process.exit(1));
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error({
+    message: 'Uncaught Exception',
+    err: err.message,
+    stack: err.stack,
+  });
+  process.exit(1);
 });
 
 module.exports = app;

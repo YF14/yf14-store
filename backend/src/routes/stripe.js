@@ -3,6 +3,8 @@ const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { protect } = require('../middleware/auth');
 const Order = require('../models/Order');
+const logger = require('../config/logger');
+const stripeLog = logger.createScopedLogger('stripe');
 
 // Create payment intent
 router.post('/create-payment-intent', protect, async (req, res) => {
@@ -24,6 +26,11 @@ router.post('/webhook', async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
+    stripeLog.warn({
+      message: 'Stripe webhook signature failed',
+      requestId: req.requestId,
+      err: err.message,
+    });
     return res.status(400).json({ error: `Webhook error: ${err.message}` });
   }
 
@@ -49,6 +56,13 @@ router.post('/webhook', async (req, res) => {
       break;
     }
   }
+
+  stripeLog.info({
+    message: 'Stripe webhook handled',
+    type: event.type,
+    eventId: event.id,
+    requestId: req.requestId,
+  });
   res.json({ received: true });
 });
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, requireAdminOrPermission } = require('../middleware/auth');
 const PromoCode = require('../models/PromoCode');
 
 router.post('/validate', protect, async (req, res) => {
@@ -16,26 +16,26 @@ router.post('/validate', protect, async (req, res) => {
 });
 
 // Admin CRUD
-router.get('/', protect, adminOnly, async (req, res) => {
+router.get('/', protect, requireAdminOrPermission('promos'), async (req, res) => {
   const promos = await PromoCode.find().sort('-createdAt');
   res.json({ promos });
 });
 
-router.post('/', protect, adminOnly, async (req, res) => {
+router.post('/', protect, requireAdminOrPermission('promos'), async (req, res) => {
   try {
     const promo = await PromoCode.create(req.body);
     res.status(201).json({ promo });
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.put('/:id', protect, adminOnly, async (req, res) => {
+router.put('/:id', protect, requireAdminOrPermission('promos'), async (req, res) => {
   try {
     const promo = await PromoCode.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json({ promo });
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-router.delete('/:id', protect, adminOnly, async (req, res) => {
+router.delete('/:id', protect, requireAdminOrPermission('promos'), async (req, res) => {
   await PromoCode.findByIdAndDelete(req.params.id);
   res.json({ message: 'Promo code deleted' });
 });

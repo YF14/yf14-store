@@ -59,27 +59,49 @@ const useAuthStore = create(
         } catch {}
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('auth-store');
         set({ user: null, token: null, refreshToken: null });
         toast.success('Logged out successfully');
       },
 
       fetchMe: async () => {
-        if (!localStorage.getItem('token')) return;
+        const token =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('token') || get().token
+            : null;
+        if (!token) return;
         try {
           const { data } = await api.get('/auth/me');
           set({ user: data.user });
-        } catch {
-          localStorage.removeItem('token');
-          set({ user: null });
+        } catch (err) {
+          // Only drop the session when the server rejects the token (401).
+          // Network errors, timeouts, or API down must NOT wipe login — that felt like random sign-out.
+          if (err.response?.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('auth-store');
+            set({ user: null, token: null, refreshToken: null });
+          }
         }
       },
 
       isAdmin: () => get().user?.role === 'admin',
+      /** Full super-admin or staff with at least one admin area */
+      canAccessAdmin: () => {
+        const u = get().user;
+        if (!u) return false;
+        if (u.role === 'admin') return true;
+        return u.role === 'staff' && Array.isArray(u.adminPermissions) && u.adminPermissions.length > 0;
+      },
       isAuthenticated: () => !!get().user,
     }),
     {
       name: 'auth-store',
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        refreshToken: state.refreshToken,
+      }),
     }
   )
 );

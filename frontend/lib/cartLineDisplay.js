@@ -1,3 +1,5 @@
+import { pickImageUrlForVariantColor } from './productMedia';
+
 /**
  * Normalize cart line for UI: name, color, size, swatch, image.
  * Works for server cart (populated product + variants) and guest cart (flat fields).
@@ -11,6 +13,7 @@ export function resolveCartLineDisplay(item) {
   const color = String(item.color || variant?.color || '').trim();
   const size = String(item.size || variant?.size || '').trim();
   const colorCode = item.colorCode || variant?.colorCode || '';
-  const imageUrl = product?.images?.[0]?.url || item.image || '';
+  const imageUrl =
+    pickImageUrlForVariantColor(product, color, item.image) || item.image || '';
   return { name, color, size, colorCode, imageUrl };
 }

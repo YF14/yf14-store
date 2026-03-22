@@ -5,6 +5,7 @@ import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import useAuthStore from '../../../store/authStore';
+import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../../lib/adminAccess';
 import { useLang } from '../../../contexts/LanguageContext';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
@@ -32,8 +33,10 @@ export default function AdminOrdersPage() {
   const [updating, setUpdating] = useState(null);
 
   useEffect(() => {
-    if (user && user.role !== 'admin') router.push('/');
-  }, [user]);
+    if (!user) router.push('/login');
+    else if (!canAccessAdmin(user)) router.push('/');
+    else if (!hasAdminPermission(user, 'orders')) router.replace(getDefaultAdminPath(user));
+  }, [user, router]);
 
   const { data, isLoading, refetch } = useQuery(
     ['admin-orders', page, statusFilter, search],
@@ -43,7 +46,7 @@ export default function AdminOrdersPage() {
       if (search) params.append('search', search);
       return api.get(`/orders?${params}`).then((r) => r.data);
     },
-    { enabled: !!user && user.role === 'admin', keepPreviousData: true }
+    { enabled: !!user && canAccessAdmin(user) && hasAdminPermission(user, 'orders'), keepPreviousData: true }
   );
 
   const orders = data?.orders || [];
@@ -63,7 +66,7 @@ export default function AdminOrdersPage() {
     }
   };
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'orders')) return null;
 
   return (
     <AdminLayout>

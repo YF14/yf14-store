@@ -1,6 +1,7 @@
 const logger = require('../config/logger');
 
 const errorHandler = (err, req, res, next) => {
+  const requestId = req.requestId;
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
 
@@ -35,11 +36,27 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (statusCode >= 500) {
-    logger.error(`${statusCode} - ${message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, { stack: err.stack });
+    logger.error({
+      message: `${statusCode} ${message}`,
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip,
+      stack: err.stack,
+      name: err.name,
+    });
+  } else if (statusCode >= 400) {
+    logger.warn({
+      message: `${statusCode} ${message}`,
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+    });
   }
 
   res.status(statusCode).json({
     error: message,
+    ...(requestId && { requestId }),
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };

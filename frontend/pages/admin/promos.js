@@ -5,6 +5,7 @@ import { NextSeo } from 'next-seo';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import useAuthStore from '../../store/authStore';
+import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import { formatIQD } from '../../lib/currency';
@@ -146,12 +147,13 @@ export default function AdminPromos() {
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    if (user && user.role !== 'admin') router.push('/');
     if (!user) router.push('/login');
-  }, [user]);
+    else if (!canAccessAdmin(user)) router.push('/');
+    else if (!hasAdminPermission(user, 'promos')) router.replace(getDefaultAdminPath(user));
+  }, [user, router]);
 
   const { data, isLoading } = useQuery('admin-promos', () =>
-    api.get('/promos').then((r) => r.data.promos), { enabled: !!user && user.role === 'admin' }
+    api.get('/promos').then((r) => r.data.promos), { enabled: !!user && canAccessAdmin(user) && hasAdminPermission(user, 'promos') }
   );
 
   const saveMutation = useMutation(
@@ -177,7 +179,7 @@ export default function AdminPromos() {
     deleteMutation.mutate(id);
   };
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'promos')) return null;
 
   const promos = data || [];
 

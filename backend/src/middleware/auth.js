@@ -28,9 +28,50 @@ const protect = async (req, res, next) => {
   }
 };
 
+/** Only full admins (manage staff, all settings). */
 const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === 'admin') return next();
   return res.status(403).json({ error: 'Admin access required.' });
+};
+
+/** Keys allowed in User.adminPermissions (staff). Keep in sync with admin UI. */
+const ADMIN_PERMISSION_KEYS = Object.freeze([
+  'dashboard',
+  'products',
+  'categories',
+  'sales',
+  'featured',
+  'newArrivals',
+  'stock',
+  'orders',
+  'users',
+  'promos',
+  'analytics',
+  'settings',
+  'activity',
+]);
+
+/** Full admin OR staff with at least one of the given permission keys. */
+const requireAdminOrPermissionAny =
+  (...permissions) =>
+  (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Not authorized.' });
+    if (req.user.role === 'admin') return next();
+    if (req.user.role === 'staff' && Array.isArray(req.user.adminPermissions)) {
+      const set = req.user.adminPermissions;
+      if (permissions.some((p) => set.includes(p))) return next();
+    }
+    return res.status(403).json({ error: 'Access denied.' });
+  };
+
+/** Full admin OR staff with a specific permission key. */
+const requireAdminOrPermission = (permission) => (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authorized.' });
+  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'staff' && Array.isArray(req.user.adminPermissions) && req.user.adminPermissions.includes(permission)) {
+    return next();
+  }
+  return res.status(403).json({ error: 'Access denied.' });
 };
 
 const optionalAuth = async (req, res, next) => {
@@ -50,4 +91,11 @@ const optionalAuth = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, optionalAuth };
+module.exports = {
+  protect,
+  adminOnly,
+  optionalAuth,
+  requireAdminOrPermission,
+  requireAdminOrPermissionAny,
+  ADMIN_PERMISSION_KEYS,
+};

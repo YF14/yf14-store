@@ -17,7 +17,7 @@ export default function HomePage() {
       />
 
       {/* Hero + marquee — pt clears fixed navbar; navy fills top so no lavender gap above hero */}
-      <section className="w-full max-w-full min-w-0 overflow-x-clip bg-nav-navy border-b border-white/[0.06] pt-[118px] lg:pt-[124px]">
+      <section className="w-full max-w-full min-w-0 overflow-x-clip bg-nav-navy border-b border-white/[0.06] pt-[calc(5.5rem+env(safe-area-inset-top,0px))] lg:pt-[calc(7.75rem+env(safe-area-inset-top,0px))]">
         <div className="container-luxury py-5 md:py-6">
           <HomeProductMarquee />
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
@@ -32,25 +32,51 @@ function ChevronIcon({ open }) {
   );
 }
 
-export default function ShopProductListing({ embed = false, homeCompact = false }) {
+export default function ShopProductListing({
+  embed = false,
+  homeCompact = false,
+  /** Dedicated /sale route: always applies filter=sale; URLs use /sale?… */
+  saleMode = false,
+  /** Dedicated /featured route */
+  featuredMode = false,
+  /** Dedicated /new-arrivals route */
+  newArrivalMode = false,
+  /** Parent page provides NextSeo (e.g. /sale) */
+  skipPageSeo = false,
+}) {
   const router = useRouter();
   const { t, isRTL } = useLang();
   const s = t.shop;
+  const p = t.product;
+  const listPathname = saleMode ? '/sale' : featuredMode ? '/featured' : newArrivalMode ? '/new-arrivals' : '/products';
+  const isCollectionPage = saleMode || featuredMode || newArrivalMode;
 
-  const SORT_OPTIONS = [
-    { value: '-createdAt',     label: s.newestFirst },
-    { value: 'price',          label: s.priceLow },
-    { value: '-price',         label: s.priceHigh },
-    { value: '-averageRating', label: s.topRated },
-    { value: '-totalSold',     label: s.bestSellers },
-  ];
+  const SORT_OPTIONS = useMemo(() => {
+    const base = [
+      { value: '-createdAt', label: s.newestFirst },
+      { value: 'price', label: s.priceLow },
+      { value: '-price', label: s.priceHigh },
+      { value: '-averageRating', label: s.topRated },
+      { value: '-totalSold', label: s.bestSellers },
+    ];
+    if (saleMode) {
+      return [{ value: 'saleSortOrder', label: p.saleCuratedOrder }, ...base];
+    }
+    if (featuredMode) {
+      return [{ value: 'featuredSortOrder', label: s.featuredCuratedOrder }, ...base];
+    }
+    if (newArrivalMode) {
+      return [{ value: 'newArrivalSortOrder', label: s.newArrivalCuratedOrder }, ...base];
+    }
+    return base;
+  }, [saleMode, featuredMode, newArrivalMode, s, p]);
 
   const [filterOpen,   setFilterOpen]   = useState(false);
   const [openSections, setOpenSections] = useState({ category: true, price: true, colour: true, size: true });
   const [filters, setFilters] = useState({
     category: '', minPrice: '', maxPrice: '',
     sizes: [], colors: [], sort: '-createdAt', search: '',
-    filter: '', // URL: ?filter=sale | new | featured
+    filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : '', // URL: ?filter=…
   });
   const [priceInput, setPriceInput] = useState({ min: 0, max: 1000000 });
 
@@ -59,16 +85,81 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
   // Sync URL params → filters (shop page only — home embed keeps local state)
   useEffect(() => {
     if (embed) return;
+    if (saleMode) {
+      const { category, search, sort } = router.query;
+      const nextCat = category || '';
+      let nextSort = sort;
+      if (!nextSort) {
+        nextSort = nextCat ? 'categorySortOrder' : 'saleSortOrder';
+      }
+      if (!nextCat && nextSort === 'categorySortOrder') {
+        nextSort = 'saleSortOrder';
+      }
+      setFilters((f) => ({
+        ...f,
+        category: nextCat,
+        search: search || '',
+        sort: nextSort,
+        filter: 'sale',
+      }));
+      return;
+    }
+    if (featuredMode) {
+      const { category, search, sort } = router.query;
+      const nextCat = category || '';
+      let nextSort = sort;
+      if (!nextSort) {
+        nextSort = nextCat ? 'categorySortOrder' : 'featuredSortOrder';
+      }
+      if (!nextCat && nextSort === 'categorySortOrder') {
+        nextSort = 'featuredSortOrder';
+      }
+      setFilters((f) => ({
+        ...f,
+        category: nextCat,
+        search: search || '',
+        sort: nextSort,
+        filter: 'featured',
+      }));
+      return;
+    }
+    if (newArrivalMode) {
+      const { category, search, sort } = router.query;
+      const nextCat = category || '';
+      let nextSort = sort;
+      if (!nextSort) {
+        nextSort = nextCat ? 'categorySortOrder' : 'newArrivalSortOrder';
+      }
+      if (!nextCat && nextSort === 'categorySortOrder') {
+        nextSort = 'newArrivalSortOrder';
+      }
+      setFilters((f) => ({
+        ...f,
+        category: nextCat,
+        search: search || '',
+        sort: nextSort,
+        filter: 'new',
+      }));
+      return;
+    }
     const { category, search, sort, filter } = router.query;
     const listFilter = filter === 'sale' || filter === 'new' || filter === 'featured' ? filter : '';
-    setFilters(f => ({
+    const nextCat = category || '';
+    let nextSort = sort;
+    if (!nextSort) {
+      nextSort = nextCat ? 'categorySortOrder' : '-createdAt';
+    }
+    if (!nextCat && nextSort === 'categorySortOrder') {
+      nextSort = '-createdAt';
+    }
+    setFilters((f) => ({
       ...f,
-      category: category || '',
-      search:   search   || '',
-      sort:     sort     || '-createdAt',
-      filter:   listFilter,
+      category: nextCat,
+      search: search || '',
+      sort: nextSort,
+      filter: listFilter,
     }));
-  }, [router.query, embed]);
+  }, [router.query, embed, saleMode, featuredMode, newArrivalMode]);
 
   // ── Products: infinite scroll (20 per page, “Load more”) ─
   const fetchProductsPage = async ({ pageParam = 1 }) => {
@@ -93,7 +184,7 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    ['products', embed ? 'home' : 'page', filters],
+    ['products', embed ? 'home' : saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : 'page', filters],
     fetchProductsPage,
     {
       getNextPageParam: (lastPage) => {
@@ -173,19 +264,34 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
 
   /** Clears only refinements (category / price / size / color). Keeps list view (?filter=sale) and search/sort. */
   const clearFilters = () => {
-    setFilters(f => ({
+    setFilters((f) => ({
       ...f,
       category: '',
       minPrice: '',
       maxPrice: '',
       sizes: [],
       colors: [],
+      sort: f.sort === 'categorySortOrder' ? '-createdAt' : f.sort,
+      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : f.filter,
     }));
     setPriceInput({ min: priceFloor, max: priceCeil });
     if (!embed) {
       const next = { ...router.query };
       delete next.category;
-      router.replace({ pathname: '/products', query: next }, undefined, { shallow: true });
+      delete next.minPrice;
+      delete next.maxPrice;
+      if (saleMode) {
+        delete next.filter;
+        router.replace({ pathname: '/sale', query: next }, undefined, { shallow: true });
+      } else if (featuredMode) {
+        delete next.filter;
+        router.replace({ pathname: '/featured', query: next }, undefined, { shallow: true });
+      } else if (newArrivalMode) {
+        delete next.filter;
+        router.replace({ pathname: '/new-arrivals', query: next }, undefined, { shallow: true });
+      } else {
+        router.replace({ pathname: '/products', query: next }, undefined, { shallow: true });
+      }
     }
   };
 
@@ -209,6 +315,7 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
   const cocktailCat = categories.find((c) => c.slug === 'cocktail-dresses');
 
   const quickAllActive =
+    !isCollectionPage &&
     !filters.filter &&
     !filters.category &&
     !filters.minPrice &&
@@ -216,7 +323,9 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
     filters.sizes.length === 0 &&
     filters.colors.length === 0;
   const under50Active =
-    String(filters.maxPrice || '') === '50000' && !filters.filter && !filters.category;
+    String(filters.maxPrice || '') === '50000' &&
+    !filters.category &&
+    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter));
 
   const isHomeEmbed = embed && homeCompact;
   const stickyTopClass = 'top-[118px] lg:top-[124px]';
@@ -247,12 +356,13 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
   const resetListFilters = (extra = {}) => {
     setFilters((f) => ({
       ...f,
-      filter: '',
+      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : '',
       category: '',
       minPrice: '',
       maxPrice: '',
       sizes: [],
       colors: [],
+      sort: f.sort === 'categorySortOrder' ? '-createdAt' : f.sort,
       ...extra,
     }));
     setPriceInput({ min: priceFloor, max: priceCeil });
@@ -287,7 +397,13 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
               >
                 <div className="px-6 pb-5 space-y-1">
                   <button
-                    onClick={() => setFilters(f => ({ ...f, category: '' }))}
+                    onClick={() =>
+                      setFilters((f) => ({
+                        ...f,
+                        category: '',
+                        sort: f.sort === 'categorySortOrder' ? '-createdAt' : f.sort,
+                      }))
+                    }
                     className={`block text-sm w-full py-1 transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                       !filters.category ? 'text-brand-gold font-medium' : 'text-gray-500 hover:text-brand-black'
                     }`}
@@ -297,7 +413,7 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                   {categories.map(cat => (
                     <button
                       key={cat._id}
-                      onClick={() => setFilters(f => ({ ...f, category: cat._id }))}
+                      onClick={() => setFilters((f) => ({ ...f, category: cat._id, sort: 'categorySortOrder' }))}
                       className={`block text-sm w-full py-1 transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                         filters.category === cat._id ? 'text-brand-gold font-medium' : 'text-gray-500 hover:text-brand-black'
                       }`}
@@ -458,10 +574,18 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
 
   return (
     <>
-      {!embed && (
+      {!embed && !skipPageSeo && (
         <NextSeo
           title={pageHeading}
-          description="Browse our complete collection of luxury women's dresses."
+          description={
+            saleMode
+              ? s.salePageDescription
+              : featuredMode
+                ? s.featuredPageDescription
+                : newArrivalMode
+                  ? s.newArrivalsPageDescription
+                  : "Browse our complete collection of luxury women's dresses."
+          }
         />
       )}
 
@@ -550,7 +674,14 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                     : 'text-xs text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-brand-gold transition-colors'
                 }
               >
-                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {(filters.category
+                  ? [{ value: 'categorySortOrder', label: s.sortCategoryOrder }, ...SORT_OPTIONS]
+                  : SORT_OPTIONS
+                ).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -561,6 +692,26 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
               <button
                 type="button"
                 onClick={() => {
+                  if (saleMode || featuredMode || newArrivalMode) {
+                    setFilters({
+                      category: '',
+                      minPrice: '',
+                      maxPrice: '',
+                      sizes: [],
+                      colors: [],
+                      sort: '-createdAt',
+                      search: '',
+                      filter: '',
+                    });
+                    setPriceInput({ min: priceFloor, max: priceCeil });
+                    const next = { ...router.query };
+                    delete next.filter;
+                    delete next.category;
+                    delete next.minPrice;
+                    delete next.maxPrice;
+                    router.replace({ pathname: '/products', query: next }, undefined, { shallow: true });
+                    return;
+                  }
                   resetListFilters();
                   const next = { ...router.query };
                   delete next.filter;
@@ -576,8 +727,11 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
               <button
                 type="button"
                 onClick={() => {
+                  if (newArrivalMode) return;
                   resetListFilters({ filter: 'new' });
-                  router.replace({ pathname: '/products', query: { ...router.query, filter: 'new' } }, undefined, { shallow: true });
+                  const next = { ...router.query };
+                  delete next.filter;
+                  router.replace({ pathname: '/new-arrivals', query: next }, undefined, { shallow: true });
                 }}
                 className={filters.filter === 'new' && !filters.category ? pillOn : pillOff}
               >
@@ -586,8 +740,11 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
               <button
                 type="button"
                 onClick={() => {
+                  if (saleMode) return;
                   resetListFilters({ filter: 'sale' });
-                  router.replace({ pathname: '/products', query: { ...router.query, filter: 'sale' } }, undefined, { shallow: true });
+                  const next = { ...router.query };
+                  delete next.filter;
+                  router.replace({ pathname: '/sale', query: next }, undefined, { shallow: true });
                 }}
                 className={filters.filter === 'sale' && !filters.category ? pillSaleOn : pillSaleOff}
               >
@@ -596,8 +753,11 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
               <button
                 type="button"
                 onClick={() => {
+                  if (featuredMode) return;
                   resetListFilters({ filter: 'featured' });
-                  router.replace({ pathname: '/products', query: { ...router.query, filter: 'featured' } }, undefined, { shallow: true });
+                  const next = { ...router.query };
+                  delete next.filter;
+                  router.replace({ pathname: '/featured', query: next }, undefined, { shallow: true });
                 }}
                 className={filters.filter === 'featured' && !filters.category ? pillOn : pillOff}
               >
@@ -608,9 +768,14 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                   type="button"
                   onClick={() => {
                     resetListFilters({ category: eveningCat._id });
-                    router.replace({ pathname: '/products', query: { ...router.query, category: eveningCat.slug } }, undefined, { shallow: true });
+                    router.replace({ pathname: listPathname, query: { ...router.query, category: eveningCat.slug } }, undefined, { shallow: true });
                   }}
-                  className={filters.category === eveningCat._id && !filters.filter ? pillOn : pillOff}
+                  className={
+                    filters.category === eveningCat._id &&
+                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                      ? pillOn
+                      : pillOff
+                  }
                 >
                   {t.nav.evening}
                 </button>
@@ -620,9 +785,14 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                   type="button"
                   onClick={() => {
                     resetListFilters({ category: casualCat._id });
-                    router.replace({ pathname: '/products', query: { ...router.query, category: casualCat.slug } }, undefined, { shallow: true });
+                    router.replace({ pathname: listPathname, query: { ...router.query, category: casualCat.slug } }, undefined, { shallow: true });
                   }}
-                  className={filters.category === casualCat._id && !filters.filter ? pillOn : pillOff}
+                  className={
+                    filters.category === casualCat._id &&
+                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                      ? pillOn
+                      : pillOff
+                  }
                 >
                   {t.nav.casual}
                 </button>
@@ -632,9 +802,14 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                   type="button"
                   onClick={() => {
                     resetListFilters({ category: cocktailCat._id });
-                    router.replace({ pathname: '/products', query: { ...router.query, category: cocktailCat.slug } }, undefined, { shallow: true });
+                    router.replace({ pathname: listPathname, query: { ...router.query, category: cocktailCat.slug } }, undefined, { shallow: true });
                   }}
-                  className={filters.category === cocktailCat._id && !filters.filter ? pillOn : pillOff}
+                  className={
+                    filters.category === cocktailCat._id &&
+                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                      ? pillOn
+                      : pillOff
+                  }
                 >
                   {t.nav.cocktail}
                 </button>
@@ -643,7 +818,7 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
                 type="button"
                 onClick={() => {
                   resetListFilters({ maxPrice: '50000' });
-                  router.replace({ pathname: '/products', query: { ...router.query, maxPrice: '50000' } }, undefined, { shallow: true });
+                  router.replace({ pathname: listPathname, query: { ...router.query, maxPrice: '50000' } }, undefined, { shallow: true });
                 }}
                 className={under50Active ? pillOn : pillOff}
               >
@@ -666,7 +841,18 @@ export default function ShopProductListing({ embed = false, homeCompact = false 
           <div className="container-luxury py-3 flex flex-wrap gap-2">
             {filters.category && categories.find(c => c._id === filters.category) && (
               <button
-                onClick={() => setFilters(f => ({ ...f, category: '' }))}
+                onClick={() => {
+                  setFilters((f) => ({
+                    ...f,
+                    category: '',
+                    sort: f.sort === 'categorySortOrder' ? '-createdAt' : f.sort,
+                  }));
+                  if (!embed) {
+                    const next = { ...router.query };
+                    delete next.category;
+                    router.replace({ pathname: listPathname, query: next }, undefined, { shallow: true });
+                  }
+                }}
                 className="flex items-center gap-1.5 px-3 py-1 text-xs border border-brand-gold/40 text-brand-gold bg-brand-purple-light/30 hover:bg-brand-purple-light/60 transition-colors"
               >
                 {catName(categories.find(c => c._id === filters.category), isRTL)}

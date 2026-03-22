@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
+import { canAccessAdmin, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
 import StoreLogoImage from './StoreLogoImage';
 
@@ -11,9 +13,11 @@ export default function Navbar({ scrolled }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchRef = useRef(null);
+  const [portalReady, setPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -22,8 +26,8 @@ export default function Navbar({ scrolled }) {
   const { t, locale, setLocale, isRTL } = useLang();
 
   const navLinks = [
-    { label: t.nav.newArrivals, href: '/products?filter=new' },
-    { label: t.nav.featured, href: '/products?filter=featured' },
+    { label: t.nav.newArrivals, href: '/new-arrivals' },
+    { label: t.nav.featured, href: '/featured' },
     {
       label: t.nav.collections,
       href: '/products',
@@ -36,31 +40,25 @@ export default function Navbar({ scrolled }) {
         { label: t.nav.summer,   href: '/products?category=summer-dresses' },
       ],
     },
-    { label: t.nav.sale, href: '/products?filter=sale' },
+    { label: t.nav.sale, href: '/sale' },
   ];
 
   useEffect(() => {
     setMobileOpen(false);
-    setSearchOpen(false);
   }, [router.pathname]);
 
   useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-      setSearchQuery('');
-    }
-  };
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
 
   return (
     <>
       <header
-        className={`relative w-full bg-nav-navy transition-shadow duration-300 ${
+        className={`relative w-full bg-nav-navy pt-[env(safe-area-inset-top,0px)] transition-shadow duration-300 touch-manipulation ${
           scrolled ? 'shadow-[0_8px_28px_rgba(0,0,0,0.35)]' : 'border-b border-white/10'
         }`}
       >
@@ -68,25 +66,18 @@ export default function Navbar({ scrolled }) {
         <div className="container-luxury">
           <div className="relative flex items-center justify-between min-h-16 md:min-h-20 py-1.5 md:py-2">
 
-            {/* Left: Search icon + mobile hamburger */}
-            <div className="flex items-center gap-4">
+            {/* Left: mobile hamburger (balances logo row on desktop) */}
+            <div className="flex items-center gap-2 min-w-0 lg:min-w-[4.5rem]">
               <button
-                className="lg:hidden flex flex-col gap-1.5 w-6"
+                type="button"
+                className="lg:hidden flex flex-col gap-1.5 justify-center items-center min-h-[44px] min-w-[44px] -ms-1 rounded-md border border-transparent hover:border-white/15 active:bg-white/5"
                 onClick={() => setMobileOpen(!mobileOpen)}
+                aria-expanded={mobileOpen}
                 aria-label="Menu"
               >
                 <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'w-6 rotate-45 translate-y-[8px]' : 'w-6'}`} />
                 <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'opacity-0 w-0' : 'w-4'}`} />
                 <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'w-6 -rotate-45 -translate-y-[8px]' : 'w-6'}`} />
-              </button>
-              <button
-                onClick={() => setSearchOpen(!searchOpen)}
-                className="hidden lg:block text-white/85 hover:text-brand-gold-light transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
               </button>
             </div>
 
@@ -109,7 +100,7 @@ export default function Navbar({ scrolled }) {
             </Link>
 
             {/* Right: Account / Lang / Cart */}
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
               {user ? (
                 <div className="relative group hidden sm:block">
                   <Link href="/account" className="text-white/85 hover:text-brand-gold-light transition-colors text-xs tracking-wide hidden md:block">
@@ -119,8 +110,8 @@ export default function Navbar({ scrolled }) {
                     <Link href="/account"        className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.myAccount}</Link>
                     <Link href="/account/orders"  className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.orders}</Link>
                     <Link href="/account/wishlist" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.wishlist}</Link>
-                    {user.role === 'admin' && (
-                      <Link href="/admin" className="block px-5 py-2 text-xs tracking-wider text-brand-gold">{t.nav.adminPanel}</Link>
+                    {canAccessAdmin(user) && (
+                      <Link href={getDefaultAdminPath(user)} className="block px-5 py-2 text-xs tracking-wider text-brand-gold">{t.nav.adminPanel}</Link>
                     )}
                     <hr className="my-1 border-gray-100" />
                     <button onClick={logout} className="block w-full text-left px-5 py-2 text-xs tracking-wider hover:text-brand-gold">
@@ -135,22 +126,24 @@ export default function Navbar({ scrolled }) {
               )}
 
               <button
+                type="button"
                 onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
-                className="text-white/90 hover:text-white transition-colors text-xs font-medium border border-white/25 hover:border-brand-gold-light px-2 py-0.5 rounded"
+                className="text-white/90 hover:text-white transition-colors text-xs font-medium border border-white/25 hover:border-brand-gold-light min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 px-2.5 py-1.5 sm:py-0.5 rounded touch-manipulation"
                 aria-label="Switch language"
               >
                 {locale === 'ar' ? 'EN' : 'ع'}
               </button>
 
               <button
+                type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative text-white/85 hover:text-brand-gold-light transition-colors flex items-center gap-1.5 text-xs tracking-wide"
+                className="relative text-white/85 hover:text-brand-gold-light transition-colors flex items-center gap-1.5 text-xs tracking-wide min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center sm:justify-start px-1 -me-1 sm:me-0 touch-manipulation"
                 aria-label="Cart"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
-                <span>{isRTL ? 'السلة' : 'Cart'}</span>
+                <span className="hidden sm:inline">{isRTL ? 'السلة' : 'Cart'}</span>
                 {itemCount > 0 && (
                   <span className="w-4 h-4 bg-brand-gold text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                     {itemCount > 9 ? '9+' : itemCount}
@@ -210,73 +203,53 @@ export default function Navbar({ scrolled }) {
             </nav>
           </div>
         </div>
-
-        {/* ── Row 3: Search bar (desktop, toggleable) ── */}
-        <AnimatePresence>
-          {searchOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-t border-white/10 overflow-hidden"
-            >
-              <form onSubmit={handleSearch} className="container-luxury py-3">
-                <div className="flex items-center gap-3">
-                  <svg className="w-4 h-4 text-white/45 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    ref={searchRef}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    type="text"
-                    placeholder={t.common.searchPlaceholder}
-                    className="flex-1 text-sm font-body bg-transparent border-none outline-none text-white placeholder-white/35"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSearchOpen(false)}
-                    className="text-white/45 hover:text-white text-[11px] tracking-widest uppercase"
-                  >
-                    {t.common.close}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* ── Mobile full-screen menu ─────────────── */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'tween', duration: 0.28 }}
-            className="fixed inset-0 z-40 bg-nav-navy pt-20 px-8 pb-8 overflow-y-auto lg:hidden"
-          >
-            {/* Mobile search */}
-            <form onSubmit={handleSearch} className="flex items-center gap-3 border-b border-white/15 pb-4 mb-6">
-              <svg className="w-4 h-4 text-white/45" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                type="text"
-                placeholder={t.common.searchPlaceholder}
-                className="flex-1 text-sm bg-transparent outline-none text-white placeholder-white/35"
-              />
-            </form>
-
+      {portalReady &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {mobileOpen && (
+              <>
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 z-[200] bg-black/50 lg:hidden touch-manipulation"
+                  aria-label="Close menu"
+                  onClick={() => setMobileOpen(false)}
+                />
+                <motion.div
+                  initial={{ x: isRTL ? '100%' : '-100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: isRTL ? '100%' : '-100%' }}
+                  transition={{ type: 'tween', duration: 0.28 }}
+                  className={`fixed inset-y-0 z-[210] w-[min(100%,20rem)] max-w-[85vw] bg-nav-navy overflow-y-auto overscroll-contain lg:hidden shadow-2xl ${
+                    isRTL ? 'right-0' : 'left-0'
+                  } pt-[calc(1rem+env(safe-area-inset-top,0px))] px-5 sm:px-8 pb-[max(2rem,env(safe-area-inset-bottom,0px))]`}
+                  role="dialog"
+                  aria-modal="true"
+                >
+                  <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-[10px] tracking-[0.2em] uppercase text-white/50">{t.siteName}</span>
+                    <button
+                      type="button"
+                      onClick={() => setMobileOpen(false)}
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-white/20 text-white/90 hover:bg-white/10 touch-manipulation"
+                      aria-label="Close menu"
+                    >
+                      ✕
+                    </button>
+                  </div>
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <div key={link.label}>
                   <Link
                     href={link.href}
-                    className="block py-3 text-xs tracking-widest uppercase text-white/85 border-b border-white/10 hover:text-brand-gold-light transition-colors"
+                    className="block py-3.5 min-h-[44px] flex items-center text-xs tracking-widest uppercase text-white/85 border-b border-white/10 hover:text-brand-gold-light transition-colors touch-manipulation"
                   >
                     {link.label}
                   </Link>
@@ -300,7 +273,7 @@ export default function Navbar({ scrolled }) {
                 {user ? (
                   <>
                     <Link href="/account"  className="btn-outline text-center">{t.nav.myAccount}</Link>
-                    <button onClick={logout} className="btn-ghost text-center">{t.nav.signOut}</button>
+                    <button type="button" onClick={logout} className="btn-ghost text-center min-h-[44px] touch-manipulation">{t.nav.signOut}</button>
                   </>
                 ) : (
                   <>
@@ -309,16 +282,20 @@ export default function Navbar({ scrolled }) {
                   </>
                 )}
                 <button
+                  type="button"
                   onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
-                  className="btn-ghost text-center text-sm"
+                  className="btn-ghost text-center text-sm min-h-[44px] touch-manipulation"
                 >
                   {locale === 'ar' ? '🌐 English' : '🌐 العربية'}
                 </button>
               </div>
             </nav>
-          </motion.div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </>
   );
 }

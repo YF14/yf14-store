@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema({
   password: { type: String, select: false },
   googleId: String,
   avatar: { type: String, default: '' },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  role: { type: String, enum: ['user', 'staff', 'admin'], default: 'user' },
+  /** When role is staff: which admin areas they can open (see middleware PERMISSION_KEYS). */
+  adminPermissions: { type: [String], default: [] },
   isVerified: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   addresses: [addressSchema],

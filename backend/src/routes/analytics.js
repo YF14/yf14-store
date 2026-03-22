@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, requireAdminOrPermissionAny } = require('../middleware/auth');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
@@ -8,7 +8,7 @@ const User = require('../models/User');
 /** Orders that count toward revenue (not cancelled / refunded) */
 const REVENUE_MATCH = { status: { $nin: ['cancelled', 'refunded'] } };
 
-router.use(protect, adminOnly);
+router.use(protect, requireAdminOrPermissionAny('dashboard', 'analytics'));
 
 router.get('/dashboard', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from 'react-query';
 import Image from 'next/image';
@@ -12,6 +12,7 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD, catName } from '../../lib/currency';
+import { filterProductGallery, pickImageUrlForVariantColor, pickListingImageUrl } from '../../lib/productMedia';
 
 const CREAM = '#faf8f5';
 const WARM_WHITE = '#f5f2ee';
@@ -56,11 +57,23 @@ export default function ProductDetailPage() {
 
   const product = data?.product;
 
+  useEffect(() => {
+    setActiveImg(0);
+  }, [selectedColor]);
+
+  const { images: galleryImages, videos: galleryVideos } = useMemo(
+    () => filterProductGallery(product?.images || [], product?.videos || [], selectedColor),
+    [product?.images, product?.videos, selectedColor],
+  );
+
   const categorySlug = product?.category?.slug || product?.category;
 
   const { data: relatedData } = useQuery(
     ['related-products', categorySlug, product?._id],
-    () => api.get(`/products?category=${encodeURIComponent(categorySlug)}&limit=20&page=1`).then((r) => r.data),
+    () =>
+      api
+        .get(`/products?category=${encodeURIComponent(categorySlug)}&limit=20&page=1&sort=categorySortOrder`)
+        .then((r) => r.data),
     { enabled: !!categorySlug && !!product?._id },
   );
 
@@ -163,8 +176,6 @@ export default function ProductDetailPage() {
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
 
-  const mediaCount = product.images.length + (product.videos || []).length;
-
   const runMeasurementValidation = () => {
     let ok = true;
     if (!heightInput.trim()) {
@@ -196,7 +207,7 @@ export default function ProductDetailPage() {
 
     await addToCart(product._id, selectedVariant._id, qty, {
       name: product.name,
-      image: product.images?.[0]?.url || '',
+      image: pickImageUrlForVariantColor(product, selectedVariant.color, '') || '',
       price: selectedVariant.price || product.price,
       size: selectedVariant.size,
       color: selectedVariant.color,
@@ -238,7 +249,7 @@ export default function ProductDetailPage() {
               className="flex flex-col items-center gap-2.5 py-6 px-2 lg:px-3 border-e overflow-y-auto overflow-x-hidden shrink-0 min-w-0 min-h-0 lg:max-h-[calc(100dvh-124px)]"
               style={{ backgroundColor: CREAM, borderColor: BORDER }}
             >
-              {product.images.map((img, i) => (
+              {galleryImages.map((img, i) => (
                 <button
                   key={i}
                   type="button"
@@ -261,8 +272,8 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               ))}
-              {(product.videos || []).map((vid, i) => {
-                const idx = product.images.length + i;
+              {galleryVideos.map((vid, i) => {
+                const idx = galleryImages.length + i;
                 return (
                   <button
                     key={`v-${i}`}
@@ -279,9 +290,9 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="relative min-w-0 min-h-[70vw] lg:min-h-0 lg:h-full bg-neutral-100">
-              {activeImg < product.images.length ? (
+              {activeImg < galleryImages.length ? (
                 <Image
-                  src={product.images[activeImg]?.url || product.images[0]?.url}
+                  src={galleryImages[activeImg]?.url || galleryImages[0]?.url}
                   alt={product.name}
                   fill
                   priority
@@ -290,7 +301,7 @@ export default function ProductDetailPage() {
                 />
               ) : (
                 <video
-                  src={product.videos?.[activeImg - product.images.length]?.url}
+                  src={galleryVideos[activeImg - galleryImages.length]?.url}
                   className="w-full h-full object-cover object-top lg:object-contain lg:object-center"
                   controls
                   autoPlay
@@ -621,7 +632,7 @@ export default function ProductDetailPage() {
             </div>
             <div className="max-w-[1600px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
               {relatedDisplay.map((p) => {
-                const img = p.images?.[0]?.url;
+                const img = pickListingImageUrl(p);
                 const relDiscount = p.comparePrice > p.price
                   ? Math.round(((p.comparePrice - p.price) / p.comparePrice) * 100)
                   : 0;
