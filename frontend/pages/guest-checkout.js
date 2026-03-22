@@ -34,7 +34,7 @@ const IRAQI_PROVINCES = [
 ];
 
 const inputClass =
-  'w-full px-[15px] py-3 rounded-[10px] text-sm outline-none transition-all duration-200 border-[1.5px] bg-white/[0.05] text-[#e8e8f0] placeholder:text-[#6b7280] focus:border-[#8b5cf6] focus:bg-[rgba(139,92,246,0.08)] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]';
+  'w-full min-h-[44px] px-[15px] py-3 rounded-[10px] text-base sm:text-sm outline-none transition-all duration-200 border-[1.5px] bg-white/[0.05] text-[#e8e8f0] placeholder:text-[#6b7280] focus:border-[#8b5cf6] focus:bg-[rgba(139,92,246,0.08)] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.1)] touch-manipulation';
 
 const labelClass = 'text-[11px] tracking-[0.08em] text-[#9ca3af] mb-1.5 flex items-center gap-1';
 
@@ -422,8 +422,12 @@ export default function GuestCheckout() {
   return (
     <Layout>
       <NextSeo title={copy.pageTitle} />
-      <div className="min-h-full w-full pb-16 sm:pb-20" style={{ backgroundColor: BG, color: TEXT }} dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="max-w-[1020px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        className="min-h-full w-full pb-[max(4rem,env(safe-area-inset-bottom,0px)+1rem)] sm:pb-20"
+        style={{ backgroundColor: BG, color: TEXT }}
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <div className="max-w-[1020px] mx-auto px-3 sm:px-6 lg:px-8">
           <header className="text-center pt-10 sm:pt-11 pb-5">
             <nav className="flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm mb-4" style={{ color: MUTED }} aria-label="Breadcrumb">
               <Link href="/" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>

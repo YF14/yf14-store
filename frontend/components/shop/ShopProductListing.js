@@ -237,6 +237,13 @@ export default function ShopProductListing({
     if (stale.length) setFilters(f => ({ ...f, colors: f.colors.filter(c => valid.has(c)) }));
   }, [availableColors]);
 
+  useEffect(() => {
+    if (!filterOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [filterOpen]);
+
   // ── Instant filter helpers ────────────────────────────
   const toggleSize = (size) =>
     setFilters(f => ({
@@ -328,9 +335,10 @@ export default function ShopProductListing({
     (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter));
 
   const isHomeEmbed = embed && homeCompact;
-  const stickyTopClass = 'top-[118px] lg:top-[124px]';
+  const stickyTopClass =
+    'top-[calc(5.5rem+env(safe-area-inset-top,0px))] lg:top-[calc(7.75rem+env(safe-area-inset-top,0px))]';
   const pillBase =
-    'flex-shrink-0 rounded-full text-[11px] font-body tracking-wide border transition-colors duration-200';
+    'flex-shrink-0 rounded-full text-[11px] font-body tracking-wide border transition-colors duration-200 touch-manipulation min-h-[40px] sm:min-h-0';
   const pillPad = isHomeEmbed ? 'px-4 py-1.5' : 'px-3.5 py-1.5';
   const pillOn = `${pillBase} ${pillPad} ${
     isHomeEmbed
@@ -614,14 +622,14 @@ export default function ShopProductListing({
               : `sticky ${stickyTopClass} border-gray-200/90 bg-white/95 backdrop-blur-md`
           }`}
         >
-          <div className="container-luxury flex items-center justify-between h-12 gap-4">
+          <div className="container-luxury flex items-center justify-between min-h-[48px] h-auto py-1.5 gap-2 sm:gap-4">
 
             {/* Left: Filters + Clear — same drawer as /products; home uses purple accent styling */}
-            <div className="flex items-center gap-4 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
                 type="button"
                 onClick={() => setFilterOpen(true)}
-                className={`flex items-center gap-2 text-xs tracking-widest uppercase transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-2 min-h-[44px] px-1 -ms-1 rounded-md text-xs tracking-widest uppercase transition-colors flex-shrink-0 touch-manipulation active:bg-black/[0.04] ${
                   isHomeEmbed
                     ? 'text-[#6b6b8a] hover:text-[#a855c8]'
                     : 'text-gray-600 hover:text-brand-gold'
@@ -646,7 +654,7 @@ export default function ShopProductListing({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className={`flex items-center gap-1 text-xs transition-colors flex-shrink-0 ${
+                  className={`flex items-center gap-1 min-h-[44px] px-1 rounded-md text-xs transition-colors flex-shrink-0 touch-manipulation active:bg-black/[0.04] ${
                     isHomeEmbed
                       ? 'text-[#9ca3af] hover:text-[#a855c8]'
                       : 'text-gray-400 hover:text-brand-gold'
@@ -670,8 +678,8 @@ export default function ShopProductListing({
                 onChange={e => setFilters(f => ({ ...f, sort: e.target.value }))}
                 className={
                   isHomeEmbed
-                    ? 'text-xs text-[#1a1a2e] bg-white border border-[#e8d0ee] rounded-lg px-3 py-1.5 cursor-pointer outline-none font-body hover:border-[#a855c8]/50'
-                    : 'text-xs text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-brand-gold transition-colors'
+                    ? 'text-xs text-[#1a1a2e] bg-white border border-[#e8d0ee] rounded-lg px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 cursor-pointer outline-none font-body hover:border-[#a855c8]/50 touch-manipulation max-w-[min(100%,11rem)] sm:max-w-none'
+                    : 'text-xs text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-brand-gold transition-colors min-h-[44px] sm:min-h-0 py-2 sm:py-0 touch-manipulation max-w-[min(100%,11rem)] sm:max-w-none'
                 }
               >
                 {(filters.category
@@ -979,14 +987,14 @@ export default function ShopProductListing({
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setFilterOpen(false)}
-              className="fixed inset-0 bg-black/30 z-[60]"
+              className="fixed inset-0 bg-black/30 z-[130] touch-manipulation"
             />
             <motion.div
               initial={{ x: isRTL ? '100%' : '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: isRTL ? '100%' : '-100%' }}
               transition={{ type: 'tween', duration: 0.26 }}
-              className={`fixed ${isRTL ? 'right-0' : 'left-0'} top-0 h-full w-[300px] bg-white z-[70] flex flex-col shadow-2xl`}
+              className={`fixed ${isRTL ? 'right-0' : 'left-0'} top-0 h-[100dvh] max-h-[100dvh] w-[min(100%,300px)] max-w-[min(90vw,300px)] bg-white z-[140] flex flex-col shadow-2xl pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]`}
             >
               {filterDrawerContent}
             </motion.div>

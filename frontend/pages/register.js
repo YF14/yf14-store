@@ -49,7 +49,9 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className={`flex items-center justify-center p-8 bg-brand-cream ${isRTL ? 'order-1' : 'order-2'}`}>
+        <div
+          className={`flex items-center justify-center p-4 sm:p-8 pb-[max(2rem,env(safe-area-inset-bottom,0px)+1rem)] min-h-[100dvh] md:min-h-0 bg-brand-cream ${isRTL ? 'order-1' : 'order-2'}`}
+        >
           <div className="w-full max-w-md">
             <h1 className="font-display text-4xl font-light mb-2">{t.auth.registerTitle}</h1>
             <p className="text-sm text-brand-warm-gray mb-10">{t.auth.registerSubtitle}</p>

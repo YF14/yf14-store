@@ -57,7 +57,9 @@ export default function LoginPage() {
         </div>
 
         {/* Form panel */}
-        <div className={`flex items-center justify-center p-8 bg-brand-cream ${isRTL ? 'order-1' : 'order-2'}`}>
+        <div
+          className={`flex items-center justify-center p-4 sm:p-8 pb-[max(2rem,env(safe-area-inset-bottom,0px)+1rem)] min-h-[100dvh] md:min-h-0 bg-brand-cream ${isRTL ? 'order-1' : 'order-2'}`}
+        >
           <div className="w-full max-w-md">
             <div className="mb-10 md:hidden">
               <Link href="/" className="font-display text-3xl tracking-[0.2em] text-brand-black">YF14 Store</Link>

@@ -229,7 +229,7 @@ export default function ProductDetailPage() {
 
       <div className="min-h-screen" style={{ backgroundColor: CREAM }} dir={isRTL ? 'rtl' : 'ltr'}>
         <nav
-          className="flex flex-wrap items-center gap-2 text-xs border-b px-6 lg:px-10 py-[14px] lg:py-[18px]"
+          className="flex flex-wrap items-center gap-2 text-xs border-b px-3 sm:px-6 lg:px-10 py-[14px] lg:py-[18px]"
           style={{ borderColor: BORDER, color: MUTED }}
         >
           <Link href="/" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>{t.product.home}</Link>
@@ -254,7 +254,7 @@ export default function ProductDetailPage() {
                   key={i}
                   type="button"
                   onClick={() => setActiveImg(i)}
-                  className="relative w-[62px] h-20 lg:w-[62px] lg:h-20 shrink-0 rounded overflow-hidden border-2 transition-colors"
+                  className="relative w-[62px] h-20 lg:w-[62px] lg:h-20 shrink-0 rounded overflow-hidden border-2 transition-colors touch-manipulation"
                   style={{ borderColor: activeImg === i ? ACCENT : 'transparent' }}
                 >
                   <Image src={img.url} alt={img.alt || product.name} fill className="object-cover" sizes="70px" />
@@ -315,7 +315,7 @@ export default function ProductDetailPage() {
 
           {/* Info */}
           <div
-            className="flex flex-col px-6 sm:px-8 lg:px-12 py-10 lg:py-12 overflow-y-auto"
+            className="flex flex-col px-4 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-12 pb-[max(2.5rem,env(safe-area-inset-bottom,0px)+1.5rem)] lg:pb-12 overflow-y-auto"
             style={{ color: CHARCOAL }}
           >
             {product.category && (
@@ -559,7 +559,7 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="w-[42px] h-[42px] flex items-center justify-center text-lg hover:bg-black/[0.03] transition-colors"
+                  className="w-[44px] h-[44px] sm:w-[42px] sm:h-[42px] flex items-center justify-center text-lg hover:bg-black/[0.03] transition-colors touch-manipulation"
                   style={{ color: CHARCOAL }}
                 >
                   −
@@ -577,7 +577,7 @@ export default function ProductDetailPage() {
                     return Math.min(maxStock, q + 1);
                   })}
                   disabled={selectedVariant && qty >= selectedVariant.stock}
-                  className="w-[42px] h-[42px] flex items-center justify-center text-lg hover:bg-black/[0.03] transition-colors disabled:opacity-30"
+                  className="w-[44px] h-[44px] sm:w-[42px] sm:h-[42px] flex items-center justify-center text-lg hover:bg-black/[0.03] transition-colors disabled:opacity-30 touch-manipulation"
                   style={{ color: CHARCOAL }}
                 >
                   +
@@ -599,7 +599,7 @@ export default function ProductDetailPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isCartLoading || isOutOfStock}
-                className={`w-full py-[17px] rounded-md text-white text-[15px] font-medium tracking-wide transition-transform disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.995] ${ctaShake ? 'animate-shake' : ''}`}
+                className={`w-full min-h-[48px] py-[17px] rounded-md text-white text-[15px] font-medium tracking-wide transition-transform disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.995] touch-manipulation ${ctaShake ? 'animate-shake' : ''}`}
                 style={{ backgroundColor: ROSE }}
               >
                 {isCartLoading ? t.product.adding : isOutOfStock ? t.product.outOfStock : t.product.addToBag}
@@ -607,7 +607,7 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={() => (user ? toggle(product._id) : router.push('/login'))}
-                className="w-full py-[15px] rounded-md border-[1.5px] text-[14px] tracking-wide flex items-center justify-center gap-2 hover:bg-black/[0.02] transition-colors"
+                className="w-full min-h-[48px] py-[15px] rounded-md border-[1.5px] text-[14px] tracking-wide flex items-center justify-center gap-2 hover:bg-black/[0.02] transition-colors touch-manipulation"
                 style={{ borderColor: BORDER, color: CHARCOAL }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill={isWishlisted(product._id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
@@ -622,7 +622,7 @@ export default function ProductDetailPage() {
         {/* Related */}
         {categorySlug && relatedDisplay.length > 0 && (
           <section
-            className="border-t px-6 sm:px-10 lg:px-12 py-14 lg:py-16"
+            className="border-t px-4 sm:px-10 lg:px-12 py-12 sm:py-14 lg:py-16 pb-[max(3rem,env(safe-area-inset-bottom,0px)+2rem)]"
             style={{ borderColor: BORDER, backgroundColor: WARM_WHITE }}
           >
             <div className="max-w-[1600px] mx-auto mb-8">
