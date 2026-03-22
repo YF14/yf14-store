@@ -41,14 +41,16 @@ export default function LoginPage() {
       <NextSeo title={t.auth.signIn} />
       <div className="min-h-screen grid md:grid-cols-2">
         {/* Image panel */}
-        <div className={`hidden md:block relative ${isRTL ? 'order-2' : 'order-1'}`}>
+        <div className={`hidden md:block relative min-h-[420px] ${isRTL ? 'order-2' : 'order-1'}`}>
           <Image
-            src="https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=900&q=80"
-            alt="Fashion"
+            src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1600&q=88"
+            alt=""
             fill
-            className="object-cover"
+            className="object-cover object-[center_25%]"
+            sizes="50vw"
+            priority
           />
-          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-end pb-16 px-12">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/15 flex flex-col items-center justify-end pb-16 px-12">
             <Link href="/" className="text-white font-display text-4xl tracking-[0.2em] mb-4">YF14 Store</Link>
             <p className="text-white/75 font-display text-base md:text-lg tracking-wide text-center">{t.footer.tagline}</p>
           </div>

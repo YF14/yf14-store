@@ -22,7 +22,7 @@ export default function Layout({ children }) {
         <Navbar scrolled={scrolled} />
       </div>
       <main
-        className={`flex-1 min-w-0 w-full bg-page-lavender ${
+        className={`flex flex-1 flex-col min-h-0 min-w-0 w-full bg-page-lavender ${
           isHome ? 'pt-0' : 'pt-[118px] lg:pt-[124px]'
         }`}
       >

@@ -13,9 +13,19 @@ exports.getCart = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+function sameCartMeasurements(item, height, weight) {
+  const ih = item.customerHeightCm != null ? Number(item.customerHeightCm) : null;
+  const iw = item.customerWeightKg != null ? Number(item.customerWeightKg) : null;
+  return ih === height && iw === weight;
+}
+
 exports.addToCart = async (req, res, next) => {
   try {
-    const { productId, variantId, quantity = 1 } = req.body;
+    const { productId, variantId, quantity = 1, customerHeightCm, customerWeightKg } = req.body;
+    const rawH = customerHeightCm != null && customerHeightCm !== '' ? Number(customerHeightCm) : null;
+    const rawW = customerWeightKg != null && customerWeightKg !== '' ? Number(customerWeightKg) : null;
+    const height = rawH != null && Number.isFinite(rawH) ? rawH : null;
+    const weight = rawW != null && Number.isFinite(rawW) ? rawW : null;
     const product = await Product.findById(productId);
     if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
     const variant = product.variants.id(variantId);
@@ -25,7 +35,11 @@ exports.addToCart = async (req, res, next) => {
     let cart = await Cart.findOne({ user: req.user.id });
     if (!cart) cart = await Cart.create({ user: req.user.id, items: [] });
 
-    const existingItem = cart.items.find(i => i.product.toString() === productId && i.variantId.toString() === variantId);
+    const existingItem = cart.items.find(
+      (i) => i.product.toString() === productId
+        && i.variantId.toString() === variantId
+        && sameCartMeasurements(i, height, weight),
+    );
     if (existingItem) {
       const newQty = existingItem.quantity + quantity;
       if (variant.stock < newQty) return res.status(400).json({ error: 'Insufficient stock' });
@@ -39,6 +53,8 @@ exports.addToCart = async (req, res, next) => {
         colorCode: variant.colorCode,
         quantity,
         price: variant.price || product.price,
+        ...(height != null && !Number.isNaN(height) ? { customerHeightCm: height } : {}),
+        ...(weight != null && !Number.isNaN(weight) ? { customerWeightKg: weight } : {}),
       });
     }
     await cart.save();

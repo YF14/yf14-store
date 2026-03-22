@@ -13,6 +13,12 @@ function saveGuestCart(items) {
   localStorage.setItem('guestCart', JSON.stringify(items));
 }
 
+function guestLineKey(variantId, heightCm, weightKg) {
+  const h = heightCm != null && !Number.isNaN(Number(heightCm)) ? String(Number(heightCm)) : '';
+  const w = weightKg != null && !Number.isNaN(Number(weightKg)) ? String(Number(weightKg)) : '';
+  return `${variantId}_${h}_${w}`;
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 const useCartStore = create((set, get) => ({
   // Server cart (logged-in users)
@@ -46,15 +52,22 @@ const useCartStore = create((set, get) => ({
     if (!token) {
       // Guest mode — add to localStorage cart
       const prev = get().guestItems;
-      const existing = prev.find(i => i.variantId === variantId);
+      const h = productData?.customerHeightCm != null ? Number(productData.customerHeightCm) : null;
+      const w = productData?.customerWeightKg != null ? Number(productData.customerWeightKg) : null;
+      const lineKey = guestLineKey(variantId, h, w);
+      const existing = prev.find(
+        (i) => guestLineKey(i.variantId, i.customerHeightCm, i.customerWeightKg) === lineKey,
+      );
       let updated;
       if (existing) {
-        updated = prev.map(i =>
-          i.variantId === variantId ? { ...i, quantity: i.quantity + quantity } : i
+        updated = prev.map((i) =>
+          guestLineKey(i.variantId, i.customerHeightCm, i.customerWeightKg) === lineKey
+            ? { ...i, quantity: i.quantity + quantity }
+            : i,
         );
       } else {
         updated = [...prev, {
-          _id: variantId, // unique key
+          _id: lineKey,
           variantId,
           productId,
           name: productData?.name || '',
@@ -65,6 +78,8 @@ const useCartStore = create((set, get) => ({
           colorCode: productData?.colorCode || '',
           stock: productData?.stock ?? 99,
           quantity,
+          ...(h != null && !Number.isNaN(h) ? { customerHeightCm: h } : {}),
+          ...(w != null && !Number.isNaN(w) ? { customerWeightKg: w } : {}),
         }];
       }
       saveGuestCart(updated);
@@ -76,7 +91,15 @@ const useCartStore = create((set, get) => ({
     // Logged-in mode — server cart
     set({ isLoading: true });
     try {
-      const { data } = await api.post('/cart/add', { productId, variantId, quantity });
+      const h = productData?.customerHeightCm != null ? Number(productData.customerHeightCm) : undefined;
+      const w = productData?.customerWeightKg != null ? Number(productData.customerWeightKg) : undefined;
+      const { data } = await api.post('/cart/add', {
+        productId,
+        variantId,
+        quantity,
+        ...(h != null && !Number.isNaN(h) ? { customerHeightCm: h } : {}),
+        ...(w != null && !Number.isNaN(w) ? { customerWeightKg: w } : {}),
+      });
       set({ cart: data.cart, isOpen: true });
       toast.success('تمت الإضافة للسلة');
       return { success: true };

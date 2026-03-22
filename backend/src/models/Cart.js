@@ -8,6 +8,8 @@ const cartItemSchema = new mongoose.Schema({
   colorCode: String,
   quantity: { type: Number, required: true, min: 1, default: 1 },
   price: { type: Number, required: true }, // snapshot price
+  customerHeightCm: { type: Number, min: 100, max: 220 },
+  customerWeightKg: { type: Number, min: 30, max: 200 },
 });
 
 const cartSchema = new mongoose.Schema({

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { NextSeo } from 'next-seo';
 import Layout from '../components/layout/Layout';
 import { useLang } from '../contexts/LanguageContext';
@@ -117,13 +116,7 @@ export default function ReturnsPage() {
                 >
                   <XIconRed />
                 </span>
-                <p className="text-white/70 text-sm leading-relaxed font-body pt-0.5">
-                  {p.not1Prefix}
-                  <Link href="/size-guide" className="text-brand-purple-light hover:text-brand-purple underline-offset-2 hover:underline">
-                    {p.sizeGuideLink}
-                  </Link>
-                  {p.not1Suffix}
-                </p>
+                <p className="text-white/70 text-sm leading-relaxed font-body pt-0.5">{p.not1WrongSize}</p>
               </li>
               {notItems.map((text, i) => (
                 <li key={i} className="px-5 py-4 md:px-6 flex gap-3 items-start">

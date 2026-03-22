@@ -150,6 +150,11 @@ export default function OrderDetailPage() {
                   <div className="flex-1">
                     <p className="font-medium text-sm">{item.name}</p>
                     <p className="text-xs text-brand-warm-gray mt-1">{item.size} · {item.color}</p>
+                    {item.customerHeightCm != null && item.customerWeightKg != null && (
+                      <p className="text-xs text-brand-warm-gray mt-0.5">
+                        {t.account.measurementsLine.replace('{h}', String(item.customerHeightCm)).replace('{w}', String(item.customerWeightKg))}
+                      </p>
+                    )}
                     <p className="text-xs text-brand-warm-gray">{t.account.qtyShort}: {item.quantity}</p>
                     <p className="text-sm font-medium mt-2">{formatIQD(item.price * item.quantity)}</p>
                   </div>

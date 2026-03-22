@@ -141,10 +141,19 @@ Events: `payment_intent.succeeded`, `payment_intent.payment_failed`
 - Admin route protection
 - Stock consistency enforcement
 
+## 👤 Admin user
+
+- **Role:** Users with `role: "admin"` in MongoDB can access `/admin` (JWT `protect` + `adminOnly` on the API).
+- **After full seed** (`cd backend && npm run seed`): log in with **`ADMIN_EMAIL` / `ADMIN_PASSWORD`** from `.env`, or defaults **`admin@maisonelara.com` / `Admin@123456`** if those env vars are unset.  
+  ⚠️ Seeding **deletes all users** — use only on dev/test DBs.
+- **Promote an existing account** (keeps other data): from `backend/` run  
+  `npm run create-admin -- you@email.com YourPassword`  
+  or set `ADMIN_EMAIL` + `ADMIN_PASSWORD` in `.env` and run `npm run create-admin`.
+
 ## 🧪 Test Data
 
 After seeding (`npm run seed`):
-- **Admin:** admin@maisonelara.com / Admin@123456
+- **Admin:** same as [Admin user](#-admin-user) above
 - **Promo Code:** WELCOME15 (15% off, min $50)
 - **Stripe Test Card:** 4242 4242 4242 4242
 

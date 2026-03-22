@@ -23,7 +23,9 @@ export default function RegisterPage() {
     if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     const result = await register({ firstName: form.firstName, lastName: form.lastName, email: form.email, password: form.password });
     if (result.success) {
-      router.push('/');
+      const r = router.query.redirect;
+      const dest = typeof r === 'string' && r.startsWith('/') && !r.startsWith('//') ? r : '/';
+      router.push(dest);
     } else {
       setError(result.error);
     }
@@ -33,9 +35,15 @@ export default function RegisterPage() {
     <>
       <NextSeo title={t.auth.register} />
       <div className="min-h-screen grid md:grid-cols-2">
-        <div className={`hidden md:block relative ${isRTL ? 'order-2' : 'order-1'}`}>
-          <Image src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&q=80" alt="Fashion" fill className="object-cover" />
-          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-end pb-16 px-12">
+        <div className={`hidden md:block relative min-h-[420px] ${isRTL ? 'order-2' : 'order-1'}`}>
+          <Image
+            src="https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=1600&q=88"
+            alt=""
+            fill
+            className="object-cover object-[center_30%]"
+            sizes="50vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/15 flex flex-col items-center justify-end pb-16 px-12">
             <Link href="/" className="text-white font-display text-4xl tracking-[0.2em] mb-4">YF14 Store</Link>
             <p className="text-white/70 text-sm tracking-wider text-center">{t.auth.registerSubtitle}</p>
           </div>

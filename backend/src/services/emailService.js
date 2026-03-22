@@ -11,6 +11,140 @@ function getResend() {
 
 const EMAIL_FROM = () => process.env.EMAIL_FROM || 'YF14 Store <orders@yf14.store>';
 const STORE_INBOX = () => process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
+const STORE_NAME = () => process.env.STORE_NAME || 'YF14 Store';
+
+function escapeHtml(str) {
+  if (str == null || str === '') return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatIqd(amount) {
+  const n = Number(amount);
+  if (Number.isNaN(n)) return 'IQD 0';
+  return `IQD ${n.toLocaleString('en-US')}`;
+}
+
+/** Arabic RTL order confirmation (table layout for email clients). */
+function buildOrderConfirmationEmailHtml(order) {
+  const gi = order.guestInfo || {};
+  const sa = order.shippingAddress || {};
+  const u = order.user;
+
+  const customerFirst =
+    (u && String(u.firstName || '').trim()) ||
+    (gi.name && String(gi.name).trim().split(/\s+/)[0]) ||
+    '';
+
+  const governorate = gi.city || sa.city || '';
+  const area = gi.town || sa.state || '';
+  const phone = gi.phone || sa.phone || '';
+
+  const orderNum = escapeHtml((order.orderNumber || '').trim() || '—');
+  const sn = escapeHtml(STORE_NAME());
+  const nameStrong = customerFirst ? escapeHtml(customerFirst) : 'عزيزتي';
+  const gov = governorate ? escapeHtml(governorate) : '—';
+  const ar = area ? escapeHtml(area) : '—';
+  const ph = phone ? escapeHtml(phone) : '—';
+  const totalStr = escapeHtml(formatIqd(order.total));
+  const year = new Date().getFullYear();
+
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تأكيد الطلب</title>
+</head>
+<body style="margin:0;padding:0;background:#0f1117;font-family:'Segoe UI',Tahoma,sans-serif;direction:rtl;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f1117;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <div style="width:48px;height:48px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);border-radius:50%;display:inline-block;margin-bottom:12px;"></div>
+              <div style="font-size:22px;font-weight:700;color:#e8e8f0;letter-spacing:0.08em;">${sn}</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:inline-flex;align-items:center;justify-content:center;font-size:32px;color:#fff;font-weight:700;">✓</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-bottom:8px;">
+              <h1 style="margin:0;font-size:28px;font-weight:700;color:#e8e8f0;">تم تأكيد طلبك! 🎉</h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <p style="margin:0;font-size:15px;color:#9ca3af;line-height:1.8;">
+                مرحباً <strong style="color:#e8e8f0;">${nameStrong}</strong>،
+                شكراً لثقتك بـ ${sn}.<br>
+                سيتواصل معك فريقنا قريباً لتأكيد الطلب وتحديد موعد التوصيل.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <div style="background:#1a1d2e;border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:24px;text-align:center;">
+                <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#6b7280;margin-bottom:8px;">رقم طلبك</div>
+                <div style="font-size:30px;font-weight:700;color:#a78bfa;margin-bottom:6px;">${orderNum}</div>
+                <div style="font-size:12px;color:#6b7280;">احتفظي بهذا الرقم لتتبع طلبك</div>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <div style="background:#1a1d2e;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;">
+                <div style="font-size:14px;font-weight:700;color:#e8e8f0;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:12px;">تفاصيل الطلب</div>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-size:13px;color:#9ca3af;padding:6px 0;">المحافظة</td>
+                    <td style="font-size:13px;color:#e8e8f0;text-align:left;padding:6px 0;">${gov}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#9ca3af;padding:6px 0;">المنطقة</td>
+                    <td style="font-size:13px;color:#e8e8f0;text-align:left;padding:6px 0;">${ar}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#9ca3af;padding:6px 0;">رقم الهاتف</td>
+                    <td style="font-size:13px;color:#e8e8f0;text-align:left;padding:6px 0;">${ph}</td>
+                  </tr>
+                  <tr style="border-top:1px solid rgba(255,255,255,0.07);">
+                    <td style="font-size:14px;font-weight:700;color:#e8e8f0;padding-top:12px;">الإجمالي</td>
+                    <td style="font-size:14px;font-weight:700;color:#a78bfa;text-align:left;padding-top:12px;">${totalStr}</td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center">
+              <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.8;">
+                ${sn} — جميع الحقوق محفوظة © ${year}<br>
+                إذا لم تطلبي هذا الطلب، يرجى تجاهل هذا البريد.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
 
 const sendEmail = async ({ to, subject, html, bcc }) => {
   try {
@@ -123,21 +257,8 @@ exports.sendWelcome = async (user) => {
 };
 
 exports.sendOrderConfirmation = async (order) => {
-  const itemsHtml = order.items.map(item => `
-    <tr>
-      <td>${item.name}</td>
-      <td>${item.size} / ${item.color}</td>
-      <td>×${item.quantity}</td>
-      <td>$${(item.price * item.quantity).toFixed(2)}</td>
-    </tr>
-  `).join('');
-
   const customerEmail =
     (order.user && order.user.email) || (order.guestInfo && order.guestInfo.email);
-  const firstName =
-    (order.user && order.user.firstName) ||
-    (order.guestInfo && order.guestInfo.name && order.guestInfo.name.trim().split(/\s+/)[0]) ||
-    'Customer';
   const storeInbox = STORE_INBOX();
 
   const to = customerEmail || storeInbox;
@@ -146,41 +267,16 @@ exports.sendOrderConfirmation = async (order) => {
     return;
   }
   const subject = customerEmail
-    ? `Order received — ${order.orderNumber}`
-    : `[Store] New guest order — ${order.orderNumber} (no customer email)`;
+    ? `تأكيد الطلب — ${order.orderNumber}`
+    : `[متجر] طلب جديد بدون بريد العميل — ${order.orderNumber}`;
   const bcc =
     customerEmail && storeInbox && customerEmail !== storeInbox ? storeInbox : undefined;
-
-  const isGuest = !order.user;
-  const trackUrl = isGuest
-    ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/`
-    : `${process.env.FRONTEND_URL || 'http://localhost:3000'}/account/orders/${order._id}`;
-  const trackLabel = isGuest ? 'Visit store' : 'Track order';
-
-  const guestBlock =
-    order.guestInfo &&
-    `<p style="color:#555;font-size:14px;"><strong>Phone:</strong> ${order.guestInfo.phone || '—'}<br/>
-    <strong>City / area:</strong> ${order.guestInfo.city || '—'} — ${order.guestInfo.town || '—'}</p>`;
 
   await sendEmail({
     to,
     bcc,
     subject,
-    html: baseTemplate(`
-      <h2 style="color:#1a1a1a;font-weight:300;letter-spacing:2px;">Order received</h2>
-      <p style="color:#555;">Thank you, ${firstName}! Your order <strong>${order.orderNumber}</strong> has been received.</p>
-      ${guestBlock || ''}
-      <table class="order-table">
-        <thead><tr><th>Item</th><th>Variant</th><th>Qty</th><th>Price</th></tr></thead>
-        <tbody>
-          ${itemsHtml}
-          <tr><td colspan="3">Shipping</td><td>$${(order.shippingCost ?? 0).toFixed(2)}</td></tr>
-          ${order.promoDiscount ? `<tr><td colspan="3">Discount (${order.promoCode})</td><td>-$${order.promoDiscount.toFixed(2)}</td></tr>` : ''}
-          <tr class="total-row"><td colspan="3">Total</td><td>$${order.total.toFixed(2)}</td></tr>
-        </tbody>
-      </table>
-      <a href="${trackUrl}" class="btn">${trackLabel}</a>
-    `),
+    html: buildOrderConfirmationEmailHtml(order),
   });
 };
 

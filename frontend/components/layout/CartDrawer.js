@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import useCartStore from '../../store/cartStore';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
+import { DELIVERY_FEE_IQD } from '../../lib/deliveryFee';
 
 export default function CartDrawer() {
   const {
@@ -17,6 +18,7 @@ export default function CartDrawer() {
 
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const prevItemCountRef = useRef(-1);
 
   // Determine active items (server or guest)
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -24,7 +26,24 @@ export default function CartDrawer() {
   const promoCode = typeof activePromoCode === 'function' ? activePromoCode() : activePromoCode;
   const discount = typeof activePromoDiscount === 'function' ? activePromoDiscount() : (activePromoDiscount || 0);
 
-  const total = subtotal - discount;
+  const total = subtotal - discount + DELIVERY_FEE_IQD;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, setOpen]);
+
+  // After last item is removed, close drawer so checkout isn’t blocked by an empty panel
+  useEffect(() => {
+    const n = items.length;
+    const prev = prevItemCountRef.current;
+    prevItemCountRef.current = n;
+    if (isOpen && prev > 0 && n === 0) setOpen(false);
+  }, [items.length, isOpen, setOpen]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -52,18 +71,24 @@ export default function CartDrawer() {
           <motion.div
             {...slideDir}
             transition={{ type: 'tween', duration: 0.35 }}
+            dir={isRTL ? 'rtl' : 'ltr'}
             className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-full w-full max-w-md bg-white z-50 flex flex-col shadow-2xl`}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-brand-black/10">
-              <h2 className="font-display text-xl font-light tracking-wide">
+            {/* Header — close always visible (incl. empty cart) */}
+            <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-brand-black/10 shrink-0">
+              <h2 className="font-display text-xl font-light tracking-wide min-w-0">
                 {t.cart.title}
                 {items.length > 0 && (
-                  <span className="ml-2 font-body text-sm text-brand-warm-gray">({items.length})</span>
+                  <span className="ms-2 font-body text-sm text-brand-warm-gray">({items.length})</span>
                 )}
               </h2>
-              <button onClick={() => setOpen(false)} className="text-brand-warm-gray hover:text-brand-black transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label={t.common.close}
+                className="shrink-0 p-2.5 -m-1 rounded-lg text-brand-warm-gray hover:text-brand-black hover:bg-black/[0.06] transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -78,12 +103,21 @@ export default function CartDrawer() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                   </div>
-                  <div>
+                  <div className="w-full max-w-xs">
                     <p className="font-display text-xl mb-2">{t.cart.empty}</p>
                     <p className="text-sm text-brand-warm-gray mb-6">{t.cart.emptyText}</p>
-                    <Link href="/products" onClick={() => setOpen(false)} className="btn-primary">
-                      {t.home.heroCta}
-                    </Link>
+                    <div className="flex flex-col gap-3">
+                      <Link href="/products" onClick={() => setOpen(false)} className="btn-primary text-center">
+                        {t.home.heroCta}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        className="w-full py-3 text-sm text-brand-warm-gray hover:text-brand-black border border-brand-black/15 rounded-md hover:bg-black/[0.03] transition-colors"
+                      >
+                        {t.common.close}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -92,8 +126,13 @@ export default function CartDrawer() {
                     // Support both server cart items (have item.product) and guest items
                     const imgUrl = item.image || item.product?.images?.[0]?.url || '';
                     const itemSlug = item.product?.slug || null;
+                    const lineKey = item._id || item.variantId;
+                    const meas =
+                      item.customerHeightCm != null && item.customerWeightKg != null
+                        ? t.product.cartMeasurements.replace('{h}', String(item.customerHeightCm)).replace('{w}', String(item.customerWeightKg))
+                        : null;
                     return (
-                      <div key={item._id || item.variantId} className="flex gap-4">
+                      <div key={lineKey} className="flex gap-4">
                         <div className="w-20 h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden rounded">
                           {imgUrl && (
                             <Image
@@ -120,22 +159,23 @@ export default function CartDrawer() {
                           <p className="text-xs text-brand-warm-gray mt-1">
                             {item.size} · {item.color}
                           </p>
+                          {meas && <p className="text-[11px] text-brand-warm-gray/90 mt-0.5">{meas}</p>}
                           <div className="flex items-center justify-between mt-3">
                             <div className="flex items-center border border-brand-black/20 rounded">
                               <button
-                                onClick={() => updateItem(item._id || item.variantId, item.quantity - 1)}
+                                onClick={() => updateItem(lineKey, item.quantity - 1)}
                                 className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors"
                               >−</button>
                               <span className="w-8 text-center text-xs font-medium">{item.quantity}</span>
                               <button
-                                onClick={() => updateItem(item._id || item.variantId, item.quantity + 1)}
+                                onClick={() => updateItem(lineKey, item.quantity + 1)}
                                 disabled={item.stock !== undefined && item.quantity >= item.stock}
                                 className="w-7 h-7 flex items-center justify-center text-brand-warm-gray hover:text-brand-black transition-colors disabled:opacity-40"
                               >+</button>
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-semibold">{formatIQD(item.price * item.quantity)}</span>
-                              <button onClick={() => removeItem(item._id || item.variantId)} className="text-brand-warm-gray hover:text-red-500 transition-colors">
+                              <button onClick={() => removeItem(lineKey)} className="text-brand-warm-gray hover:text-red-500 transition-colors">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -197,7 +237,7 @@ export default function CartDrawer() {
                   </div>
                   <div className="flex justify-between text-brand-warm-gray">
                     <span>{t.cart.shipping}</span>
-                    <span>5,000 د.ع</span>
+                    <span>{formatIQD(DELIVERY_FEE_IQD)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600 font-medium">
@@ -211,8 +251,10 @@ export default function CartDrawer() {
                   </div>
                 </div>
 
-                <p className="text-xs text-brand-warm-gray text-center" dir="rtl">
-                  🚚 التوصيل 5,000 د.ع — الدفع عند الاستلام
+                <p className="text-xs text-brand-warm-gray text-center" dir={isRTL ? 'rtl' : 'ltr'}>
+                  {isRTL
+                    ? `🚚 التوصيل ${formatIQD(DELIVERY_FEE_IQD)} — الدفع عند الاستلام`
+                    : `🚚 Delivery ${formatIQD(DELIVERY_FEE_IQD)} — cash on delivery`}
                 </p>
 
                 <Link href="/checkout" onClick={() => setOpen(false)} className="btn-primary w-full text-center block">

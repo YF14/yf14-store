@@ -10,6 +10,8 @@ const orderItemSchema = new mongoose.Schema({
   colorCode: String,
   quantity: { type: Number, required: true, min: 1 },
   variantId: mongoose.Schema.Types.ObjectId,
+  customerHeightCm: Number,
+  customerWeightKg: Number,
 });
 
 const shippingAddressSchema = new mongoose.Schema({

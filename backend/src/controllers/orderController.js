@@ -5,6 +5,9 @@ const Cart = require('../models/Cart');
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 
+/** Flat delivery (IQD); optional env override. Frontend `lib/deliveryFee.js` should match. */
+const DELIVERY_FEE_IQD = Number(process.env.DELIVERY_FEE_IQD) || 5000;
+
 exports.createOrder = async (req, res, next) => {
   try {
     const { items, shippingAddress, promoCode, paymentMethod = 'cash' } = req.body;
@@ -34,6 +37,8 @@ exports.createOrder = async (req, res, next) => {
         colorCode: variant.colorCode,
         quantity: item.quantity,
         variantId: variant._id,
+        ...(item.customerHeightCm != null ? { customerHeightCm: Number(item.customerHeightCm) } : {}),
+        ...(item.customerWeightKg != null ? { customerWeightKg: Number(item.customerWeightKg) } : {}),
       });
     }
 
@@ -54,7 +59,7 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
-    const shippingCost = 0;
+    const shippingCost = DELIVERY_FEE_IQD;
     const total = subtotal + shippingCost - promoDiscount;
 
     // Create order
@@ -137,6 +142,8 @@ exports.createGuestOrder = async (req, res, next) => {
         colorCode: variant.colorCode,
         quantity: item.quantity,
         variantId: variant._id,
+        ...(item.customerHeightCm != null ? { customerHeightCm: Number(item.customerHeightCm) } : {}),
+        ...(item.customerWeightKg != null ? { customerWeightKg: Number(item.customerWeightKg) } : {}),
       });
     }
 
@@ -156,7 +163,7 @@ exports.createGuestOrder = async (req, res, next) => {
       }
     }
 
-    const shippingCost = 0;
+    const shippingCost = DELIVERY_FEE_IQD;
     const total = subtotal + shippingCost - promoDiscount;
 
     const order = await Order.create({

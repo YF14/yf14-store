@@ -124,11 +124,9 @@ const en = {
     reviews: 'Reviews',
     relatedTitle: 'You May Also Like',
     noReviews: 'No reviews yet',
-    writeReview: 'Write a Review',
     allProducts: 'All Products',
     newArrivals: 'New Arrivals',
     onSale: 'On Sale',
-    sizeGuide: 'Size Guide',
     shareProduct: 'Share',
     addedToCart: 'Added to Cart',
     alreadyInWishlist: 'Already in Wishlist',
@@ -141,29 +139,30 @@ const en = {
     reviewsWord: 'reviews',
     adding: 'Adding...',
     addToBag: 'Add to Bag',
-    verifiedBadge: '✓ Verified',
-    noReviewsCta: 'No reviews yet. Be the first!',
-    reviewTitlePlaceholder: 'Review title',
-    reviewBodyPlaceholder: 'Share your experience...',
-    submitReview: 'Submit Review',
-    reviewSubmitted: 'Review submitted!',
-    reviewSubmitFailed: 'Failed to submit review',
-    productDetailsSection: 'Product Details',
     onlyLeftPrefix: 'Only',
     onlyLeftSuffix: 'left!',
     inStockLabel: 'in stock',
-    shippingLine: 'Free over 100,000 IQD · 3-5 business days',
-    returnsLine: '30-day free returns',
-    materialLabel: 'Material',
-    careLabel: 'Care',
-    shippingLabel: 'Shipping',
-    returnsLabel: 'Returns',
     selectSizeColor: 'Please select size and color',
     variantUnavailable: 'This combination is not available',
     notEnoughStock: 'Not enough stock',
     lowStockBanner: 'Only {n} left in stock',
     savedToWishlist: '♥ Saved to Wishlist',
     addToWishlistBtn: '♡ Add to Wishlist',
+    measurementsTitle: 'Your measurements',
+    heightPlaceholder: 'Height',
+    weightPlaceholder: 'Weight',
+    unitCm: 'cm',
+    unitKg: 'kg',
+    measurementHint: 'This helps us suggest the best fit for you.',
+    heightRequired: 'Please enter your height first',
+    weightRequired: 'Please enter your weight first',
+    heightInvalid: 'Please enter a valid height (100–220 cm)',
+    weightInvalid: 'Please enter a valid weight (30–200 kg)',
+    relatedSimilar: 'You may also like',
+    relatedSameColor: 'Same color',
+    relatedSameCategory: 'Same category',
+    cartMeasurements: 'H {h} cm · W {w} kg',
+    quantityLabel: 'Quantity',
   },
 
   cart: {
@@ -302,6 +301,7 @@ const en = {
     itemsPlural: 'items',
     trackPrefix: 'Track',
     qtyShort: 'Qty',
+    measurementsLine: 'Height {h} cm · Weight {w} kg',
   },
 
   pages: {
@@ -357,15 +357,150 @@ const en = {
     when2Title: 'Return must happen while delivery person is present',
     when2Desc: 'Hand the item back immediately — do not ask the delivery person to wait or come back',
     notTitle: 'We do not accept returns for',
-    not1Prefix: 'Wrong size ordered — please check the ',
-    sizeGuideLink: 'size guide',
-    not1Suffix: ' before ordering',
+    not1WrongSize:
+      'Wrong size ordered — please check the size chart on the product page before ordering',
     not2: 'Change of mind after the delivery person has left',
     not3: 'Sale items — all sale purchases are final',
     warnLead:
       'Before placing your order, please review all product photos carefully. If you have any questions about a product, contact us on ',
     warnWhatsApp: 'WhatsApp',
     warnTail: ' before ordering — not after delivery.',
+  },
+
+  contactPage: {
+    metaTitle: 'Contact us',
+    metaDesc: 'Contact YF14 Store — WhatsApp, Instagram, and Facebook.',
+    pageTitle: 'Contact us',
+    pageSub: "We're happy to help anytime",
+    waCardTitle: 'We reply quickly on WhatsApp',
+    waCardBeforeLink: 'For urgent questions, message us on ',
+    waCardAfterLink: ' — we usually reply within an hour during business hours.',
+    socialSectionTitle: 'Follow us on our platforms',
+    heroEyebrow: "We're here to help",
+    heroTitle: 'Get in',
+    heroTitleEm: 'touch',
+    heroSub:
+      'We’re happy to answer your questions — follow us on social or send a message and we’ll get back to you.',
+    infoLabel: 'Follow us',
+    infoHeadingBefore: 'Find us on',
+    infoHeadingAfter: 'your favourite platforms',
+    infoBody:
+      'Follow us on Instagram and Facebook for the latest drops, or message us on WhatsApp for quick help.',
+    formTitle: 'Send us a message',
+    formSub: 'We usually reply within 24 hours.',
+    labelName: 'Name',
+    phName: 'Your name',
+    labelPhone: 'Registered mobile number',
+    phoneHelper: 'Iraqi mobile only — use the same number you registered or used for orders.',
+    phPhone: '+964 7XX XXX XXXX',
+    labelEmail: 'Email',
+    phEmail: 'you@example.com',
+    labelSubject: 'Topic',
+    subjectPlaceholder: 'Choose a topic',
+    subjectProduct: 'Product question',
+    subjectTrack: 'Track my order',
+    subjectReturn: 'Return or exchange',
+    subjectComplaint: 'Complaint',
+    subjectOther: 'Other',
+    labelMessage: 'Your message',
+    phMessage: 'Write your message…',
+    sendBtn: 'Send message',
+    successTitle: 'Message sent!',
+    successBody: 'Thank you for reaching out.\nWe’ll reply as soon as we can.',
+    toastName: 'Please enter your name',
+    toastPhone: 'Enter a valid Iraqi mobile number (e.g. +964 7XX XXX XXXX)',
+    toastEmail: 'Please enter a valid email',
+    toastMessage: 'Please write your message',
+    toastSubject: 'Please choose a topic',
+    socialIg: 'Instagram',
+    socialFb: 'Facebook',
+    socialWa: 'WhatsApp',
+    bottomShop: 'Back to shop',
+  },
+
+  privacyPage: {
+    metaTitle: 'Privacy policy',
+    metaDesc: 'How YF14 Store collects, uses, and protects your personal information.',
+    eyebrow: 'Legal',
+    title: 'Privacy policy',
+    lastUpdated: 'Last updated: March 2025',
+    sections: [
+      {
+        title: 'What we collect',
+        body:
+          'We collect information you provide when you create an account, place an order, or contact us — such as name, email, phone number, delivery address, and order details. We also receive technical data (e.g. device type, browser) needed to run the site securely.',
+      },
+      {
+        title: 'How we use it',
+        body:
+          'We use your information to process and deliver orders, communicate about your purchases, improve our service, and comply with legal obligations. We do not sell your personal data to third parties.',
+      },
+      {
+        title: 'Cookies & analytics',
+        body:
+          'We may use cookies or similar technologies to remember preferences and understand how visitors use the store. You can control cookies through your browser settings.',
+      },
+      {
+        title: 'Data retention & security',
+        body:
+          'We keep data only as long as needed for the purposes above or as required by law. We take reasonable measures to protect your information, though no online service is completely secure.',
+      },
+      {
+        title: 'Your rights',
+        body:
+          'Depending on applicable law, you may request access, correction, or deletion of certain personal data. Contact us through the contact page and we will respond within a reasonable time.',
+      },
+      {
+        title: 'Changes',
+        body:
+          'We may update this policy from time to time. The “last updated” date at the top will change when we do. Continued use of the site after changes means you accept the updated policy.',
+      },
+    ],
+  },
+
+  termsPage: {
+    metaTitle: 'Terms & conditions',
+    metaDesc: 'Terms of use for shopping at YF14 Store.',
+    eyebrow: 'Legal',
+    title: 'Terms & conditions',
+    lastUpdated: 'Last updated: March 2025',
+    sections: [
+      {
+        title: 'Agreement',
+        body:
+          'By using this website and placing orders, you agree to these terms. If you do not agree, please do not use the site.',
+      },
+      {
+        title: 'Products & pricing',
+        body:
+          'We aim to describe products and prices accurately. Minor variations in colour or appearance may occur. We may correct errors and refuse or cancel orders where a listing was clearly mistaken.',
+      },
+      {
+        title: 'Orders & payment',
+        body:
+          'When you place an order, you offer to buy the items at the prices shown. We confirm acceptance when we send order confirmation or ship your order. Payment methods and delivery fees (e.g. cash on delivery) are shown at checkout.',
+      },
+      {
+        title: 'Delivery',
+        body:
+          'Delivery times and areas are described in our delivery information. Risk passes to you when the order is delivered to the address you provided.',
+      },
+      {
+        title: 'Returns & exchanges',
+        body:
+          'Returns and exchanges are governed by our returns policy page. Please read it before ordering.',
+      },
+      {
+        title: 'Limitation of liability',
+        body:
+          'To the extent permitted by law, we are not liable for indirect or consequential loss. Our total liability for any claim relating to an order is limited to the amount you paid for that order.',
+      },
+      {
+        title: 'Contact',
+        body:
+          'Questions about these terms? Reach us via the contact page or the channels listed in the footer.',
+      },
+    ],
   },
 
   footer: {
@@ -392,7 +527,6 @@ const en = {
     shipping: 'Delivery policy',
     returns: 'Returns & exchanges',
     trackOrder: 'Track my order',
-    sizeGuideLink: 'Size guide',
     allRights: 'All rights reserved',
     privacyPolicy: 'Privacy policy',
     terms: 'Terms & conditions',

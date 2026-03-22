@@ -53,6 +53,8 @@ export default function Footer() {
     ? `https://wa.me/${whatsappRaw.replace(/\D/g, '')}`
     : '/contact';
 
+  const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://www.facebook.com/yf14store';
+
   const collections = [
     { label: t.nav.evening, href: '/products?category=evening-dresses' },
     { label: t.nav.cocktail, href: '/products?category=cocktail-dresses' },
@@ -65,7 +67,6 @@ export default function Footer() {
   const careLinks = [
     { label: t.footer.shipping, href: '/shipping' },
     { label: t.footer.returns, href: '/returns' },
-    { label: t.footer.sizeGuideLink, href: '/size-guide' },
     { label: t.footer.trackOrder, href: '/account/orders' },
     { label: t.footer.contact, href: '/contact' },
   ];
@@ -78,12 +79,10 @@ export default function Footer() {
   const iconClass = 'w-4 h-4 text-brand-purple flex-shrink-0 mt-0.5';
 
   return (
-    <footer className="w-full max-w-full min-w-0 overflow-x-hidden text-white mt-12 bg-[#0a0a12]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, #8b2be2, #d63384, #8b2be2)' }} />
-
-      <div className="py-7 md:py-8">
+    <footer className="w-full max-w-full min-w-0 overflow-x-hidden text-white bg-[#0a0a12]" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="pt-10 md:pt-12 pb-7 md:pb-8">
         {/* Same DOM order always: brand, collections, help, delivery. With footer dir=rtl, grid column 1 is on the visual right (RTL flow). */}
-        <div className="container-luxury grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 md:gap-8 lg:gap-6">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 md:gap-8 lg:gap-6 lg:gap-x-10 xl:gap-x-12">
           <div className="sm:col-span-2 lg:col-span-1 flex flex-col items-start">
             <div className="flex items-center gap-2 mb-3">
               <Link
@@ -116,7 +115,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="https://www.facebook.com/YFStore"
+                href={facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={iconWrap}
