@@ -149,7 +149,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
           {/* Wishlist */}
           <button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 w-8 h-8 bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-black hover:text-white z-10"
+            className="absolute top-3 right-3 w-8 h-8 bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all duration-200 hover:bg-brand-black hover:text-white active:bg-brand-black active:text-white z-10"
           >
             <svg
               className="w-4 h-4"
@@ -169,7 +169,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
             const sizeOrder = ['XS','S','M','L','XL','XXL','XXXL'];
             sizes.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b));
             return (
-              <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
+              <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 [@media(hover:none)]:translate-y-0 transition-transform duration-300 z-10">
                 {sizes.length > 0 ? (
                   <div className="flex items-center justify-center gap-1.5 flex-wrap">
                     {sizes.map(size => (

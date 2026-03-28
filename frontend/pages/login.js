@@ -188,11 +188,13 @@ export default function LoginPage() {
                 color: '#c084fc',
                 background: 'rgba(139,43,226,0.06)',
               }}
-              onMouseEnter={(e) => {
+              onPointerEnter={(e) => {
+                if (e.pointerType === 'touch') return;
                 e.currentTarget.style.background = 'rgba(139,43,226,0.15)';
                 e.currentTarget.style.borderColor = 'rgba(139,43,226,0.7)';
               }}
-              onMouseLeave={(e) => {
+              onPointerLeave={(e) => {
+                if (e.pointerType === 'touch') return;
                 e.currentTarget.style.background = 'rgba(139,43,226,0.06)';
                 e.currentTarget.style.borderColor = 'rgba(139,43,226,0.4)';
               }}

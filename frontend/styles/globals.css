@@ -131,6 +131,7 @@ h1, h2, h3, h4 {
   }
   .btn-primary:hover::after { @apply opacity-100; }
   .btn-primary:hover { @apply shadow-lg -translate-y-px; }
+  .btn-primary:active { @apply scale-[0.98]; }
   .btn-primary span, .btn-primary svg { @apply relative z-10; }
 
   .btn-outline {
@@ -139,6 +140,7 @@ h1, h2, h3, h4 {
   .btn-outline:hover {
     @apply bg-[#8b2be2] text-white shadow-md -translate-y-px;
   }
+  .btn-outline:active { @apply scale-[0.98]; }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 text-brand-black text-xs tracking-widest uppercase font-body font-medium transition-all duration-200 hover:text-[#8b2be2] touch-manipulation;
@@ -256,7 +258,9 @@ h1, h2, h3, h4 {
 /* ── Image zoom ─────────────────────── */
 .img-zoom { @apply overflow-hidden; }
 .img-zoom img { transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.img-zoom:hover img { transform: scale(1.07); }
+@media (hover: hover) and (pointer: fine) {
+  .img-zoom:hover img { transform: scale(1.07); }
+}
 
 /* ── Overlay ────────────────────────── */
 .overlay-dark::after {
@@ -339,4 +343,17 @@ input[type='range']::-webkit-slider-thumb {
 }
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* ── Touch-device hover reset ────────────────────────────────────────────────
+   On touch screens :hover states can get "stuck" after a tap.
+   @media (hover: none) matches devices with no true hover pointer (phones/tablets).
+   We reset the visual changes that .btn-primary:hover / .btn-outline:hover apply
+   so tapping a button never leaves it in a lifted, highlighted state.
+   The :active rule below gives an equivalent pressed feedback instead.
+─────────────────────────────────────────────────────────────────────────────── */
+@media (hover: none) {
+  .btn-primary:hover::after   { opacity: 0; }
+  .btn-primary:hover          { transform: none; box-shadow: none; }
+  .btn-outline:hover          { background-color: transparent; color: #8b2be2; box-shadow: none; transform: none; }
 }
