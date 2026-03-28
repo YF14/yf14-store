@@ -8,7 +8,7 @@ import api from '../../lib/api';
 import { useLang } from '../../contexts/LanguageContext';
 import { catName, formatIQD } from '../../lib/currency';
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'];
 const PAGE_SIZE = 20;
 
 function ProductSkeleton() {

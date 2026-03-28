@@ -188,7 +188,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
             const sizes = product.variants
               ? [...new Set(product.variants.filter(v => v.stock > 0).map(v => v.size))]
               : [];
-            const sizeOrder = ['XS','S','M','L','XL','XXL','XXXL'];
+            const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'];
             sizes.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b));
             return (
               <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 [@media(hover:none)]:translate-y-0 transition-transform duration-300 z-10">

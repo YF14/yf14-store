@@ -11,7 +11,7 @@ import { catName } from '../../lib/currency';
 import toast from 'react-hot-toast';
 import VideoPreviewThumb from './VideoPreviewThumb';
 
-const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'];
 const DEFAULT_SIZES = ['M', 'L', 'XL', 'XXL'];
 const DEFAULT_STOCK = 6;
 

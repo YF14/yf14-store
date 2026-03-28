@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const variantSchema = new mongoose.Schema({
-  size: { type: String, required: true, enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
+  size: { type: String, required: true, enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'] },
   color: { type: String, required: true },
   colorCode: { type: String, default: '#000000' }, // hex color
   stock: { type: Number, required: true, default: 0, min: 0 },
