@@ -7,7 +7,7 @@ import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
 import { pickListingImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
 
-const SCROLL_SPEED = 0.3; // px per frame at 60 fps ≈ 18 px/s
+const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
 
 function MarqueeCard({ product }) {
   const [hovered, setHovered] = useState(false);
@@ -95,16 +95,16 @@ export default function HomeProductMarquee() {
   // Duplicate for seamless infinite loop
   const loop = products.length ? [...products, ...products] : [];
 
-  /* ── Auto-scroll via requestAnimationFrame ── */
+  /* ── Auto-scroll via requestAnimationFrame ──
+     Run once on mount; the tick checks scrollRef on every frame so it
+     works regardless of when products finish loading.                   */
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || products.length === 0) return;
-
     let raf;
     const tick = () => {
-      if (!paused.current && el) {
+      const el = scrollRef.current;
+      if (el && !paused.current && el.scrollWidth > el.clientWidth) {
         el.scrollLeft += SCROLL_SPEED;
-        // Seamless loop: once we've passed the first copy, jump back silently
+        // Seamless loop: once past the first copy, jump back silently
         const half = el.scrollWidth / 2;
         if (el.scrollLeft >= half) el.scrollLeft -= half;
       }
@@ -112,7 +112,7 @@ export default function HomeProductMarquee() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [products.length]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Resume helper (called after user releases) ── */
   const scheduleResume = useCallback(() => {
@@ -178,7 +178,7 @@ export default function HomeProductMarquee() {
         </div>
       </div>
 
-      <div className="relative max-w-full overflow-hidden">
+      <div className="relative max-w-full">
         {isLoading ? (
           <div className="flex gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
