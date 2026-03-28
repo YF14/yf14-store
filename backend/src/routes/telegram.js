@@ -53,7 +53,7 @@ router.post('/webhook', async (req, res) => {
     const action = data.slice(0, firstUnderscore);
     const orderId = data.slice(firstUnderscore + 1);
 
-    const VALID_ACTIONS = ['approve', 'decline', 'ship', 'deliver'];
+    const VALID_ACTIONS = ['approve', 'decline', 'ship', 'deliver', 'cancel'];
     if (!orderId || !VALID_ACTIONS.includes(action)) {
       await telegramService.answerCallback(cbId, '❌ إجراء غير معروف');
       return;
@@ -96,10 +96,15 @@ router.post('/webhook', async (req, res) => {
         `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`,
         {
-          inline_keyboard: [[
-            { text: '🚚 في الطريق',   callback_data: `ship_${order._id}` },
-            { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
-          ]],
+          inline_keyboard: [
+            [
+              { text: '🚚 في الطريق',   callback_data: `ship_${order._id}` },
+              { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
+            ],
+            [
+              { text: '❌ إلغاء الطلب', callback_data: `cancel_${order._id}` },
+            ],
+          ],
         }
       );
 
@@ -161,9 +166,14 @@ router.post('/webhook', async (req, res) => {
         `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`,
         {
-          inline_keyboard: [[
-            { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
-          ]],
+          inline_keyboard: [
+            [
+              { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
+            ],
+            [
+              { text: '❌ إلغاء الطلب', callback_data: `cancel_${order._id}` },
+            ],
+          ],
         }
       );
 
@@ -196,6 +206,42 @@ router.post('/webhook', async (req, res) => {
         `🧾 المنتجات:\n${items}\n\n` +
         `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`
+      );
+
+    // ── CANCEL (available at any active stage) ────────────────────────────
+    } else if (action === 'cancel') {
+      if (['cancelled', 'delivered', 'refunded'].includes(order.status)) {
+        await telegramService.answerCallback(cbId, `⚠️ لا يمكن إلغاء الطلب — الحالة: ${order.status}`);
+        return;
+      }
+
+      const prevStatus = order.status;
+      order.status = 'cancelled';
+      order.statusHistory.push({ status: 'cancelled', note: `تم الإلغاء عبر تيليغرام (كان: ${prevStatus})` });
+
+      // Restore stock for each item
+      for (const item of order.items) {
+        await Product.updateOne(
+          { _id: item.product, 'variants._id': item.variantId },
+          { $inc: { 'variants.$.stock': item.quantity, totalSold: -item.quantity } }
+        );
+      }
+      await order.save();
+
+      emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
+
+      await telegramService.answerCallback(cbId, '🚫 تم إلغاء الطلب');
+      await telegramService.editOrderMessage(
+        chatId, msgId,
+        `🚫 تم إلغاء الطلب\n\n` +
+        `📦 ${order.orderNumber}\n` +
+        `👤 ${customerName}\n` +
+        `📞 الهاتف: ${phone}\n` +
+        `📧 الإيميل: ${customerEmail || 'N/A'}\n` +
+        `📍 العنوان: ${address}\n\n` +
+        `🧾 المنتجات:\n${items}\n\n` +
+        `💵 الإجمالي: ${iqd(order.total)}\n\n` +
+        `تم إعادة المخزون${customerEmail ? ' وإخطار العميل' : ''}`
       );
     }
   } catch (err) {
