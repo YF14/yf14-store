@@ -98,13 +98,15 @@ exports.notifyNewOrder = async (order) => {
   }
 };
 
-exports.editOrderMessage = async (chatId, messageId, text) => {
+exports.editOrderMessage = async (chatId, messageId, text, replyMarkup) => {
   try {
-    await call('editMessageText', {
+    const body = {
       chat_id: chatId,
       message_id: messageId,
       text: String(text).slice(0, 4096),
-    });
+    };
+    if (replyMarkup) body.reply_markup = replyMarkup;
+    await call('editMessageText', body);
   } catch (err) {
     logger.error('Telegram editMessage error:', err);
   }

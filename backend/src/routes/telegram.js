@@ -53,7 +53,8 @@ router.post('/webhook', async (req, res) => {
     const action = data.slice(0, firstUnderscore);
     const orderId = data.slice(firstUnderscore + 1);
 
-    if (!orderId || !['approve', 'decline'].includes(action)) {
+    const VALID_ACTIONS = ['approve', 'decline', 'ship', 'deliver'];
+    if (!orderId || !VALID_ACTIONS.includes(action)) {
       await telegramService.answerCallback(cbId, '❌ إجراء غير معروف');
       return;
     }
@@ -64,18 +65,18 @@ router.post('/webhook', async (req, res) => {
       return;
     }
 
-    if (order.status !== 'pending') {
-      await telegramService.answerCallback(cbId, `⚠️ الطلب بالفعل: ${order.status}`);
-      return;
-    }
-
     const customerName = order.guestInfo?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'زائر';
     const customerEmail = order.guestInfo?.email || order.user?.email;
     const phone = getPhone(order);
     const address = buildFullAddress(order);
     const items = order.items.map(i => `  • ${i.name} (${i.size}/${i.color}) x${i.quantity} — ${iqd(i.price * i.quantity)}`).join('\n');
 
+    // ── APPROVE ──────────────────────────────────────────────────────────
     if (action === 'approve') {
+      if (order.status !== 'pending') {
+        await telegramService.answerCallback(cbId, `⚠️ الطلب بالفعل: ${order.status}`);
+        return;
+      }
       order.status = 'confirmed';
       order.statusHistory.push({ status: 'confirmed', note: 'تم الموافقة عبر تيليغرام' });
       await order.save();
@@ -83,7 +84,8 @@ router.post('/webhook', async (req, res) => {
       emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
       await telegramService.answerCallback(cbId, '✅ تمت الموافقة!');
-      await telegramService.editOrderMessage(chatId, msgId,
+      await telegramService.editOrderMessage(
+        chatId, msgId,
         `✅ تمت الموافقة على الطلب\n\n` +
         `📦 ${order.orderNumber}\n` +
         `👤 ${customerName}\n` +
@@ -92,9 +94,21 @@ router.post('/webhook', async (req, res) => {
         `📍 العنوان: ${address}\n\n` +
         `🧾 المنتجات:\n${items}\n\n` +
         `💵 الإجمالي: ${iqd(order.total)}\n\n` +
-        `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`
+        `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`,
+        {
+          inline_keyboard: [[
+            { text: '🚚 في الطريق',   callback_data: `ship_${order._id}` },
+            { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
+          ]],
+        }
       );
+
+    // ── DECLINE ──────────────────────────────────────────────────────────
     } else if (action === 'decline') {
+      if (order.status !== 'pending') {
+        await telegramService.answerCallback(cbId, `⚠️ الطلب بالفعل: ${order.status}`);
+        return;
+      }
       order.status = 'cancelled';
       order.statusHistory.push({ status: 'cancelled', note: 'تم الرفض عبر تيليغرام' });
 
@@ -104,13 +118,13 @@ router.post('/webhook', async (req, res) => {
           { $inc: { 'variants.$.stock': item.quantity, totalSold: -item.quantity } }
         );
       }
-
       await order.save();
 
       emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
       await telegramService.answerCallback(cbId, '❌ تم رفض الطلب');
-      await telegramService.editOrderMessage(chatId, msgId,
+      await telegramService.editOrderMessage(
+        chatId, msgId,
         `❌ تم رفض الطلب\n\n` +
         `📦 ${order.orderNumber}\n` +
         `👤 ${customerName}\n` +
@@ -120,6 +134,68 @@ router.post('/webhook', async (req, res) => {
         `🧾 المنتجات:\n${items}\n\n` +
         `💵 الإجمالي: ${iqd(order.total)}\n\n` +
         `تم إعادة المخزون${customerEmail ? ' وإخطار العميل' : ''}`
+      );
+
+    // ── SHIP ─────────────────────────────────────────────────────────────
+    } else if (action === 'ship') {
+      if (!['confirmed', 'processing'].includes(order.status)) {
+        await telegramService.answerCallback(cbId, `⚠️ الطلب بالفعل: ${order.status}`);
+        return;
+      }
+      order.status = 'shipped';
+      order.statusHistory.push({ status: 'shipped', note: 'تم التحديث عبر تيليغرام: في الطريق' });
+      await order.save();
+
+      emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
+
+      await telegramService.answerCallback(cbId, '🚚 تم تحديث الطلب: في الطريق');
+      await telegramService.editOrderMessage(
+        chatId, msgId,
+        `🚚 الطلب في الطريق\n\n` +
+        `📦 ${order.orderNumber}\n` +
+        `👤 ${customerName}\n` +
+        `📞 الهاتف: ${phone}\n` +
+        `📧 الإيميل: ${customerEmail || 'N/A'}\n` +
+        `📍 العنوان: ${address}\n\n` +
+        `🧾 المنتجات:\n${items}\n\n` +
+        `💵 الإجمالي: ${iqd(order.total)}\n\n` +
+        `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`,
+        {
+          inline_keyboard: [[
+            { text: '✅ تم التسليم', callback_data: `deliver_${order._id}` },
+          ]],
+        }
+      );
+
+    // ── DELIVER ───────────────────────────────────────────────────────────
+    } else if (action === 'deliver') {
+      if (order.status === 'delivered') {
+        await telegramService.answerCallback(cbId, '⚠️ الطلب تم تسليمه مسبقاً');
+        return;
+      }
+      if (!['confirmed', 'processing', 'shipped'].includes(order.status)) {
+        await telegramService.answerCallback(cbId, `⚠️ الطلب بالفعل: ${order.status}`);
+        return;
+      }
+      order.status = 'delivered';
+      order.deliveredAt = new Date();
+      order.statusHistory.push({ status: 'delivered', note: 'تم التحديث عبر تيليغرام: تم التسليم' });
+      await order.save();
+
+      emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
+
+      await telegramService.answerCallback(cbId, '🎉 تم التسليم!');
+      await telegramService.editOrderMessage(
+        chatId, msgId,
+        `🎉 تم تسليم الطلب بنجاح\n\n` +
+        `📦 ${order.orderNumber}\n` +
+        `👤 ${customerName}\n` +
+        `📞 الهاتف: ${phone}\n` +
+        `📧 الإيميل: ${customerEmail || 'N/A'}\n` +
+        `📍 العنوان: ${address}\n\n` +
+        `🧾 المنتجات:\n${items}\n\n` +
+        `💵 الإجمالي: ${iqd(order.total)}\n\n` +
+        `${customerEmail ? '✉️ تم إرسال إيميل للعميل' : '📵 لا يوجد إيميل للعميل'}`
       );
     }
   } catch (err) {
