@@ -149,7 +149,11 @@ function CategoryRow({
           className="w-[5.5rem] sm:w-28 shrink-0 text-center"
           title={a.catColumnFlag}
         >
-          {node.flag?.trim() ? (
+          {node.isHidden ? (
+            <span className="text-[10px] px-2 py-1 rounded-md font-semibold bg-red-500/15 text-red-300 border border-red-500/25">
+              PRIVATE
+            </span>
+          ) : node.flag?.trim() ? (
             <span className="text-[10px] px-2 py-1 rounded-md font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/30">
               {node.flag.trim()}
             </span>
@@ -164,22 +168,40 @@ function CategoryRow({
           )}
         </div>
         <div className="w-[4.5rem] sm:w-24 shrink-0 flex justify-center" title={a.catColumnStatus}>
-          <span
-            className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              node.isActive ? 'text-emerald-300 bg-emerald-500/15' : 'text-orange-300 bg-orange-500/15'
-            }`}
-          >
-            {node.isActive ? a.statusLive : a.statusHidden}
-          </span>
+          {node.isHidden ? (
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium text-red-300 bg-red-500/15">
+              Admin only
+            </span>
+          ) : (
+            <span
+              className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                node.isActive ? 'text-emerald-300 bg-emerald-500/15' : 'text-orange-300 bg-orange-500/15'
+              }`}
+            >
+              {node.isActive ? a.statusLive : a.statusHidden}
+            </span>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => onEdit(node)}
-          className="text-xs px-3 py-1.5 rounded-lg border shrink-0 transition-colors hover:bg-white/5"
-          style={{ borderColor: 'rgba(255,255,255,0.2)', color: MUTED }}
-        >
-          {a.edit}
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {node.isHidden && (
+            <Link
+              href={`/admin/categories/private?id=${node._id}`}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-red-500/10"
+              style={{ borderColor: 'rgba(239,68,68,0.3)', color: '#fca5a5' }}
+              title="Manage products in this private category"
+            >
+              Products
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => onEdit(node)}
+            className="text-xs px-3 py-1.5 rounded-lg border shrink-0 transition-colors hover:bg-white/5"
+            style={{ borderColor: 'rgba(255,255,255,0.2)', color: MUTED }}
+          >
+            {a.edit}
+          </button>
+        </div>
       </div>
       {hasChildren && expanded && node.children.map((ch) => (
         <CategoryRow
@@ -201,6 +223,7 @@ function CategoryRow({
 export default function AdminCategoriesPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t, isRTL } = useLang();
   const a = t.admin;
   const queryClient = useQueryClient();
@@ -222,10 +245,11 @@ export default function AdminCategoriesPage() {
   });
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'categories')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const catOk = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'categories');
 
@@ -297,6 +321,7 @@ export default function AdminCategoriesPage() {
       icon: '',
       flag: '',
       isFeatured: false,
+      isHidden: false,
       sortOrder: 0,
       isActive: true,
     });
@@ -313,6 +338,7 @@ export default function AdminCategoriesPage() {
       icon: cat.icon || '',
       flag: cat.flag || '',
       isFeatured: !!cat.isFeatured,
+      isHidden: !!cat.isHidden,
       sortOrder: cat.sortOrder ?? 0,
       isActive: !!cat.isActive,
     });
@@ -371,6 +397,7 @@ export default function AdminCategoriesPage() {
       icon: form.icon.trim(),
       flag: form.flag.trim(),
       isFeatured: form.isFeatured,
+      isHidden: form.isHidden,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
     };
@@ -728,6 +755,34 @@ export default function AdminCategoriesPage() {
                   />
                   {a.catFeaturedCategory}
                 </label>
+                <div
+                  className="rounded-xl border p-3 space-y-1"
+                  style={{ borderColor: 'rgba(239,68,68,0.25)', backgroundColor: 'rgba(239,68,68,0.04)' }}
+                >
+                  <label className="flex items-start gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isHidden}
+                      onChange={(e) => setForm((f) => ({ ...f, isHidden: e.target.checked }))}
+                      className="rounded border-gray-500 mt-0.5"
+                    />
+                    <span>
+                      <span className="font-semibold text-red-300">Private / Hidden category</span>
+                      <span className="block text-[11px] mt-0.5" style={{ color: MUTED2 }}>
+                        Invisible to customers everywhere. Products assigned here get unlimited stock (no deductions on orders).
+                      </span>
+                    </span>
+                  </label>
+                  {form.isHidden && editing && (
+                    <Link
+                      href={`/admin/categories/private?id=${editing._id}`}
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-300 hover:bg-red-500/10 transition-colors"
+                      onClick={() => setModalOpen(false)}
+                    >
+                      Manage products in this private category →
+                    </Link>
+                  )}
+                </div>
                 <div>
                   <label className="block text-xs mb-1.5" style={{ color: MUTED }}>
                     {a.sortOrderLabel}

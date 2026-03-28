@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from 'react-query';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
 import { canAccessAdmin, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
+import { catName } from '../../lib/currency';
+import api from '../../lib/api';
 import StoreLogoImage from './StoreLogoImage';
 
 export default function Navbar({ scrolled }) {
@@ -25,23 +28,26 @@ export default function Navbar({ scrolled }) {
   const setCartOpen = useCartStore((s) => s.setOpen);
   const { t, locale, setLocale, isRTL } = useLang();
 
-  const navLinks = [
+  const { data: catData } = useQuery(
+    'categories',
+    () => api.get('/categories').then((r) => r.data),
+    { staleTime: 2 * 60 * 1000 }
+  );
+  const categories = catData?.categories || [];
+
+  const navLinks = useMemo(() => [
     { label: t.nav.newArrivals, href: '/new-arrivals' },
     { label: t.nav.featured, href: '/featured' },
     {
       label: t.nav.collections,
       href: '/products',
-      children: [
-        { label: t.nav.evening,  href: '/products?category=evening-dresses' },
-        { label: t.nav.cocktail, href: '/products?category=cocktail-dresses' },
-        { label: t.nav.maxi,     href: '/products?category=maxi-dresses' },
-        { label: t.nav.mini,     href: '/products?category=mini-dresses' },
-        { label: t.nav.casual,   href: '/products?category=casual-dresses' },
-        { label: t.nav.summer,   href: '/products?category=summer-dresses' },
-      ],
+      children: categories.map((cat) => ({
+        label: catName(cat, isRTL),
+        href: `/products?category=${cat.slug}`,
+      })),
     },
     { label: t.nav.sale, href: '/sale' },
-  ];
+  ], [t, isRTL, categories]);
 
   useEffect(() => {
     setMobileOpen(false);

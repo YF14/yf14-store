@@ -72,7 +72,7 @@ export default function CartDrawer() {
             {...slideDir}
             transition={{ type: 'tween', duration: 0.35 }}
             dir={isRTL ? 'rtl' : 'ltr'}
-            className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-[100dvh] max-h-[100dvh] w-full max-w-md bg-white z-50 flex flex-col shadow-2xl pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-manipulation`}
+            className={`fixed top-0 ${isRTL ? 'left-0' : 'right-0'} h-[100dvh] max-h-[100dvh] w-full sm:max-w-md bg-white z-50 flex flex-col shadow-2xl pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-manipulation`}
           >
             {/* Header — close always visible (incl. empty cart) */}
             <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-brand-black/10 shrink-0">
@@ -95,7 +95,7 @@ export default function CartDrawer() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-6">
                   <div className="w-20 h-20 border-2 border-brand-gold/30 rounded-full flex items-center justify-center">
@@ -132,8 +132,8 @@ export default function CartDrawer() {
                         ? t.product.cartMeasurements.replace('{h}', String(item.customerHeightCm)).replace('{w}', String(item.customerWeightKg))
                         : null;
                     return (
-                      <div key={lineKey} className="flex gap-4">
-                        <div className="w-20 h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden rounded">
+                      <div key={lineKey} className="flex gap-3 sm:gap-4">
+                        <div className="w-[72px] h-[90px] sm:w-20 sm:h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden rounded">
                           {imgUrl && (
                             <Image
                               src={imgUrl}
@@ -192,7 +192,7 @@ export default function CartDrawer() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-brand-black/10 px-6 py-5 space-y-4">
+              <div className="border-t border-brand-black/10 px-4 sm:px-6 py-4 sm:py-5 space-y-4">
 
                 {/* Coupon */}
                 {promoCode ? (

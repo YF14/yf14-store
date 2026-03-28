@@ -59,8 +59,9 @@ function buildSort(sortParam) {
 exports.getProducts = async (req, res, next) => {
   try {
     const { page = 1, limit = 12, category, minPrice, maxPrice, sizes, colors, sort = '-createdAt', search, filter, showAll } = req.query;
+    const isAdmin = canUseShowAllProducts(req);
     const query = {};
-    if (!showAll || !canUseShowAllProducts(req)) query.isActive = true;
+    if (!showAll || !isAdmin) query.isActive = true;
 
     if (filter === 'sale') {
       applySaleFilter(query);
@@ -72,10 +73,25 @@ exports.getProducts = async (req, res, next) => {
 
     if (category) {
       if (mongoose.Types.ObjectId.isValid(category)) {
+        // For public requests, never return products for a hidden category
+        if (!isAdmin) {
+          const cat = await Category.findById(category).select('isHidden').lean();
+          if (cat?.isHidden) {
+            return res.json({ products: [], total: 0, page: 1, pages: 0 });
+          }
+        }
         query.category = category;
       } else {
-        const cat = await Category.findOne({ slug: category }).select('_id');
+        const catFilter = { slug: category };
+        if (!isAdmin) catFilter.isHidden = { $ne: true };
+        const cat = await Category.findOne(catFilter).select('_id');
         query.category = cat ? cat._id : new mongoose.Types.ObjectId();
+      }
+    } else if (!isAdmin) {
+      // No specific category filter — exclude products whose primary category is hidden
+      const hiddenCatIds = await Category.find({ isHidden: true }).distinct('_id').lean();
+      if (hiddenCatIds.length > 0) {
+        query.category = { $nin: hiddenCatIds };
       }
     }
     if (minPrice || maxPrice) query.price = {};
@@ -86,12 +102,23 @@ exports.getProducts = async (req, res, next) => {
     if (search) query.$text = { $search: search };
 
     const total = await Product.countDocuments(query);
-    const products = await Product.find(query)
+    const rawProducts = await Product.find(query)
       .populate('category', 'name slug')
       .sort(buildSort(sort))
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .select('-reviews');
+
+    // Spoof variant stock for hidden-category products so storefront never blocks purchases.
+    // Applies to ALL users — admins can check real stock in the admin stock panel.
+    const products = rawProducts.map((p) => {
+      const obj = p.toObject({ virtuals: true });
+      if (Array.isArray(obj.hiddenCategories) && obj.hiddenCategories.length > 0) {
+        obj.variants = obj.variants.map((v) => ({ ...v, stock: 9999 }));
+      }
+      delete obj.hiddenCategories;
+      return obj;
+    });
 
     res.json({ products, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) { next(err); }
@@ -100,39 +127,71 @@ exports.getProducts = async (req, res, next) => {
 exports.getProduct = async (req, res, next) => {
   try {
     const product = await Product.findOne({ slug: req.params.slug, isActive: true })
-      .populate('category', 'name slug')
+      .populate('category', 'name nameAr slug isHidden')
       .populate('reviews.user', 'firstName lastName avatar');
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json({ product });
+
+    const obj = product.toObject({ virtuals: true });
+
+    // If the primary category is hidden, strip it entirely so it never leaks to the storefront
+    if (obj.category?.isHidden) {
+      obj.category = null;
+    } else if (obj.category) {
+      delete obj.category.isHidden;
+    }
+
+    // Spoof stock as "always available" for hidden-category products so storefront never blocks add-to-cart
+    if (Array.isArray(obj.hiddenCategories) && obj.hiddenCategories.length > 0) {
+      obj.variants = obj.variants.map((v) => ({ ...v, stock: 9999 }));
+    }
+    delete obj.hiddenCategories;
+    res.json({ product: obj });
   } catch (err) { next(err); }
 };
 
+/** Spoof variant stock to 9999 for hidden-category products and strip the field. */
+function spoofUnlimitedStock(rawProducts) {
+  return rawProducts.map((p) => {
+    const obj = typeof p.toObject === 'function' ? p.toObject() : { ...p };
+    if (Array.isArray(obj.hiddenCategories) && obj.hiddenCategories.length > 0) {
+      obj.variants = (obj.variants || []).map((v) => ({ ...v, stock: 9999 }));
+    }
+    delete obj.hiddenCategories;
+    delete obj.__v;
+    return obj;
+  });
+}
+
 exports.getFeatured = async (req, res, next) => {
   try {
-    const products = await Product.find({ isActive: true, isFeatured: true })
+    const raw = await Product.find({ isActive: true, isFeatured: true })
       .sort({ featuredSortOrder: 1, createdAt: -1 })
       .limit(8)
       .select('-reviews')
       .populate('category', 'name slug');
-    res.json({ products });
+    res.json({ products: spoofUnlimitedStock(raw) });
   } catch (err) { next(err); }
 };
 
 exports.getNewArrivals = async (req, res, next) => {
   try {
-    const products = await Product.find({ isActive: true, isNewArrival: true })
+    const raw = await Product.find({ isActive: true, isNewArrival: true })
       .sort({ newArrivalSortOrder: 1, createdAt: -1 })
       .limit(8)
       .select('-reviews')
       .populate('category', 'name slug');
-    res.json({ products });
+    res.json({ products: spoofUnlimitedStock(raw) });
   } catch (err) { next(err); }
 };
 
 exports.getBestSellers = async (req, res, next) => {
   try {
-    const products = await Product.find({ isActive: true }).sort('-totalSold').limit(8).select('-reviews').populate('category', 'name slug');
-    res.json({ products });
+    const raw = await Product.find({ isActive: true })
+      .sort('-totalSold')
+      .limit(8)
+      .select('-reviews')
+      .populate('category', 'name slug');
+    res.json({ products: spoofUnlimitedStock(raw) });
   } catch (err) { next(err); }
 };
 
@@ -450,6 +509,35 @@ exports.updateVariantStock = async (req, res, next) => {
       .select('-reviews');
     res.json({ product: fresh });
   } catch (err) { next(err); }
+};
+
+/**
+ * GET /products/admin/out-of-stock  (admin only)
+ * Returns every active product where ALL variants have stock ≤ 0,
+ * or that has no variants at all. Computed dynamically — no DB schema change.
+ */
+exports.getOutOfStockProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find({
+      $or: [
+        { 'variants.0': { $exists: false } },
+        { variants: { $not: { $elemMatch: { stock: { $gt: 0 } } } } },
+      ],
+    })
+      .select('name slug images price variants category isActive createdAt updatedAt hiddenCategories')
+      .populate('category', 'name slug')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Expose only the IDs of hidden categories so the frontend can show status
+    const clean = products.map(({ hiddenCategories, ...p }) => ({
+      ...p,
+      hiddenCategoryIds: (hiddenCategories || []).map((id) => String(id)),
+    }));
+    res.json({ products: clean, total: clean.length });
+  } catch (err) {
+    next(err);
+  }
 };
 
 exports.addReview = async (req, res, next) => {

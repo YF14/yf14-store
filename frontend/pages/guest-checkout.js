@@ -58,6 +58,19 @@ export default function GuestCheckout() {
   const [orderNumber, setOrderNumber] = useState('');
   const [promoInput, setPromoInput] = useState('');
 
+  // Restore success state from sessionStorage so a page refresh keeps the success screen visible
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('guestOrderSuccess');
+      if (saved) {
+        const { orderNumber: savedNum, name, email } = JSON.parse(saved);
+        setOrderNumber(savedNum || '');
+        setForm((f) => ({ ...f, name: name || '', email: email || '' }));
+        setDone(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -209,7 +222,15 @@ export default function GuestCheckout() {
       });
 
       await clearCart();
-      setOrderNumber(data.orderNumber);
+      const num = data.orderNumber || '';
+      setOrderNumber(num);
+      try {
+        sessionStorage.setItem('guestOrderSuccess', JSON.stringify({
+          orderNumber: num,
+          name: form.name.trim(),
+          email: form.email.trim(),
+        }));
+      } catch { /* ignore */ }
       setDone(true);
     } catch (err) {
       const msg =
@@ -241,6 +262,20 @@ export default function GuestCheckout() {
       .replace(/^#+/, '')
       .replace(/#+$/, '');
     const orderDisplay = orderRaw ? `#${orderRaw}` : '#';
+
+    // Build register URL with guest info pre-filled
+    const nameParts = form.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    const registerParams = new URLSearchParams({ redirect: '/account/orders' });
+    if (firstName) registerParams.set('firstName', firstName);
+    if (lastName) registerParams.set('lastName', lastName);
+    if (form.email.trim()) registerParams.set('email', form.email.trim());
+    const registerHref = `/register?${registerParams.toString()}`;
+
+    const clearSuccess = () => {
+      try { sessionStorage.removeItem('guestOrderSuccess'); } catch { /* ignore */ }
+    };
 
     const StepLine = ({ done: active }) => (
       <div className="flex-1 min-w-[12px] pt-[22px] px-0.5">
@@ -349,7 +384,8 @@ export default function GuestCheckout() {
               </p>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-between">
                 <Link
-                  href="/register?redirect=/account/orders"
+                  href={registerHref}
+                  onClick={clearSuccess}
                   className="inline-flex flex-1 min-h-[44px] items-center justify-center px-4 py-3 rounded-xl text-white font-semibold text-sm transition-all hover:brightness-110"
                   style={{ backgroundColor: PURPLE }}
                 >
@@ -357,6 +393,7 @@ export default function GuestCheckout() {
                 </Link>
                 <Link
                   href="/login?redirect=/account/orders"
+                  onClick={clearSuccess}
                   className="inline-flex flex-1 min-h-[44px] items-center justify-center px-4 py-3 rounded-xl border font-semibold text-sm transition-colors hover:bg-white/[0.06]"
                   style={{ borderColor: PURPLE_LIGHT, color: PURPLE_LIGHT }}
                 >
@@ -394,6 +431,7 @@ export default function GuestCheckout() {
 
             <Link
               href="/products"
+              onClick={clearSuccess}
               className="flex w-full items-center justify-center py-4 rounded-2xl text-white font-semibold text-[15px] transition-all hover:brightness-110 active:scale-[0.99]"
               style={{ backgroundColor: PURPLE, boxShadow: '0 10px 32px rgba(139,92,246,0.4)' }}
             >

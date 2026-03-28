@@ -28,6 +28,19 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
 
+  // Products in a hidden (unlimited-stock) category have stock spoofed to 9999 by the API.
+  const isUnlimited =
+    product.variants &&
+    product.variants.length > 0 &&
+    product.variants.every((v) => v.stock >= 9999);
+
+  // True when every variant has zero stock (or no variants exist) — never true for unlimited products
+  const isProductOOS =
+    !isUnlimited &&
+    (!product.variants ||
+      product.variants.length === 0 ||
+      product.variants.every((v) => v.stock === 0));
+
   const handleWishlist = (e) => {
     e.preventDefault();
     if (!user) { toast.error('Please log in to save items'); return; }
@@ -58,22 +71,24 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
     >
       <Link href={`/products/${product.slug}`} className="group block">
         <div
-          className="relative aspect-[2/3] bg-gray-100 overflow-hidden rounded-t-xl mb-0"
+          className="relative aspect-square bg-gray-100 overflow-hidden rounded-t-xl mb-0"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Base image — tall portrait (≈2:3) like editorial lookbooks */}
+          {/* Base image */}
           {primaryImg && (
             <Image
               src={primaryImg}
               alt={product.name}
               fill
-              className={`object-cover object-top transition-all duration-700 ${
-                hovered && !videoUrl
+              className={`object-contain transition-all duration-700 ${
+                hovered && videoUrl
+                  ? 'opacity-0'
+                  : hovered && !videoUrl
                   ? hoverImg
                     ? 'opacity-0'
-                    : 'scale-110'
-                  : 'scale-100'
+                    : 'scale-105'
+                  : 'scale-100 opacity-100'
               }`}
               sizes={imageSizes}
             />
@@ -85,7 +100,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
               src={hoverImg}
               alt={product.name}
               fill
-              className={`object-cover object-top transition-opacity duration-700 absolute inset-0 ${
+              className={`object-contain transition-opacity duration-700 absolute inset-0 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
               sizes={imageSizes}
@@ -101,7 +116,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
               loop
               playsInline
               preload="metadata"
-              className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${
+              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -109,9 +124,21 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-            {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
-            {product.isNewArrival && <span className="badge badge-new">New</span>}
-            {product.isBestSeller && <span className="badge badge-bestseller">Best Seller</span>}
+            {isProductOOS ? (
+              <span
+                className="badge-oos"
+                role="status"
+                aria-label={t.common.outOfStock}
+              >
+                {t.common.outOfStock}
+              </span>
+            ) : (
+              <>
+                {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
+                {product.isNewArrival && <span className="badge badge-new">New</span>}
+                {product.isBestSeller && <span className="badge badge-bestseller">Best Seller</span>}
+              </>
+            )}
             {videoUrl && (
               <span className="text-[9px] bg-brand-black/70 text-white px-1.5 py-0.5 backdrop-blur-sm">
                 ▶ Video
@@ -152,7 +179,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">Out of Stock</p>
+                  <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">{t.common.outOfStock}</p>
                 )}
               </div>
             );

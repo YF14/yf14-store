@@ -24,6 +24,7 @@ const STATUS_COLORS = {
 export default function AdminOrdersPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
   const st = t.status;
@@ -33,10 +34,11 @@ export default function AdminOrdersPage() {
   const [updating, setUpdating] = useState(null);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'orders')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const { data, isLoading, refetch } = useQuery(
     ['admin-orders', page, statusFilter, search],

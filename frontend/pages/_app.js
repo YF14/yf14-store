@@ -22,6 +22,7 @@ const queryClient = new QueryClient({
 function AppInner({ Component, pageProps }) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const fetchCart = useCartStore((s) => s.fetchCart);
   const initGuest = useCartStore((s) => s.initGuest);
   const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
@@ -41,6 +42,10 @@ function AppInner({ Component, pageProps }) {
 
   const getLayout = Component.getLayout || ((page) => page);
 
+  // Inject isAuthReady so protected pages can delay redirect guards until
+  // fetchMe() has settled — prevents spurious logout on hard reload.
+  const enrichedPageProps = { ...pageProps, isAuthReady };
+
   return (
     <QueryClientProvider client={queryClient}>
       <DefaultSeo
@@ -54,7 +59,7 @@ function AppInner({ Component, pageProps }) {
           siteName: t.siteName,
         }}
       />
-      {getLayout(<Component {...pageProps} />)}
+      {getLayout(<Component {...enrichedPageProps} />)}
       <Toaster
         position={isRTL ? 'top-left' : 'top-right'}
         toastOptions={{

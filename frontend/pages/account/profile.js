@@ -11,6 +11,7 @@ import { useLang } from '../../contexts/LanguageContext';
 export default function ProfilePage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const setUser = useAuthStore((s) => s.setUser);
   const { t, isRTL } = useLang();
 
@@ -19,9 +20,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) { router.push('/login'); return; }
     setForm({ firstName: user.firstName, lastName: user.lastName, email: user.email });
-  }, [user]);
+  }, [user, isAuthReady]);
 
   const updateProfile = async (e) => {
     e.preventDefault();

@@ -26,16 +26,18 @@ const STATUS_COLORS = {
 export default function AdminAnalyticsPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
   const st = t.status;
   const [days, setDays] = useState(30);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'analytics')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const enabled = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'analytics');
 

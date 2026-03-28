@@ -483,19 +483,9 @@ const en = {
           'When you place an order, you offer to buy the items at the prices shown. We confirm acceptance when we send order confirmation or ship your order. Payment methods and delivery fees (e.g. cash on delivery) are shown at checkout.',
       },
       {
-        title: 'Delivery',
-        body:
-          'Delivery times and areas are described in our delivery information. Risk passes to you when the order is delivered to the address you provided.',
-      },
-      {
         title: 'Returns & exchanges',
         body:
           'Returns and exchanges are governed by our returns policy page. Please read it before ordering.',
-      },
-      {
-        title: 'Limitation of liability',
-        body:
-          'To the extent permitted by law, we are not liable for indirect or consequential loss. Our total liability for any claim relating to an order is limited to the amount you paid for that order.',
       },
       {
         title: 'Contact',
@@ -601,6 +591,7 @@ const en = {
     orders: 'Orders',
     customers: 'Customers',
     stockMenu: 'Stock',
+    outOfStockMenu: 'Out of Stock',
     promoCodes: 'Promo Codes',
     analytics: 'Analytics',
     storeSettings: 'Store settings',

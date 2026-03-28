@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import { useQuery } from 'react-query';
 import { useLang } from '../../contexts/LanguageContext';
+import { catName } from '../../lib/currency';
+import api from '../../lib/api';
 import StoreLogoImage from './StoreLogoImage';
 
 const ftHeading = 'text-[10px] tracking-[0.2em] uppercase text-[#a78bfa]/90 mb-2.5 font-medium';
@@ -55,12 +58,18 @@ export default function Footer() {
 
   const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://www.facebook.com/yf14store';
 
+  const { data: catData } = useQuery(
+    'categories',
+    () => api.get('/categories').then((r) => r.data),
+    { staleTime: 2 * 60 * 1000 }
+  );
+  const fetchedCategories = catData?.categories || [];
+
   const collections = [
-    { label: t.nav.evening, href: '/products?category=evening-dresses' },
-    { label: t.nav.cocktail, href: '/products?category=cocktail-dresses' },
-    { label: t.nav.maxi, href: '/products?category=maxi-dresses' },
-    { label: t.nav.mini, href: '/products?category=mini-dresses' },
-    { label: t.nav.summer, href: '/products?category=summer-dresses' },
+    ...fetchedCategories.map((cat) => ({
+      label: catName(cat, isRTL),
+      href: `/products?category=${cat.slug}`,
+    })),
     { label: t.nav.featured, href: '/featured' },
     { label: t.nav.newArrivals, href: '/new-arrivals' },
     { label: t.nav.sale, href: '/sale' },

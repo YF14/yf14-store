@@ -34,7 +34,7 @@ function MarqueeCard({ product }) {
       href={`/products/${product.slug}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group flex-shrink-0 w-[170px] h-[240px] rounded-xl overflow-hidden relative bg-[#0f0f1a] block ring-1 ring-white/10 hover:ring-[#c084fc]/30 transition-all duration-300"
+      className="group flex-shrink-0 w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] rounded-xl overflow-hidden relative bg-[#0f0f1a] block ring-1 ring-white/10 hover:ring-[#c084fc]/30 transition-all duration-300"
     >
       <div className="absolute inset-0">
         {primaryImg ? (
@@ -42,10 +42,14 @@ function MarqueeCard({ product }) {
             src={primaryImg}
             alt={product.name}
             fill
-            className={`object-cover object-top transition-transform duration-500 ${
-              videoUrl ? 'scale-100' : 'group-hover:scale-[1.04]'
+            className={`object-contain transition-all duration-500 ${
+              hovered && videoUrl
+                ? 'opacity-0'
+                : videoUrl
+                ? 'scale-100 opacity-100'
+                : 'group-hover:scale-[1.04] opacity-100'
             }`}
-            sizes="170px"
+            sizes="200px"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />
@@ -58,7 +62,7 @@ function MarqueeCard({ product }) {
             loop
             playsInline
             preload="metadata"
-            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${
+            className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${
               hovered ? 'opacity-100' : 'opacity-0'
             }`}
           />

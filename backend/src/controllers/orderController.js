@@ -23,7 +23,12 @@ exports.createOrder = async (req, res, next) => {
 
       const variant = product.variants.id(item.variantId);
       if (!variant) return res.status(400).json({ error: `Variant not found for ${product.name}.` });
-      if (variant.stock < item.quantity) return res.status(400).json({ error: `Insufficient stock for ${product.name} (${variant.size}/${variant.color}).` });
+
+      // Products tagged to a hidden category have unlimited stock — skip the check
+      const isUnlimited = Array.isArray(product.hiddenCategories) && product.hiddenCategories.length > 0;
+      if (!isUnlimited && variant.stock < item.quantity) {
+        return res.status(400).json({ error: `Insufficient stock for ${product.name} (${variant.size}/${variant.color}).` });
+      }
 
       const price = variant.price || product.price;
       subtotal += price * item.quantity;
@@ -38,6 +43,7 @@ exports.createOrder = async (req, res, next) => {
         colorCode: variant.colorCode,
         quantity: item.quantity,
         variantId: variant._id,
+        _isUnlimited: isUnlimited,
         ...(item.customerHeightCm != null ? { customerHeightCm: Number(item.customerHeightCm) } : {}),
         ...(item.customerWeightKg != null ? { customerWeightKg: Number(item.customerWeightKg) } : {}),
       });
@@ -77,17 +83,17 @@ exports.createOrder = async (req, res, next) => {
       statusHistory: [{ status: 'pending', note: 'Order placed' }],
     });
 
-    // Deduct stock
+    // Deduct stock (skip for unlimited-stock / hidden-category products)
     for (const item of validatedItems) {
-      await Product.updateOne(
-        { _id: item.product, 'variants._id': item.variantId },
-        {
-          $inc: {
-            'variants.$.stock': -item.quantity,
-            totalSold: item.quantity
-          }
-        }
-      );
+      if (item._isUnlimited) {
+        // Only increment totalSold, never reduce stock
+        await Product.updateOne({ _id: item.product }, { $inc: { totalSold: item.quantity } });
+      } else {
+        await Product.updateOne(
+          { _id: item.product, 'variants._id': item.variantId },
+          { $inc: { 'variants.$.stock': -item.quantity, totalSold: item.quantity } }
+        );
+      }
     }
 
     // Clear cart
@@ -128,7 +134,12 @@ exports.createGuestOrder = async (req, res, next) => {
 
       const variant = product.variants.id(item.variantId);
       if (!variant) return res.status(400).json({ error: `Variant not found for ${product.name}.` });
-      if (variant.stock < item.quantity) return res.status(400).json({ error: `Only ${variant.stock} left for ${product.name} (${variant.size}/${variant.color}).` });
+
+      // Products tagged to a hidden category have unlimited stock — skip the check
+      const isUnlimited = Array.isArray(product.hiddenCategories) && product.hiddenCategories.length > 0;
+      if (!isUnlimited && variant.stock < item.quantity) {
+        return res.status(400).json({ error: `Only ${variant.stock} left for ${product.name} (${variant.size}/${variant.color}).` });
+      }
 
       const price = variant.price || product.price;
       subtotal += price * item.quantity;
@@ -143,6 +154,7 @@ exports.createGuestOrder = async (req, res, next) => {
         colorCode: variant.colorCode,
         quantity: item.quantity,
         variantId: variant._id,
+        _isUnlimited: isUnlimited,
         ...(item.customerHeightCm != null ? { customerHeightCm: Number(item.customerHeightCm) } : {}),
         ...(item.customerWeightKg != null ? { customerWeightKg: Number(item.customerWeightKg) } : {}),
       });
@@ -188,12 +200,16 @@ exports.createGuestOrder = async (req, res, next) => {
       statusHistory: [{ status: 'pending', note: 'Guest order placed' }],
     });
 
-    // Deduct stock
+    // Deduct stock (skip for unlimited-stock / hidden-category products)
     for (const item of validatedItems) {
-      await Product.updateOne(
-        { _id: item.product, 'variants._id': item.variantId },
-        { $inc: { 'variants.$.stock': -item.quantity, totalSold: item.quantity } }
-      );
+      if (item._isUnlimited) {
+        await Product.updateOne({ _id: item.product }, { $inc: { totalSold: item.quantity } });
+      } else {
+        await Product.updateOne(
+          { _id: item.product, 'variants._id': item.variantId },
+          { $inc: { 'variants.$.stock': -item.quantity, totalSold: item.quantity } }
+        );
+      }
     }
 
     // Telegram notification (adapt for guest)
@@ -244,12 +260,18 @@ exports.cancelOrder = async (req, res, next) => {
     order.statusHistory.push({ status: 'cancelled', note: 'Cancelled by customer', updatedBy: req.user.id });
     await order.save();
 
-    // Restore stock
+    // Restore stock (skip for unlimited-stock / hidden-category products)
     for (const item of order.items) {
-      await Product.updateOne(
-        { _id: item.product, 'variants._id': item.variantId },
-        { $inc: { 'variants.$.stock': item.quantity, totalSold: -item.quantity } }
-      );
+      const prod = await Product.findById(item.product).select('hiddenCategories').lean();
+      const isUnlimited = Array.isArray(prod?.hiddenCategories) && prod.hiddenCategories.length > 0;
+      if (isUnlimited) {
+        await Product.updateOne({ _id: item.product }, { $inc: { totalSold: -item.quantity } });
+      } else {
+        await Product.updateOne(
+          { _id: item.product, 'variants._id': item.variantId },
+          { $inc: { 'variants.$.stock': item.quantity, totalSold: -item.quantity } }
+        );
+      }
     }
 
     res.json({ order });

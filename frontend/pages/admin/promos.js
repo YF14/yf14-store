@@ -141,16 +141,18 @@ function PromoModal({ promo, onClose, onSave, a }) {
 export default function AdminPromos() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const queryClient = useQueryClient();
   const { t } = useLang();
   const a = t.admin;
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'promos')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const { data, isLoading } = useQuery('admin-promos', () =>
     api.get('/promos').then((r) => r.data.promos), { enabled: !!user && canAccessAdmin(user) && hasAdminPermission(user, 'promos') }

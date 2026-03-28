@@ -24,6 +24,7 @@ export default function AdminCategoryProductsPage() {
   const router = useRouter();
   const { id: categoryId } = router.query;
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t, isRTL } = useLang();
   const a = t.admin;
   const s = t.shop;
@@ -34,10 +35,11 @@ export default function AdminCategoryProductsPage() {
   const [productFormMode, setProductFormMode] = useState(null);
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'categories')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const catOk = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'categories');
 

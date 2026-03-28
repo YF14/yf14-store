@@ -12,14 +12,16 @@ export default function EditProductPage() {
   const router = useRouter();
   const { id } = router.query;
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'products')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'products')) return null;
   if (!router.isReady || !id) return null;

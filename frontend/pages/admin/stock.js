@@ -27,6 +27,7 @@ function productImageUrl(p) {
 export default function AdminStockPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const queryClient = useQueryClient();
   const { t } = useLang();
   const a = t.admin;
@@ -40,10 +41,11 @@ export default function AdminStockPage() {
     !!user && canAccessAdmin(user) && hasAdminPermission(user, 'stock');
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'stock')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   /** On leave Stock, invalidate so next visit loads server order (last edited on top). While on page, order stays fixed. */
   useEffect(() => {

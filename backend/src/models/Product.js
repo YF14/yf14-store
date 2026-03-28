@@ -68,6 +68,12 @@ const productSchema = new mongoose.Schema({
   seoTitle: String,
   seoDescription: String,
   weight: Number, // in grams for shipping
+  /**
+   * Admin-only: IDs of hidden categories this product is tagged to.
+   * While non-empty the product has unlimited stock (order deduction skipped).
+   * Never exposed in public API responses.
+   */
+  hiddenCategories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
 }, { timestamps: true });
 
 // Indexes

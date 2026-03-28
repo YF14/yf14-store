@@ -15,16 +15,18 @@ import { formatIQD } from '../../../lib/currency';
 export default function AdminProductsPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'products')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const { data, isLoading, refetch } = useQuery(
     ['admin-products', page, search],

@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 export default function AdminStoreSettingsPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t, isRTL } = useLang();
   const a = t.admin;
   const queryClient = useQueryClient();
@@ -39,10 +40,11 @@ export default function AdminStoreSettingsPage() {
   const previewSrc = settings?.logoUrl || STORE_LOGO_FALLBACK;
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'settings')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const saveAnnouncementsMutation = useMutation(
     () =>

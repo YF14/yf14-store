@@ -6,12 +6,13 @@ const Product = require('../models/Product');
 
 router.get('/', async (req, res) => {
   try {
-    const categories = await Category.find({ isActive: true }).sort('sortOrder');
+    // Never expose hidden categories to the public storefront
+    const categories = await Category.find({ isActive: true, isHidden: { $ne: true } }).sort('sortOrder');
     res.json({ categories });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-/** Admin: all categories (incl. inactive) for management UI — must be before /:slug */
+/** Admin: all categories (incl. inactive and hidden) for management UI — must be before /:slug */
 router.get('/admin/all', protect, requireAdminOrPermission('categories'), async (req, res) => {
   try {
     const categories = await Category.find().sort({ sortOrder: 1, name: 1 }).lean();
@@ -19,9 +20,53 @@ router.get('/admin/all', protect, requireAdminOrPermission('categories'), async 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/** Admin: list products tagged to a hidden category */
+router.get('/hidden/:id/products', protect, requireAdminOrPermission('categories'), async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id).lean();
+    if (!category || !category.isHidden) return res.status(404).json({ error: 'Hidden category not found' });
+    const products = await Product.find({ hiddenCategories: req.params.id })
+      .select('name slug images price variants isActive category')
+      .populate('category', 'name slug')
+      .lean();
+    res.json({ products });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/** Admin: assign existing products to a hidden category */
+router.post('/hidden/:id/products', protect, requireAdminOrPermission('categories'), async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id).lean();
+    if (!category || !category.isHidden) return res.status(404).json({ error: 'Hidden category not found' });
+    const { productIds } = req.body;
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ error: 'productIds array required' });
+    }
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $addToSet: { hiddenCategories: req.params.id } }
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/** Admin: remove a product from a hidden category */
+router.delete('/hidden/:id/products/:productId', protect, requireAdminOrPermission('categories'), async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id).lean();
+    if (!category || !category.isHidden) return res.status(404).json({ error: 'Hidden category not found' });
+    await Product.updateOne(
+      { _id: req.params.productId },
+      { $pull: { hiddenCategories: category._id } }
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/:slug', async (req, res) => {
   try {
-    const category = await Category.findOne({ slug: req.params.slug, isActive: true });
+    // Hidden categories are invisible to the public — return 404 so nothing leaks
+    const category = await Category.findOne({ slug: req.params.slug, isActive: true, isHidden: { $ne: true } });
     if (!category) return res.status(404).json({ error: 'Category not found' });
     res.json({ category });
   } catch (err) { res.status(500).json({ error: err.message }); }

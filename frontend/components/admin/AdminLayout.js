@@ -8,6 +8,7 @@ import { hasAdminPermission } from '../../lib/adminAccess';
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const logout = useAuthStore((s) => s.logout);
   const { t, isRTL, locale, setLocale } = useLang();
   const a = t.admin;
@@ -21,6 +22,7 @@ export default function AdminLayout({ children }) {
     { href: '/admin/featured', label: a.featuredAssortmentMenu, icon: '✦', permission: 'featured' },
     { href: '/admin/new-arrivals', label: a.newArrivalsAssortmentMenu, icon: '✨', permission: 'newArrivals' },
     { href: '/admin/stock', label: a.stockMenu, icon: '📋', permission: 'stock' },
+    { href: '/admin/out-of-stock', label: a.outOfStockMenu || 'Out of Stock', icon: '🚫', permission: 'stock' },
     { href: '/admin/orders', label: a.orders, icon: '📦', permission: 'orders' },
     { href: '/admin/users', label: a.customers, icon: '👤', permission: 'users' },
     { href: '/admin/promos', label: a.promoCodes, icon: '🏷️', permission: 'promos' },
@@ -116,6 +118,16 @@ export default function AdminLayout({ children }) {
       </div>
     </>
   );
+
+  // Hold rendering until fetchMe() has settled so page-level useEffect guards
+  // never see a momentary user:null and redirect to /login on hard reload.
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] bg-brand-black flex items-center justify-center">
+        <span className="w-6 h-6 rounded-full border-2 border-brand-gold border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gray-50 flex flex-col lg:flex-row" dir={isRTL ? 'rtl' : 'ltr'}>

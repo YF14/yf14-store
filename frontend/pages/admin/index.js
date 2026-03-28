@@ -38,15 +38,17 @@ function StatCard({ title, value, sub, icon }) {
 export default function AdminDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
   const st = t.status;
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'dashboard')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   const enabled = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'dashboard');
   const { data } = useQuery('admin-dashboard', () => api.get('/analytics/dashboard').then((r) => r.data), { enabled });

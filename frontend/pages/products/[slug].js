@@ -169,8 +169,18 @@ export default function ProductDetailPage() {
     ? product.variants.find((v) => v.size === selectedSize && v.color === selectedColor)
     : null;
 
-  const isOutOfStock = selectedVariant ? selectedVariant.stock === 0 : false;
-  const isLowStock = selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 3;
+  // Products in a hidden (unlimited-stock) category have their stock spoofed to 9999 by the API.
+  // Treat any stock value >= 9999 as "unlimited" — suppress all stock-related UI for these.
+  const isUnlimited = selectedVariant ? selectedVariant.stock >= 9999 : product.variants.every((v) => v.stock >= 9999);
+
+  const isOutOfStock = !isUnlimited && (selectedVariant ? selectedVariant.stock === 0 : false);
+  const isLowStock = !isUnlimited && selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 3;
+
+  // True when every variant is zero stock (product is globally OOS regardless of selection)
+  const productGlobalOOS =
+    !isUnlimited && product.variants.length > 0 && product.variants.every((v) => v.stock === 0);
+  // Show the badge when a selected variant is OOS, or when no selection has been made yet but all stock is gone
+  const showOOSBadge = isOutOfStock || (!selectedVariant && productGlobalOOS);
 
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -242,7 +252,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 w-full min-w-0 min-h-0 lg:min-h-[calc(100dvh-124px)]">
           {/* Gallery — minmax(0,1fr); sticky height aligns with viewport below nav (avoids h-screen + pt mismatch crop) */}
           <div
-            className="grid w-full min-w-0 min-h-0 grid-cols-[86px_minmax(0,1fr)] lg:grid-cols-[94px_minmax(0,1fr)] overflow-hidden lg:sticky lg:self-start lg:top-[124px] lg:h-[calc(100dvh-124px)] lg:max-h-[calc(100dvh-124px)]"
+            className="grid w-full min-w-0 min-h-0 grid-cols-[72px_minmax(0,1fr)] sm:grid-cols-[86px_minmax(0,1fr)] lg:grid-cols-[94px_minmax(0,1fr)] overflow-hidden lg:sticky lg:self-start lg:top-[124px] lg:h-[calc(100dvh-124px)] lg:max-h-[calc(100dvh-124px)]"
             style={{ backgroundColor: WARM_WHITE }}
           >
             <div
@@ -254,7 +264,7 @@ export default function ProductDetailPage() {
                   key={i}
                   type="button"
                   onClick={() => setActiveImg(i)}
-                  className="relative w-[62px] h-20 lg:w-[62px] lg:h-20 shrink-0 rounded overflow-hidden border-2 transition-colors touch-manipulation"
+                  className="relative w-[52px] h-[68px] sm:w-[62px] sm:h-20 shrink-0 rounded overflow-hidden border-2 transition-colors touch-manipulation"
                   style={{ borderColor: activeImg === i ? ACCENT : 'transparent' }}
                 >
                   <Image src={img.url} alt={img.alt || product.name} fill className="object-cover" sizes="70px" />
@@ -289,26 +299,38 @@ export default function ProductDetailPage() {
               })}
             </div>
 
-            <div className="relative min-w-0 min-h-[70vw] lg:min-h-0 lg:h-full bg-neutral-100">
+            <div className="relative min-w-0 min-h-[80vw] lg:min-h-0 lg:h-full bg-neutral-100">
               {activeImg < galleryImages.length ? (
                 <Image
                   src={galleryImages[activeImg]?.url || galleryImages[0]?.url}
                   alt={product.name}
                   fill
                   priority
-                  className="object-cover object-top lg:object-contain lg:object-center"
+                  className="object-contain object-center"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               ) : (
                 <video
                   src={galleryVideos[activeImg - galleryImages.length]?.url}
-                  className="w-full h-full object-cover object-top lg:object-contain lg:object-center"
+                  className="w-full h-full object-contain object-center"
                   controls
                   autoPlay
                   muted
                   loop
                   playsInline
                 />
+              )}
+
+              {/* Out-of-stock overlay badge */}
+              {showOOSBadge && (
+                <span
+                  key={String(showOOSBadge)}
+                  className="badge-oos absolute top-4 start-4 z-10"
+                  role="status"
+                  aria-label={t.common.outOfStock}
+                >
+                  {t.common.outOfStock}
+                </span>
               )}
             </div>
           </div>
@@ -573,17 +595,17 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={() => setQty((q) => {
-                    const maxStock = selectedVariant ? selectedVariant.stock : 99;
+                    const maxStock = selectedVariant ? (selectedVariant.stock >= 9999 ? 99 : selectedVariant.stock) : 99;
                     return Math.min(maxStock, q + 1);
                   })}
-                  disabled={selectedVariant && qty >= selectedVariant.stock}
+                  disabled={!isUnlimited && selectedVariant && qty >= selectedVariant.stock}
                   className="w-[44px] h-[44px] sm:w-[42px] sm:h-[42px] flex items-center justify-center text-lg hover:bg-black/[0.03] transition-colors disabled:opacity-30 touch-manipulation"
                   style={{ color: CHARCOAL }}
                 >
                   +
                 </button>
               </div>
-              {selectedVariant && (
+              {selectedVariant && !isUnlimited && (
                 <p className={`text-xs mt-3 ${selectedVariant.stock <= 5 ? 'text-amber-600 font-medium' : ''}`} style={{ color: selectedVariant.stock <= 5 ? undefined : MUTED }}>
                   {selectedVariant.stock <= 5
                     ? `${t.product.onlyLeftPrefix} ${selectedVariant.stock} ${t.product.onlyLeftSuffix}`
@@ -599,6 +621,7 @@ export default function ProductDetailPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isCartLoading || isOutOfStock}
+                aria-label={isOutOfStock ? t.common.outOfStock : undefined}
                 className={`w-full min-h-[48px] py-[17px] rounded-md text-white text-[15px] font-medium tracking-wide transition-transform disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.995] touch-manipulation ${ctaShake ? 'animate-shake' : ''}`}
                 style={{ backgroundColor: ROSE }}
               >

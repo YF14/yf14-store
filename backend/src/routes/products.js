@@ -11,6 +11,7 @@ router.get('/search', productController.searchProducts);
 router.get('/price-range', productController.getProductPriceRange);
 router.get('/colors', productController.getProductColors);
 
+router.get('/admin/out-of-stock', protect, requireAdminOrPermission('stock'), productController.getOutOfStockProducts);
 router.get('/admin/:id', protect, requireAdminOrPermission('products'), productController.getProductById);
 router.post('/', protect, requireAdminOrPermission('products'), productController.createProduct);
 router.put('/reorder-category', protect, requireAdminOrPermission('categories'), productController.reorderCategoryProducts);

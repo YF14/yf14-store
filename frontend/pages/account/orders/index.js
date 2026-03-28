@@ -23,10 +23,14 @@ const STATUS_COLORS = {
 export default function OrdersPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const [page, setPage] = useState(1);
   const { t, isRTL } = useLang();
 
-  useEffect(() => { if (!user) router.push('/login'); }, [user]);
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (!user) router.push('/login');
+  }, [user, isAuthReady]);
 
   const { data, isLoading } = useQuery(
     ['my-orders', page],

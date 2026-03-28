@@ -11,14 +11,16 @@ import { useLang } from '../../contexts/LanguageContext';
 export default function WishlistPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const wishlist = useWishlistStore((s) => s.wishlist);
   const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
   const { t, isRTL } = useLang();
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) { router.push('/login'); return; }
     fetchWishlist();
-  }, [user]);
+  }, [user, isAuthReady]);
 
   if (!user) return null;
 

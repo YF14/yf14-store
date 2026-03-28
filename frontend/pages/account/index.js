@@ -13,12 +13,14 @@ import { useLang } from '../../contexts/LanguageContext';
 export default function AccountPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const logout = useAuthStore((s) => s.logout);
   const { t, isRTL } = useLang();
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
-  }, [user]);
+  }, [user, isAuthReady]);
 
   const { data: ordersData } = useQuery('my-orders-recent', () =>
     api.get('/orders/my-orders?limit=3').then(r => r.data), { enabled: !!user }

@@ -14,7 +14,7 @@ const PAGE_SIZE = 20;
 function ProductSkeleton() {
   return (
     <div>
-      <div className="aspect-[2/3] skeleton mb-3" />
+      <div className="aspect-square skeleton mb-3 rounded-t-xl" />
       <div className="h-3.5 skeleton mb-2 w-3/4" />
       <div className="h-3 skeleton w-1/2" />
     </div>
@@ -696,7 +696,7 @@ export default function ShopProductListing({
 
           {/* Quick filter pills — /products only (home uses drawer + sort) */}
           {!isHomeEmbed && (
-            <div className="container-luxury pb-3 pt-1 flex gap-2 overflow-x-auto overflow-y-hidden scrollbar-thin">
+            <div className="container-luxury pb-3 pt-1 flex gap-2 overflow-x-auto overflow-y-hidden scrollbar-none">
               <button
                 type="button"
                 onClick={() => {

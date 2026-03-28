@@ -10,6 +10,13 @@ const useAuthStore = create(
       token: null,
       refreshToken: null,
       isLoading: false,
+      /**
+       * False until the first fetchMe() call settles (success, 401, or any error).
+       * Protected pages must wait for this before redirecting to /login, otherwise
+       * a brief user:null window (before persist hydrates) causes a spurious logout.
+       * Not persisted — resets to false on every hard reload.
+       */
+      isAuthReady: false,
 
       setUser: (user) => set({ user }),
 
@@ -69,10 +76,14 @@ const useAuthStore = create(
           typeof window !== 'undefined'
             ? localStorage.getItem('token') || get().token
             : null;
-        if (!token) return;
+        if (!token) {
+          // No token — not logged in; auth check is still complete
+          set({ isAuthReady: true });
+          return;
+        }
         try {
           const { data } = await api.get('/auth/me');
-          set({ user: data.user });
+          set({ user: data.user, isAuthReady: true });
         } catch (err) {
           // Only drop the session when the server rejects the token (401).
           // Network errors, timeouts, or API down must NOT wipe login — that felt like random sign-out.
@@ -80,7 +91,11 @@ const useAuthStore = create(
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('auth-store');
-            set({ user: null, token: null, refreshToken: null });
+            set({ user: null, token: null, refreshToken: null, isAuthReady: true });
+          } else {
+            // Transient failure (network, timeout, server restart) — keep the
+            // persisted user so the page doesn't bounce to /login, but mark ready.
+            set({ isAuthReady: true });
           }
         }
       },
@@ -97,6 +112,7 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-store',
+      // isAuthReady is intentionally excluded — it must restart as false on every page load
       partialize: (state) => ({
         user: state.user,
         token: state.token,

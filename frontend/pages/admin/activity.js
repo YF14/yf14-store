@@ -50,6 +50,7 @@ function ActivityTargetCell({ row, user, openProductTitle }) {
 export default function AdminActivityPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t, isRTL } = useLang();
   const a = t.admin;
   const labels = a.activityActionLabels || {};
@@ -61,10 +62,11 @@ export default function AdminActivityPage() {
   const canView = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'activity');
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'activity')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   useEffect(() => {
     setPage(1);

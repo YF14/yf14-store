@@ -14,6 +14,12 @@ const categorySchema = new mongoose.Schema({
   /** Highlight category in admin / future nav emphasis */
   isFeatured: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
+  /**
+   * Hidden categories are admin-only. They never appear in storefront navigation,
+   * search results, filters, or public API responses. Products tagged to a hidden
+   * category receive unlimited stock (stock deduction is skipped on orders).
+   */
+  isHidden: { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },
   seoTitle: String,
   seoDescription: String,

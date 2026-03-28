@@ -13,6 +13,7 @@ import { formatIQD } from '../../lib/currency';
 export default function AdminUsersPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const queryClient = useQueryClient();
   const { t } = useLang();
   const a = t.admin;
@@ -29,10 +30,11 @@ export default function AdminUsersPage() {
   const canView = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'users');
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
     else if (!hasAdminPermission(user, 'users')) router.replace(getDefaultAdminPath(user));
-  }, [user, router]);
+  }, [user, isAuthReady, router]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
