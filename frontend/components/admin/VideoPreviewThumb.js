@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import HlsVideo from '../media/HlsVideo';
 
 /**
  * Renders a muted video tile that shows a visible frame (not a black first frame).
@@ -32,7 +33,7 @@ export default function VideoPreviewThumb({ src, className = '' }) {
   }, []);
 
   return (
-    <video
+    <HlsVideo
       key={src}
       ref={videoRef}
       src={src}

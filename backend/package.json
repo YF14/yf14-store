@@ -8,10 +8,10 @@
     "dev": "nodemon src/server.js",
     "seed": "node src/scripts/seed.js",
     "create-admin": "node scripts/createAdmin.js",
-    "telegram:set-webhook": "node scripts/setTelegramWebhook.js"
+    "telegram:set-webhook": "node scripts/setTelegramWebhook.js",
+    "delete-all-products": "node scripts/deleteAllProducts.js --yes"
   },
   "dependencies": {
-    "@imagekit/nodejs": "^7.3.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",

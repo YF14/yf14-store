@@ -5,7 +5,8 @@ import { useQuery } from 'react-query';
 import api from '../../lib/api';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
-import { pickListingImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
+import { pickListingImageUrl, pickListingVideoUrl, pickListingVideoThumbnail } from '../../lib/productMedia';
+import HlsVideo from '../media/HlsVideo';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
@@ -15,6 +16,7 @@ function MarqueeCard({ product, priority = false }) {
   const videoRef = useRef(null);
   const primaryImg = optimizeRemoteImageSrc(pickListingImageUrl(product), { maxWidth: 420, quality: 75 });
   const videoUrl = pickListingVideoUrl(product);
+  const videoPoster = pickListingVideoThumbnail(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
@@ -55,7 +57,14 @@ function MarqueeCard({ product, priority = false }) {
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />
         )}
         {videoUrl && (
-          <video ref={videoRef} src={videoUrl} muted loop playsInline preload="metadata"
+          <HlsVideo
+            ref={videoRef}
+            src={videoUrl}
+            poster={videoPoster || undefined}
+            muted
+            loop
+            playsInline
+            preload="metadata"
             className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${hovered ? 'opacity-100' : 'opacity-0'}`}
           />
         )}

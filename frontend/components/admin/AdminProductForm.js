@@ -155,7 +155,12 @@ export default function AdminProductForm({
     );
     setVideos(
       p.videos?.length
-        ? p.videos.map((v) => ({ url: v.url, fileId: v.fileId || '', color: v.color || '' }))
+        ? p.videos.map((v) => ({
+            url: v.url,
+            fileId: v.fileId || '',
+            color: v.color || '',
+            thumbnail: v.thumbnail || '',
+          }))
         : []
     );
     setVariants(
@@ -277,7 +282,15 @@ export default function AdminProductForm({
         timeout: 120000,
       });
       const secs = ((performance.now() - started) / 1000).toFixed(1);
-      setVideos((prev) => [...prev, { url: data.url, fileId: data.fileId, color: mediaTargetColor || '' }]);
+      setVideos((prev) => [
+        ...prev,
+        {
+          url: data.url,
+          fileId: data.fileId,
+          color: mediaTargetColor || '',
+          thumbnail: data.thumbnail || '',
+        },
+      ]);
       URL.revokeObjectURL(previewUrl);
       setVideoPending(null);
       toast.success(a.videoUploadedIn.replace('{time}', secs));
@@ -375,7 +388,12 @@ export default function AdminProductForm({
           isPrimary: img.isPrimary || i === 0,
           color: img.color || '',
         })),
-        videos: videos.map((v) => ({ url: v.url, fileId: v.fileId, color: v.color || '' })),
+        videos: videos.map((v) => ({
+          url: v.url,
+          fileId: v.fileId,
+          color: v.color || '',
+          thumbnail: v.thumbnail || '',
+        })),
         variants: variants.map((v) => ({
           ...v,
           stock: Number(v.stock),

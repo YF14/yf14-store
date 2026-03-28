@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, adminOnly, requireAdminOrPermission, ADMIN_PERMISSION_KEYS } = require('../middleware/auth');
 const User = require('../models/User');
-const { uploadAvatar, uploadToImageKit } = require('../config/imagekit');
+const { uploadAvatar, uploadToCloudflareImages } = require('../config/cloudflareMedia');
 
 router.use(protect);
 
@@ -24,7 +24,7 @@ router.put('/profile', async (req, res) => {
 router.put('/avatar', uploadAvatar.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const result = await uploadToImageKit(req.file.buffer, req.file.originalname, '/yf14-store/avatars');
+    const result = await uploadToCloudflareImages(req.file.buffer, req.file.originalname);
     const user = await User.findByIdAndUpdate(req.user.id, { avatar: result.url }, { new: true });
     res.json({ avatar: user.avatar });
   } catch (err) { res.status(500).json({ error: err.message }); }

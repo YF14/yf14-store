@@ -1,6 +1,6 @@
 /**
- * One-off: upload a logo file to ImageKit and save URL in MongoDB (StoreSettings).
- * Requires MONGODB_URI + ImageKit env vars (same as the API).
+ * One-off: upload a logo file to Cloudflare Images and save URL in MongoDB (StoreSettings).
+ * Requires MONGODB_URI + Cloudflare env vars (same as the API).
  *
  * Usage: node scripts/seed-store-logo.js path/to/logo.png
  */
@@ -8,7 +8,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
-const { uploadToImageKit } = require('../src/config/imagekit');
+const { uploadToCloudflareImages } = require('../src/config/cloudflareMedia');
 const StoreSettings = require('../src/models/StoreSettings');
 
 async function main() {
@@ -23,8 +23,8 @@ async function main() {
   }
   const buf = fs.readFileSync(filePath);
   const name = path.basename(filePath);
-  const result = await uploadToImageKit(buf, name, '/yf14-store/branding');
-  const fileId = result.fileId || result.file_id;
+  const result = await uploadToCloudflareImages(buf, name);
+  const fileId = result.fileId;
   await mongoose.connect(process.env.MONGODB_URI);
   await StoreSettings.findOneAndUpdate(
     { key: 'site' },

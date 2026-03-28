@@ -597,7 +597,7 @@ const en = {
     storeSettings: 'Store settings',
     storeLogoTitle: 'Store logo',
     storeLogoHelp:
-      'PNG or JPG, max 5 MB. File is sent to ImageKit and the public URL is saved in MongoDB. Navbar and footer use this URL.',
+      'PNG or JPG, max 5 MB. File is uploaded to Cloudflare Images and the public URL is saved in MongoDB. Navbar and footer use this URL.',
     storeLogoUpload: 'Upload new logo',
     storeLogoCurrent: 'Current preview',
     storeLogoSuccess: 'Logo updated — storefront will refresh within a few minutes.',

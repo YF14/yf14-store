@@ -1,6 +1,6 @@
 /**
  * Remote image helpers for next/image — CDN-friendly URLs + shared blur placeholder.
- * ImageKit: https://docs.imagekit.io/features/image-transformations
+ * Legacy ImageKit URLs still get on-the-fly transforms; other hosts pass through unchanged.
  */
 
 /** 10×7 neutral JPEG — lightweight blur placeholder for product/listing images */
@@ -12,8 +12,8 @@ function isImageKitHost(hostname) {
 }
 
 /**
- * Append ImageKit transform (width, quality, auto format) when missing.
- * Skips blob/data URLs and non-ImageKit hosts. Leaves URLs that already use /tr: in path.
+ * Append ImageKit transform (width, quality, auto format) when missing — for old ImageKit URLs only.
+ * Skips blob/data URLs and non-ImageKit hosts.
  *
  * @param {string} url
  * @param {{ maxWidth?: number, quality?: number }} [opts]

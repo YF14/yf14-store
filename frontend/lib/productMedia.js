@@ -59,6 +59,15 @@ export function pickListingVideoUrl(product) {
   return (shared || vids[0])?.url || '';
 }
 
+/** Stream / CDN thumbnail URL for listing hover poster (optional). */
+export function pickListingVideoThumbnail(product) {
+  const vids = product?.videos || [];
+  if (!vids.length) return '';
+  const shared = vids.find(isSharedProductMedia);
+  const v = shared || vids[0];
+  return (typeof v?.thumbnail === 'string' && v.thumbnail) ? v.thumbnail : '';
+}
+
 /** Cart / line item when product is populated: match variant color when possible. */
 export function pickImageUrlForVariantColor(product, colorName, storedLineImage) {
   if (storedLineImage) return storedLineImage;

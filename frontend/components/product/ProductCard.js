@@ -6,7 +6,13 @@ import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { formatIQD } from '../../lib/currency';
-import { pickListingImageUrl, pickListingSecondImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
+import {
+  pickListingImageUrl,
+  pickListingSecondImageUrl,
+  pickListingVideoUrl,
+  pickListingVideoThumbnail,
+} from '../../lib/productMedia';
+import HlsVideo from '../media/HlsVideo';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 import { useLang } from '../../contexts/LanguageContext';
 
@@ -26,6 +32,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
   const hoverImgRaw = pickListingSecondImageUrl(product);
   const hoverImg = hoverImgRaw ? optimizeRemoteImageSrc(hoverImgRaw, { maxWidth: 720, quality: 75 }) : '';
   const videoUrl = pickListingVideoUrl(product);
+  const videoPoster = pickListingVideoThumbnail(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
@@ -123,9 +130,10 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
 
           {/* Video overlay on hover */}
           {videoUrl && (
-            <video
+            <HlsVideo
               ref={videoRef}
               src={videoUrl}
+              poster={videoPoster || undefined}
               muted
               loop
               playsInline

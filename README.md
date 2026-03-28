@@ -8,7 +8,7 @@ A production-ready, full-stack e-commerce platform for a premium women's dress b
 maison-elara/
 ├── backend/          # Node.js + Express + MongoDB API
 │   └── src/
-│       ├── config/   # DB, ImageKit, Logger
+│       ├── config/   # DB, Cloudflare media, Logger
 │       ├── controllers/
 │       ├── middleware/
 │       ├── models/   # Mongoose schemas
@@ -35,7 +35,7 @@ maison-elara/
 ### Prerequisites
 - Node.js 18+
 - MongoDB Atlas account
-- ImageKit account (uploads)
+- Cloudflare Images + Stream (uploads)
 - Stripe account (optional for cash-on-delivery flows)
 
 ### Backend Setup
@@ -70,7 +70,7 @@ Copy `backend/.env.example` → `backend/.env` and `frontend/.env.example` → `
 | `BACKEND_URL` | Public API URL, no trailing slash (e.g. `https://xxx.up.railway.app`) — used for Telegram webhook + OAuth |
 | `JWT_SECRET` | Strong random string (32+ chars) |
 | `JWT_REFRESH_SECRET` | Refresh token secret |
-| `IMAGEKIT_*` | ImageKit credentials |
+| `CLOUDFLARE_*` | Cloudflare Images + Stream (see `backend/.env.example`) |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `EMAIL_*` | SMTP credentials |
@@ -88,6 +88,7 @@ Copy `backend/.env.example` → `backend/.env` and `frontend/.env.example` → `
 | `NEXT_PUBLIC_API_URL` | Backend API URL ending in `/api` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
 | `NEXT_PUBLIC_SITE_URL` | Canonical frontend URL |
+| `NEXT_PUBLIC_CF_STREAM_CUSTOMER_HOST` | Optional; Stream thumbnail host if `next/image` needs it (see `frontend/.env.example`) |
 
 ## 📦 Features
 

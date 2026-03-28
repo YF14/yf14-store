@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { NextSeo } from 'next-seo';
 import Layout from '../../components/layout/Layout';
+import HlsVideo from '../../components/media/HlsVideo';
 import api from '../../lib/api';
 import useCartStore from '../../store/cartStore';
 import useWishlistStore from '../../store/wishlistStore';
@@ -302,8 +303,12 @@ export default function ProductDetailPage() {
                     className="relative w-[62px] h-20 shrink-0 rounded overflow-hidden border-2 bg-neutral-900 transition-colors"
                     style={{ borderColor: activeImg === idx ? ACCENT : 'transparent' }}
                   >
-                    <video src={vid.url} className="w-full h-full object-cover" muted preload="metadata" />
-                    <span className="absolute inset-0 flex items-center justify-center text-white text-sm">▶</span>
+                    {vid.thumbnail ? (
+                      <Image src={vid.thumbnail} alt="" fill className="object-cover" sizes="62px" unoptimized />
+                    ) : (
+                      <HlsVideo src={vid.url} className="w-full h-full object-cover" muted preload="metadata" />
+                    )}
+                    <span className="absolute inset-0 flex items-center justify-center text-white text-sm pointer-events-none">▶</span>
                   </button>
                 );
               })}
@@ -325,8 +330,9 @@ export default function ProductDetailPage() {
                   blurDataURL={IMAGE_BLUR_DATA_URL}
                 />
               ) : (
-                <video
+                <HlsVideo
                   src={galleryVideos[activeImg - galleryImages.length]?.url}
+                  poster={galleryVideos[activeImg - galleryImages.length]?.thumbnail || undefined}
                   className="w-full h-full object-contain object-center"
                   controls
                   autoPlay

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 /**
- * Singleton site branding (logo URL from ImageKit, etc.).
+ * Singleton site branding (logo URL from Cloudflare Images / CDN, etc.).
  * Only one logical row: key === 'site'.
  */
 const DEFAULT_ANNOUNCEMENT_EN = [
