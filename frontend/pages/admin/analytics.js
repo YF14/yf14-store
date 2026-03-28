@@ -12,6 +12,8 @@ import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../l
 import { useLang } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import { formatIQD } from '../../lib/currency';
+import Image from 'next/image';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 const STATUS_COLORS = {
   pending: '#f59e0b',
@@ -189,7 +191,19 @@ export default function AdminAnalyticsPage() {
                       <td className="px-3 py-2.5 text-brand-warm-gray">{i + 1}</td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-3">
-                          {p.image && <img src={p.image} alt={p.name} className="w-8 h-10 object-cover" />}
+                          {p.image && (
+                            <Image
+                              src={optimizeRemoteImageSrc(p.image, { maxWidth: 128, quality: 70 })}
+                              alt={p.name}
+                              width={32}
+                              height={40}
+                              className="w-8 h-10 object-cover"
+                              sizes="32px"
+                              loading="lazy"
+                              placeholder="blur"
+                              blurDataURL={IMAGE_BLUR_DATA_URL}
+                            />
+                          )}
                           <span className="font-medium">{p.name}</span>
                         </div>
                       </td>

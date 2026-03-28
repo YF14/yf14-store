@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { formatIQD } from '../lib/currency';
 import { DELIVERY_FEE_IQD } from '../lib/deliveryFee';
 import { resolveCartLineDisplay } from '../lib/cartLineDisplay';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../lib/remoteImage';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -721,7 +722,16 @@ export default function GuestCheckout() {
                         >
                           <div className="w-[54px] h-[66px] rounded-[10px] overflow-hidden shrink-0 relative bg-gradient-to-br from-[#2e1f45] to-[#1a1530]">
                             {line.imageUrl ? (
-                              <Image src={line.imageUrl} alt={line.name} fill className="object-cover" sizes="54px" />
+                              <Image
+                                src={optimizeRemoteImageSrc(line.imageUrl, { maxWidth: 180, quality: 75 })}
+                                alt={line.name}
+                                fill
+                                className="object-cover"
+                                sizes="54px"
+                                loading="lazy"
+                                placeholder="blur"
+                                blurDataURL={IMAGE_BLUR_DATA_URL}
+                              />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-white/20">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

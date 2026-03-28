@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useQuery, useQueryClient } from 'react-query';
 import useAuthStore from '../../store/authStore';
 import { useLang } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import { classifyProductMediaFile } from '../../lib/mediaClassify';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 import { catName } from '../../lib/currency';
 import toast from 'react-hot-toast';
 import VideoPreviewThumb from './VideoPreviewThumb';
@@ -509,7 +511,20 @@ export default function AdminProductForm({
               {images.map((img, i) => (
                 <div key={i} className="flex flex-col border border-brand-black/10 bg-gray-50 overflow-hidden rounded-sm">
                   <div className="relative group aspect-square shrink-0">
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    {/^blob:|^data:/i.test(img.url) ? (
+                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Image
+                        src={optimizeRemoteImageSrc(img.url, { maxWidth: 480, quality: 75 })}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 22vw, 180px"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL={IMAGE_BLUR_DATA_URL}
+                      />
+                    )}
                     {img.isPrimary && (
                       <span className="absolute top-1 start-1 text-[9px] bg-brand-gold text-white px-1.5 py-0.5">
                         {a.mainBadge}

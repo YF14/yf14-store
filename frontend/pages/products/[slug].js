@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD, catName } from '../../lib/currency';
 import { filterProductGallery, pickImageUrlForVariantColor, pickListingImageUrl } from '../../lib/productMedia';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 const CREAM = '#faf8f5';
 const WARM_WHITE = '#f5f2ee';
@@ -267,7 +268,16 @@ export default function ProductDetailPage() {
                   className="relative w-[52px] h-[68px] sm:w-[62px] sm:h-20 shrink-0 rounded overflow-hidden border-2 transition-colors touch-manipulation"
                   style={{ borderColor: activeImg === i ? ACCENT : 'transparent' }}
                 >
-                  <Image src={img.url} alt={img.alt || product.name} fill className="object-cover" sizes="70px" />
+                  <Image
+                    src={optimizeRemoteImageSrc(img.url, { maxWidth: 200, quality: 75 })}
+                    alt={img.alt || product.name}
+                    fill
+                    className="object-cover"
+                    sizes="70px"
+                    loading="lazy"
+                    placeholder="blur"
+                    blurDataURL={IMAGE_BLUR_DATA_URL}
+                  />
                   {i === 0 && (
                     <span className="absolute top-1 end-1 flex flex-col gap-0.5 items-end pointer-events-none">
                       {discount > 0 && (
@@ -302,12 +312,17 @@ export default function ProductDetailPage() {
             <div className="relative min-w-0 min-h-[80vw] lg:min-h-0 lg:h-full bg-neutral-100">
               {activeImg < galleryImages.length ? (
                 <Image
-                  src={galleryImages[activeImg]?.url || galleryImages[0]?.url}
+                  src={optimizeRemoteImageSrc(
+                    galleryImages[activeImg]?.url || galleryImages[0]?.url,
+                    { maxWidth: 1400, quality: 80 }
+                  )}
                   alt={product.name}
                   fill
                   priority
                   className="object-contain object-center"
                   sizes="(max-width: 1024px) 100vw, 50vw"
+                  placeholder="blur"
+                  blurDataURL={IMAGE_BLUR_DATA_URL}
                 />
               ) : (
                 <video
@@ -654,8 +669,8 @@ export default function ProductDetailPage() {
               </h2>
             </div>
             <div className="max-w-[1600px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
-              {relatedDisplay.map((p) => {
-                const img = pickListingImageUrl(p);
+              {relatedDisplay.map((p, relIdx) => {
+                const img = optimizeRemoteImageSrc(pickListingImageUrl(p), { maxWidth: 640, quality: 75 });
                 const relDiscount = p.comparePrice > p.price
                   ? Math.round(((p.comparePrice - p.price) / p.comparePrice) * 100)
                   : 0;
@@ -669,7 +684,17 @@ export default function ProductDetailPage() {
                   >
                     <div className="relative h-40 md:h-[220px] bg-neutral-100">
                       {img && (
-                        <Image src={img} alt={p.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" sizes="(max-width:768px) 50vw, 25vw" />
+                        <Image
+                          src={img}
+                          alt={p.name}
+                          fill
+                          className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                          sizes="(max-width:768px) 50vw, 25vw"
+                          priority={relIdx < 2}
+                          loading={relIdx < 2 ? undefined : 'lazy'}
+                          placeholder="blur"
+                          blurDataURL={IMAGE_BLUR_DATA_URL}
+                        />
                       )}
                       {relDiscount > 0 && (
                         <span className="absolute top-3 end-3 text-[10px] font-medium text-white px-2 py-0.5 rounded" style={{ backgroundColor: ROSE }}>

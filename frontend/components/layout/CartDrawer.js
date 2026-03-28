@@ -6,6 +6,7 @@ import useCartStore from '../../store/cartStore';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
 import { DELIVERY_FEE_IQD } from '../../lib/deliveryFee';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 export default function CartDrawer() {
   const {
@@ -136,11 +137,14 @@ export default function CartDrawer() {
                         <div className="w-[72px] h-[90px] sm:w-20 sm:h-28 bg-gray-50 flex-shrink-0 relative overflow-hidden rounded">
                           {imgUrl && (
                             <Image
-                              src={imgUrl}
+                              src={optimizeRemoteImageSrc(imgUrl, { maxWidth: 240, quality: 75 })}
                               alt={item.name}
                               fill
                               className="object-cover"
                               sizes="80px"
+                              loading="lazy"
+                              placeholder="blur"
+                              blurDataURL={IMAGE_BLUR_DATA_URL}
                             />
                           )}
                         </div>

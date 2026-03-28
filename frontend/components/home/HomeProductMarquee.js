@@ -6,13 +6,14 @@ import api from '../../lib/api';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
 import { pickListingImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
 
-function MarqueeCard({ product }) {
+function MarqueeCard({ product, priority = false }) {
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef(null);
-  const primaryImg = pickListingImageUrl(product);
+  const primaryImg = optimizeRemoteImageSrc(pickListingImageUrl(product), { maxWidth: 420, quality: 75 });
   const videoUrl = pickListingVideoUrl(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -44,7 +45,11 @@ function MarqueeCard({ product }) {
               : videoUrl ? 'scale-100 opacity-100'
               : 'group-hover:scale-[1.04] opacity-100'
             }`}
-            sizes="200px" draggable={false}
+            sizes="200px"
+            draggable={false}
+            priority={priority}
+            placeholder="blur"
+            blurDataURL={IMAGE_BLUR_DATA_URL}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />
@@ -204,7 +209,7 @@ export default function HomeProductMarquee() {
             onClickCapture={onClickCapture}
           >
             {loop.map((p, i) => (
-              <MarqueeCard key={`${p._id}-${i}`} product={p} />
+              <MarqueeCard key={`${p._id}-${i}`} product={p} priority={i < 3} />
             ))}
           </div>
         )}

@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { formatIQD } from '../lib/currency';
 import { DELIVERY_FEE_IQD } from '../lib/deliveryFee';
 import { resolveCartLineDisplay } from '../lib/cartLineDisplay';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../lib/remoteImage';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -658,11 +659,14 @@ export default function CheckoutPage() {
                         >
                           {line.imageUrl ? (
                             <Image
-                              src={line.imageUrl}
+                              src={optimizeRemoteImageSrc(line.imageUrl, { maxWidth: 180, quality: 75 })}
                               alt={line.name}
                               fill
                               className="object-cover"
                               sizes="54px"
+                              loading="lazy"
+                              placeholder="blur"
+                              blurDataURL={IMAGE_BLUR_DATA_URL}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white/20">

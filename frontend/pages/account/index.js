@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
 import Layout from '../../components/layout/Layout';
@@ -9,6 +10,7 @@ import api from '../../lib/api';
 import { canAccessAdmin, getDefaultAdminPath } from '../../lib/adminAccess';
 import { formatIQD } from '../../lib/currency';
 import { useLang } from '../../contexts/LanguageContext';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -50,7 +52,16 @@ export default function AccountPage() {
             <div className="border border-brand-black/10 p-6 mb-4">
               <div className="w-16 h-16 bg-brand-cream rounded-full flex items-center justify-center mb-3 overflow-hidden">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.firstName} className="w-full h-full object-cover" />
+                  <Image
+                    src={optimizeRemoteImageSrc(user.avatar, { maxWidth: 128, quality: 80 })}
+                    alt={user.firstName || ''}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                    sizes="64px"
+                    placeholder="blur"
+                    blurDataURL={IMAGE_BLUR_DATA_URL}
+                  />
                 ) : (
                   <span className="font-display text-2xl text-brand-warm-gray">
                     {user.firstName?.[0]}{user.lastName?.[0]}

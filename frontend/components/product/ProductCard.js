@@ -7,6 +7,7 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import { formatIQD } from '../../lib/currency';
 import { pickListingImageUrl, pickListingSecondImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 import { useLang } from '../../contexts/LanguageContext';
 
 const DEFAULT_IMAGE_SIZES = '(max-width: 640px) 50vw, 33vw';
@@ -21,8 +22,9 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
 
   if (!product) return null;
 
-  const primaryImg = pickListingImageUrl(product);
-  const hoverImg = pickListingSecondImageUrl(product);
+  const primaryImg = optimizeRemoteImageSrc(pickListingImageUrl(product), { maxWidth: 720, quality: 75 });
+  const hoverImgRaw = pickListingSecondImageUrl(product);
+  const hoverImg = hoverImgRaw ? optimizeRemoteImageSrc(hoverImgRaw, { maxWidth: 720, quality: 75 }) : '';
   const videoUrl = pickListingVideoUrl(product);
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -98,6 +100,9 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
                   : 'scale-100 opacity-100'
               }`}
               sizes={imageSizes}
+              priority={index < 6}
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
             />
           )}
 
@@ -111,6 +116,8 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
               sizes={imageSizes}
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
             />
           )}
 
