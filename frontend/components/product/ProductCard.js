@@ -47,7 +47,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
     toggle(product._id);
   };
 
-  const handleMouseEnter = () => {
+  const playVideo = () => {
     setHovered(true);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -55,12 +55,17 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
     }
   };
 
-  const handleMouseLeave = () => {
+  const stopVideo = () => {
     setHovered(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
+    if (videoRef.current) videoRef.current.pause();
   };
+
+  const handleMouseEnter = playVideo;
+  const handleMouseLeave = stopVideo;
+
+  // On mobile: touchstart fires video immediately (no waiting for iOS mouseenter delay)
+  const handleTouchStart = () => { if (videoUrl) playVideo(); };
+  const handleTouchEnd   = () => { if (videoUrl) stopVideo(); };
 
   return (
     <motion.div
@@ -74,6 +79,8 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
           className="relative aspect-square bg-gray-100 overflow-hidden rounded-t-xl mb-0"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Base image */}
           {primaryImg && (
@@ -116,7 +123,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
               loop
               playsInline
               preload="metadata"
-              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${
+              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${
                 hovered ? 'opacity-100' : 'opacity-0'
               }`}
             />

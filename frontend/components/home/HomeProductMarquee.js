@@ -51,7 +51,7 @@ function MarqueeCard({ product }) {
         )}
         {videoUrl && (
           <video ref={videoRef} src={videoUrl} muted loop playsInline preload="metadata"
-            className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${hovered ? 'opacity-100' : 'opacity-0'}`}
           />
         )}
       </div>
