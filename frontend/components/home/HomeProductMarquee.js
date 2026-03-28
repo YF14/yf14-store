@@ -7,7 +7,7 @@ import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
 import { pickListingImageUrl, pickListingVideoUrl } from '../../lib/productMedia';
 
-const SCROLL_SPEED = 0.6; // px per frame at 60 fps ≈ 36 px/s
+const SCROLL_SPEED = 0.3; // px per frame at 60 fps ≈ 18 px/s
 
 function MarqueeCard({ product }) {
   const [hovered, setHovered] = useState(false);
