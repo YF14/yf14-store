@@ -32,9 +32,10 @@ function MarqueeCard({ product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="group flex-shrink-0 w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] rounded-xl overflow-hidden relative bg-[#0f0f1a] block ring-1 ring-white/10 hover:ring-[#c084fc]/30 transition-all duration-300"
+      onPointerEnter={(e) => { if (e.pointerType !== 'touch') handleMouseEnter(); }}
+      onPointerLeave={(e) => { if (e.pointerType !== 'touch') handleMouseLeave(); }}
+      className="group flex-shrink-0 w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] rounded-xl overflow-hidden relative bg-[#0f0f1a] block ring-1 ring-white/10 hover:ring-[#c084fc]/30 transition-all duration-300 select-none"
+      draggable={false}
     >
       <div className="absolute inset-0">
         {primaryImg ? (
@@ -50,6 +51,7 @@ function MarqueeCard({ product }) {
                 : 'group-hover:scale-[1.04] opacity-100'
             }`}
             sizes="200px"
+            draggable={false}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />
@@ -108,6 +110,10 @@ export default function HomeProductMarquee() {
   const h = t.home;
   const s = t.shop;
 
+  const scrollRef = useRef(null);
+  // Mouse-drag state for desktop
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+
   const { data, isLoading } = useQuery(['home-marquee-products', 'featured'], () =>
     api
       .get('/products?filter=featured&sort=featuredSortOrder&page=1&limit=24')
@@ -116,7 +122,32 @@ export default function HomeProductMarquee() {
 
   const products = data?.products || [];
   const total = data?.total ?? 0;
-  const loop = products.length ? [...products, ...products] : [];
+
+  /* ── Mouse drag (desktop) ── */
+  const onMouseDown = (e) => {
+    if (!scrollRef.current) return;
+    drag.current = { active: true, startX: e.pageX - scrollRef.current.offsetLeft, scrollLeft: scrollRef.current.scrollLeft, moved: false };
+    scrollRef.current.style.cursor = 'grabbing';
+  };
+  const onMouseMove = (e) => {
+    if (!drag.current.active || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - drag.current.startX) * 1.4;
+    if (Math.abs(walk) > 4) drag.current.moved = true;
+    scrollRef.current.scrollLeft = drag.current.scrollLeft - walk;
+  };
+  const onMouseUp = () => {
+    if (!scrollRef.current) return;
+    drag.current.active = false;
+    scrollRef.current.style.cursor = 'grab';
+  };
+
+  // Prevent card navigation when the user was dragging (not just clicking)
+  const onClickCapture = (e) => {
+    if (drag.current.moved) e.stopPropagation();
+    drag.current.moved = false;
+  };
 
   return (
     <div>
@@ -145,11 +176,11 @@ export default function HomeProductMarquee() {
         </div>
       </div>
 
-      <div className="relative max-w-full overflow-x-clip overflow-y-visible">
+      <div className="relative max-w-full">
         {isLoading ? (
-          <div className="flex gap-3 max-w-full overflow-x-clip">
+          <div className="flex gap-3 overflow-x-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[170px] h-[240px] rounded-xl overflow-hidden">
+              <div key={i} className="flex-shrink-0 w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] rounded-xl overflow-hidden">
                 <div className="w-full h-full rounded-xl bg-white/[0.08] animate-pulse" />
               </div>
             ))}
@@ -157,12 +188,25 @@ export default function HomeProductMarquee() {
         ) : products.length === 0 ? (
           <p className="text-center text-white/40 py-10 text-sm">{s.noPiecesFound}</p>
         ) : (
-          <div className="max-w-full overflow-x-clip py-1 [contain:inline-size]" dir="ltr">
-            <div className="flex w-max gap-3 animate-marquee-home hover:[animation-play-state:paused] will-change-transform">
-              {loop.map((p, i) => (
-                <MarqueeCard key={`${p._id}-${i}`} product={p} />
-              ))}
-            </div>
+          /* Swipeable / draggable scroll strip */
+          <div
+            ref={scrollRef}
+            dir="ltr"
+            className="flex gap-3 overflow-x-auto scrollbar-none py-1 cursor-grab active:cursor-grabbing select-none"
+            style={{ WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onClickCapture={onClickCapture}
+          >
+            {products.map((p) => (
+              <div key={p._id} style={{ scrollSnapAlign: 'start' }}>
+                <MarqueeCard product={p} />
+              </div>
+            ))}
+            {/* Trailing spacer so last card isn't flush against edge */}
+            <div className="flex-shrink-0 w-2" aria-hidden />
           </div>
         )}
       </div>
