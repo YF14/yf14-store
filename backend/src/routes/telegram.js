@@ -10,23 +10,6 @@ function iqd(v) {
   return `${Number(v || 0).toLocaleString('en-US')} IQD`;
 }
 
-function buildFullAddress(order) {
-  const guest = order.guestInfo;
-  const addr = order.shippingAddress;
-  const parts = [];
-  if (guest) {
-    if (guest.city) parts.push(guest.city);
-    if (guest.town) parts.push(guest.town);
-  } else if (addr) {
-    if (addr.street) parts.push(addr.street);
-    if (addr.city) parts.push(addr.city);
-    if (addr.state) parts.push(addr.state);
-    if (addr.country) parts.push(addr.country);
-    if (addr.zipCode) parts.push(addr.zipCode);
-  }
-  return parts.join(', ') || 'N/A';
-}
-
 function getPhone(order) {
   return order.guestInfo?.phone || order.shippingAddress?.phone || 'N/A';
 }
@@ -68,8 +51,8 @@ router.post('/webhook', async (req, res) => {
     const customerName = order.guestInfo?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'زائر';
     const customerEmail = order.guestInfo?.email || order.user?.email;
     const phone = getPhone(order);
-    const address = buildFullAddress(order);
-    const items = order.items.map(i => `  • ${i.name} (${i.size}/${i.color}) x${i.quantity} — ${iqd(i.price * i.quantity)}`).join('\n');
+    const address = telegramService.buildOrderAddress(order);
+    const items = telegramService.formatOrderItemsLines(order);
 
     // ── APPROVE ──────────────────────────────────────────────────────────
     if (action === 'approve') {

@@ -19,38 +19,67 @@ async function call(method, body) {
   return json;
 }
 
+/**
+ * Iraqi checkout uses shippingAddress.city (محافظة) + shippingAddress.state (منطقة/حي);
+ * guest orders also set guestInfo.city / guestInfo.town. Merge so we never skip addr when guest is {}.
+ */
 function buildAddress(order) {
   const guest = order.guestInfo;
   const addr = order.shippingAddress;
+  const city = guest?.city || addr?.city;
+  const area = guest?.town || addr?.state;
+  const street = addr?.street;
+  const zip = addr?.zipCode;
+  const country = addr?.country;
+
   const parts = [];
-  if (guest) {
-    if (guest.city) parts.push(guest.city);
-    if (guest.town) parts.push(guest.town);
-  } else if (addr) {
-    if (addr.street) parts.push(addr.street);
-    if (addr.city) parts.push(addr.city);
-    if (addr.state) parts.push(addr.state);
-    if (addr.country) parts.push(addr.country);
-    if (addr.zipCode) parts.push(addr.zipCode);
+  if (street) parts.push(String(street).trim());
+  if (city) parts.push(String(city).trim());
+  if (area) parts.push(String(area).trim());
+  if (zip) parts.push(String(zip).trim());
+  if (country && String(country).trim() && String(country).trim() !== 'IQ') {
+    parts.push(String(country).trim());
   }
-  return parts.join(', ') || 'N/A';
+
+  const line = parts.filter(Boolean).join(' — ');
+  return line || 'غير محدد';
+}
+
+function formatItemHeightWeight(item) {
+  const h = item.customerHeightCm;
+  const w = item.customerWeightKg;
+  const bits = [];
+  if (h != null && h !== '' && !Number.isNaN(Number(h))) bits.push(`طول ${Number(h)} سم`);
+  if (w != null && w !== '' && !Number.isNaN(Number(w))) bits.push(`وزن ${Number(w)} كغ`);
+  return bits.length ? ` (${bits.join('، ')})` : '';
 }
 
 function getPhone(order) {
   return order.guestInfo?.phone || order.shippingAddress?.phone || 'N/A';
 }
 
+function formatOrderItemsLines(order) {
+  if (!order?.items?.length) return '  —';
+  return order.items
+    .map((i) => {
+      const hw = formatItemHeightWeight(i);
+      return `  • ${i.name} (${i.size} / ${i.color}) x${i.quantity}${hw} — ${iqd(i.price * i.quantity)}`;
+    })
+    .join('\n');
+}
+
+exports.buildOrderAddress = buildAddress;
+exports.formatOrderItemsLines = formatOrderItemsLines;
+
 exports.notifyNewOrder = async (order) => {
   if (!BOT_TOKEN() || !CHAT_ID()) return;
   try {
-    const items = order.items
-      .map(i => `  • ${i.name} (${i.size} / ${i.color}) x${i.quantity} — ${iqd(i.price * i.quantity)}`)
-      .join('\n');
+    const items = formatOrderItemsLines(order);
 
     const guest = order.guestInfo;
     const customerName = guest?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'زائر';
     const customerContact = guest?.email || guest?.phone || order.user?.email || 'N/A';
-    const isGuest = !!guest;
+    const isGuest = Boolean(guest?.name || guest?.phone);
     const phone = getPhone(order);
     const address = buildAddress(order);
 
@@ -86,7 +115,7 @@ exports.notifyNewOrder = async (order) => {
           await call('sendPhoto', {
             chat_id: CHAT_ID(),
             photo: item.image,
-            caption: `📦 ${order.orderNumber}\n${item.name} — ${item.size} / ${item.color} x${item.quantity}`,
+            caption: `📦 ${order.orderNumber}\n${item.name} — ${item.size} / ${item.color} x${item.quantity}${formatItemHeightWeight(item)}`,
           });
         } catch {}
       }
