@@ -16,11 +16,14 @@ router.get('/dashboard', async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const [
       totalRevenue, monthRevenue, lastMonthRevenue,
       totalOrders, monthOrders,
       totalUsers, monthUsers,
+      usersActive, usersInactive, usersSignedInLast30Days,
       recentOrders, bestSellers, lowStock
     ] = await Promise.all([
       Order.aggregate([{ $match: REVENUE_MATCH }, { $group: { _id: null, total: { $sum: '$total' } } }]),
@@ -30,6 +33,12 @@ router.get('/dashboard', async (req, res) => {
       Order.countDocuments({ createdAt: { $gte: startOfMonth } }),
       User.countDocuments({ role: 'user' }),
       User.countDocuments({ role: 'user', createdAt: { $gte: startOfMonth } }),
+      User.countDocuments({
+        role: 'user',
+        $or: [{ isActive: true }, { isActive: { $exists: false } }],
+      }),
+      User.countDocuments({ role: 'user', isActive: false }),
+      User.countDocuments({ role: 'user', lastLogin: { $gte: thirtyDaysAgo } }),
       Order.find().sort('-createdAt').limit(10).populate('user', 'firstName lastName email'),
       Product.find().sort('-totalSold').limit(5).select('name images price totalSold averageRating'),
       Product.find({ 'variants.stock': { $lte: 5 } }).select('name variants').limit(20),
@@ -42,7 +51,13 @@ router.get('/dashboard', async (req, res) => {
         lastMonth: lastMonthRevenue[0]?.total || 0,
       },
       orders: { total: totalOrders, thisMonth: monthOrders },
-      users: { total: totalUsers, thisMonth: monthUsers },
+      users: {
+        total: totalUsers,
+        thisMonth: monthUsers,
+        active: usersActive,
+        inactive: usersInactive,
+        signedInLast30Days: usersSignedInLast30Days,
+      },
       recentOrders,
       bestSellers,
       lowStock: lowStock.filter(p => p.variants.some(v => v.stock <= 5)),

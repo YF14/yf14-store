@@ -638,6 +638,12 @@ const en = {
     lowStockAlert: 'Low Stock Alert',
     sold: 'sold',
     revenueLast30: 'Revenue — Last 30 Days',
+    userAccountsTitle: 'Customer accounts',
+    userAccountsSubtitle: 'Registered shoppers (role: customer). Active = can sign in; deactivated accounts are blocked.',
+    usersActiveLabel: 'Active',
+    usersInactiveLabel: 'Deactivated',
+    usersSignedIn30dLabel: 'Signed in (30 days)',
+    manageUsers: 'Manage users',
 
     // Products
     addProduct: '+ Add Product',

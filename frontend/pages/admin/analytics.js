@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useQuery } from 'react-query';
 import { NextSeo } from 'next-seo';
@@ -23,6 +24,12 @@ const STATUS_COLORS = {
   delivered: '#22c55e',
   cancelled: '#ef4444',
   refunded: '#6b7280',
+};
+
+const USER_STATUS_BADGES = {
+  active: 'text-green-700 bg-green-50 border-green-100',
+  inactive: 'text-red-700 bg-red-50 border-red-100',
+  recent: 'text-indigo-700 bg-indigo-50 border-indigo-100',
 };
 
 export default function AdminAnalyticsPage() {
@@ -78,7 +85,11 @@ export default function AdminAnalyticsPage() {
         {[
           { label: a.totalRevenue, value: formatIQD(stats.revenue?.total), sub: `${formatIQD(stats.revenue?.thisMonth)} ${a.thisMonth}` },
           { label: a.totalOrders, value: stats.orders?.total || 0, sub: `${stats.orders?.thisMonth || 0} ${a.thisMonth}` },
-          { label: a.customers, value: stats.users?.total || 0, sub: `${stats.users?.thisMonth || 0} ${a.thisMonth}` },
+          {
+            label: a.customers,
+            value: stats.users?.total || 0,
+            sub: `${stats.users?.thisMonth || 0} ${a.thisMonth} · ${a.usersActiveLabel}: ${stats.users?.active ?? 0}`,
+          },
           { label: a.lowStockAlerts, value: lowStockItems.length, sub: `${inventory.length} ${a.activeProductsTracked}` },
         ].map((card) => (
           <div key={card.label} className="bg-white border border-brand-black/10 p-5">
@@ -87,6 +98,29 @@ export default function AdminAnalyticsPage() {
             <p className="text-xs text-brand-warm-gray mt-1">{card.sub}</p>
           </div>
         ))}
+      </div>
+
+      <div className="bg-white border border-brand-black/10 p-6 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <h2 className="font-display text-lg font-light">{a.userAccountsTitle}</h2>
+            <p className="text-xs text-brand-warm-gray mt-2 max-w-xl leading-relaxed">{a.userAccountsSubtitle}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end lg:pt-1">
+            <span className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.active}`}>
+              {a.usersActiveLabel}: {(stats.users?.active ?? 0).toLocaleString()}
+            </span>
+            <span className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.inactive}`}>
+              {a.usersInactiveLabel}: {(stats.users?.inactive ?? 0).toLocaleString()}
+            </span>
+            <span className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.recent}`}>
+              {a.usersSignedIn30dLabel}: {(stats.users?.signedInLast30Days ?? 0).toLocaleString()}
+            </span>
+          </div>
+        </div>
+        <Link href="/admin/users" className="inline-block text-xs text-brand-gold hover:underline mt-4">
+          {a.manageUsers} →
+        </Link>
       </div>
 
       <div className="space-y-8">

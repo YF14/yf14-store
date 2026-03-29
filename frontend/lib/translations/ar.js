@@ -637,6 +637,12 @@ const ar = {
     lowStockAlert: 'تنبيه نفاد المخزون',
     sold: 'مبيعات',
     revenueLast30: 'الإيرادات — آخر 30 يوم',
+    userAccountsTitle: 'حسابات العملاء',
+    userAccountsSubtitle: 'المسجلون كمتسوقين. النشط = يمكنهم تسجيل الدخول؛ المعطّلون لا يمكنهم الدخول.',
+    usersActiveLabel: 'نشط',
+    usersInactiveLabel: 'معطّل',
+    usersSignedIn30dLabel: 'دخول خلال 30 يوماً',
+    manageUsers: 'إدارة المستخدمين',
 
     // Products
     addProduct: '+ إضافة منتج',

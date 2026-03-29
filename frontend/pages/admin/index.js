@@ -20,6 +20,12 @@ const STATUS_COLORS = {
   cancelled: 'text-red-600 bg-red-50',
 };
 
+const USER_STATUS_BADGES = {
+  active: 'text-green-700 bg-green-50 border-green-100',
+  inactive: 'text-red-700 bg-red-50 border-red-100',
+  recent: 'text-indigo-700 bg-indigo-50 border-indigo-100',
+};
+
 function StatCard({ title, value, sub, icon }) {
   return (
     <div className="bg-white border border-brand-black/10 p-6">
@@ -75,8 +81,45 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title={a.totalRevenue} value={fmt(stats.revenue?.total)} sub={`${a.thisMonth}: ${fmt(stats.revenue?.thisMonth)}`} icon="💰" />
           <StatCard title={a.totalOrders} value={stats.orders?.total?.toLocaleString() || '0'} sub={`${a.thisMonth}: ${stats.orders?.thisMonth || 0}`} icon="📦" />
-          <StatCard title={a.customers} value={stats.users?.total?.toLocaleString() || '0'} sub={`${a.thisMonth}: +${stats.users?.thisMonth || 0}`} icon="👤" />
+          <StatCard
+            title={a.customers}
+            value={stats.users?.total?.toLocaleString() || '0'}
+            sub={`${a.thisMonth}: +${stats.users?.thisMonth || 0} · ${a.usersActiveLabel}: ${(stats.users?.active ?? 0).toLocaleString()}`}
+            icon="👤"
+          />
           <StatCard title={a.avgOrderValue} value={fmt(stats.orders?.total ? stats.revenue?.total / stats.orders?.total : 0)} sub={a.allTime} icon="📊" />
+        </div>
+
+        <div className="bg-white border border-brand-black/10 p-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div>
+              <h2 className="font-display text-xl font-light">{a.userAccountsTitle}</h2>
+              <p className="text-xs text-brand-warm-gray mt-2 max-w-xl leading-relaxed">{a.userAccountsSubtitle}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 lg:justify-end lg:pt-1">
+              <span
+                className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.active}`}
+                title={a.usersActiveLabel}
+              >
+                {a.usersActiveLabel}: {(stats.users?.active ?? 0).toLocaleString()}
+              </span>
+              <span
+                className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.inactive}`}
+                title={a.usersInactiveLabel}
+              >
+                {a.usersInactiveLabel}: {(stats.users?.inactive ?? 0).toLocaleString()}
+              </span>
+              <span
+                className={`text-xs px-3 py-1.5 rounded border font-medium ${USER_STATUS_BADGES.recent}`}
+                title={a.usersSignedIn30dLabel}
+              >
+                {a.usersSignedIn30dLabel}: {(stats.users?.signedInLast30Days ?? 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <Link href="/admin/users" className="inline-block text-xs text-brand-gold hover:underline mt-4">
+            {a.manageUsers} →
+          </Link>
         </div>
 
         {chart.length > 0 && (
