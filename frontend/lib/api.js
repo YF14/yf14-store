@@ -24,7 +24,8 @@ function isAuthPublicPath(url) {
     u.includes('/auth/login') ||
     u.includes('/auth/register') ||
     u.includes('/auth/refresh-token') ||
-    u.includes('/auth/forgot-password')
+    u.includes('/auth/forgot-password') ||
+    u.includes('/auth/reset-password')
   );
 }
 

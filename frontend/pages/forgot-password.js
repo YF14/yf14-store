@@ -17,7 +17,11 @@ export default function ForgotPasswordPage() {
     try {
       await api.post('/auth/forgot-password', { email });
       setSent(true);
-    } catch { toast.error(t.errors.genericError); }
+    } catch (err) {
+      const detail =
+        err.response?.data?.details?.[0]?.message || err.response?.data?.details?.[0]?.msg;
+      toast.error(detail || err.response?.data?.error || t.errors.genericError);
+    }
     finally { setLoading(false); }
   };
 

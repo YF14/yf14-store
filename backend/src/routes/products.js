@@ -10,6 +10,7 @@ router.get('/best-sellers', productController.getBestSellers);
 router.get('/search', productController.searchProducts);
 router.get('/price-range', productController.getProductPriceRange);
 router.get('/colors', productController.getProductColors);
+router.get('/sizes', productController.getProductSizes);
 
 router.get('/admin/out-of-stock', protect, requireAdminOrPermission('stock'), productController.getOutOfStockProducts);
 router.get('/admin/:id', protect, requireAdminOrPermission('products'), productController.getProductById);

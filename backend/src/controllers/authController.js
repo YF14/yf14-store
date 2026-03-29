@@ -83,13 +83,24 @@ exports.getMe = async (req, res) => {
 
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.json({ message: 'If that email exists, a reset link was sent.' });
+    const email = String(req.body.email || '')
+      .trim()
+      .toLowerCase();
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.json({ message: 'If that email exists, a reset link was sent.' });
+    }
+    // Google-only accounts have no password hash — same generic response, no email
+    if (!user.password) {
+      return res.json({ message: 'If that email exists, a reset link was sent.' });
+    }
     const token = crypto.randomBytes(32).toString('hex');
     user.passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
     user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save({ validateBeforeSave: false });
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    const base = String(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const resetUrl = `${base}/reset-password/${token}`;
     await emailService.sendPasswordReset(user, resetUrl);
     res.json({ message: 'If that email exists, a reset link was sent.' });
   } catch (err) { next(err); }

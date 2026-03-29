@@ -258,6 +258,41 @@ exports.getProductColors = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+/** Distinct variant sizes for filter UI — optional `colors` narrows to those color(s). */
+exports.getProductSizes = async (req, res, next) => {
+  try {
+    const { category, colors, filter } = req.query;
+    const match = { isActive: true, 'variants.0': { $exists: true } };
+    if (filter === 'sale') applySaleFilter(match);
+    else if (filter === 'new') match.isNewArrival = true;
+    else if (filter === 'featured') match.isFeatured = true;
+
+    if (category) {
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        match.category = new mongoose.Types.ObjectId(category);
+      } else {
+        const cat = await Category.findOne({ slug: category }).select('_id');
+        match.category = cat ? cat._id : new mongoose.Types.ObjectId();
+      }
+    }
+    if (colors) match['variants.color'] = { $in: colors.split(',') };
+
+    const variantMatch = { 'variants.size': { $exists: true, $ne: '' } };
+    if (colors) variantMatch['variants.color'] = { $in: colors.split(',') };
+
+    const sizes = await Product.aggregate([
+      { $match: match },
+      { $unwind: '$variants' },
+      { $match: variantMatch },
+      { $group: { _id: { productId: '$_id', size: '$variants.size' } } },
+      { $group: { _id: '$_id.size', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, size: '$_id', count: 1 } },
+    ]);
+    res.json({ sizes });
+  } catch (err) { next(err); }
+};
+
 exports.getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)

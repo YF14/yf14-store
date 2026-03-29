@@ -21,13 +21,25 @@ const loginValidation = [
   body('password').notEmpty().withMessage('Password is required'),
 ];
 
+const forgotPasswordValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+];
+
+const resetPasswordValidation = [
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain uppercase, lowercase, and number'),
+];
+
 router.post('/register', registerValidation, validate, authController.register);
 router.post('/login', loginValidation, validate, authController.login);
 router.post('/logout', protect, authController.logout);
 router.post('/refresh-token', authController.refreshToken);
 router.get('/me', protect, authController.getMe);
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password/:token', authController.resetPassword);
+router.post('/forgot-password', forgotPasswordValidation, validate, authController.forgotPassword);
+router.post('/reset-password/:token', resetPasswordValidation, validate, authController.resetPassword);
 router.get('/google', authController.googleAuth);
 router.get('/google/callback', authController.googleCallback);
 

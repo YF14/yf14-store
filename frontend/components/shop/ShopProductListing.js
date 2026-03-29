@@ -9,6 +9,20 @@ import { useLang } from '../../contexts/LanguageContext';
 import { catName, formatIQD } from '../../lib/currency';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'];
+const SIZE_ORDER = Object.fromEntries(SIZES.map((sz, i) => [sz, i]));
+
+/** Sort size facet rows: known order first, then alphabetical. */
+function sortSizeAgg(rows) {
+  return [...rows].sort((a, b) => {
+    const ia = SIZE_ORDER[a.size];
+    const ib = SIZE_ORDER[b.size];
+    if (ia != null && ib != null) return ia - ib;
+    if (ia != null) return -1;
+    if (ib != null) return 1;
+    return String(a.size).localeCompare(String(b.size), undefined, { numeric: true });
+  });
+}
+
 const PAGE_SIZE = 20;
 
 function ProductSkeleton() {
@@ -218,6 +232,19 @@ export default function ShopProductListing({
     }
   );
 
+  const colorsFacetKey = useMemo(() => [...filters.colors].sort().join('|'), [filters.colors]);
+  const { data: sizeData, isLoading: sizesLoading } = useQuery(
+    ['productSizes', filters.category, colorsFacetKey, filters.filter],
+    () => {
+      const params = new URLSearchParams();
+      if (filters.category) params.set('category', filters.category);
+      if (filters.filter) params.set('filter', filters.filter);
+      if (filters.colors.length) params.set('colors', filters.colors.join(','));
+      const qs = params.toString();
+      return api.get(`/products/sizes${qs ? `?${qs}` : ''}`).then((r) => r.data);
+    }
+  );
+
   const categories      = catData?.categories   || [];
   const availableColors = colorData?.colors     || [];
   const priceFloor      = priceRangeData?.min   ?? 0;
@@ -236,6 +263,24 @@ export default function ShopProductListing({
     const stale = filters.colors.filter(c => !valid.has(c));
     if (stale.length) setFilters(f => ({ ...f, colors: f.colors.filter(c => valid.has(c)) }));
   }, [availableColors]);
+
+  const displaySizeRows = useMemo(() => {
+    const apiSizes = sizeData?.sizes;
+    if (apiSizes && apiSizes.length > 0) return sortSizeAgg(apiSizes);
+    if (filters.colors.length > 0) {
+      if (sizesLoading) return null;
+      return [];
+    }
+    return sortSizeAgg(SIZES.map((size) => ({ size, count: null })));
+  }, [sizeData?.sizes, colorsFacetKey, sizesLoading, filters.colors.length]);
+
+  // Drop size chips that are not valid for current color / catalog facet list
+  useEffect(() => {
+    if (displaySizeRows == null) return;
+    const valid = new Set(displaySizeRows.map((r) => r.size));
+    const stale = filters.sizes.filter((s) => !valid.has(s));
+    if (stale.length) setFilters((f) => ({ ...f, sizes: f.sizes.filter((s) => valid.has(s)) }));
+  }, [displaySizeRows, filters.sizes]);
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -541,24 +586,34 @@ export default function ShopProductListing({
                 transition={{ duration: 0.18 }} className="overflow-hidden"
               >
                 <div className="px-6 pb-5">
-                  <div className="flex flex-wrap gap-2">
-                    {SIZES.map(size => {
-                      const active = filters.sizes.includes(size);
-                      return (
-                        <button
-                          key={size}
-                          onClick={() => toggleSize(size)}
-                          className={`px-3 py-1.5 text-xs border transition-all duration-150 ${
-                            active
-                              ? 'bg-brand-black text-white border-brand-black'
-                              : 'border-gray-200 text-gray-600 hover:border-brand-black hover:text-brand-black'
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {displaySizeRows == null ? (
+                    <p className="text-xs text-gray-500 py-1">{s.sizesLoading}</p>
+                  ) : displaySizeRows.length === 0 ? (
+                    <p className="text-xs text-gray-500 py-1 leading-relaxed">{s.sizesNoneForColors}</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {displaySizeRows.map(({ size, count }) => {
+                        const active = filters.sizes.includes(size);
+                        return (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => toggleSize(size)}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs border transition-all duration-150 ${
+                              active
+                                ? 'bg-brand-black text-white border-brand-black'
+                                : 'border-gray-200 text-gray-600 hover:border-brand-black hover:text-brand-black'
+                            }`}
+                          >
+                            {size}
+                            {count != null && (
+                              <span className={active ? 'text-white/70' : 'text-gray-400'}>({count})</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
