@@ -235,6 +235,11 @@ const ar = {
     terms: 'الشروط والأحكام',
     and: 'و',
     privacy: 'سياسة الخصوصية',
+    registerPasswordHint:
+      '8 أحرف على الأقل، مع حرف كبير وحرف صغير ورقم واحد على الأقل.',
+    registerPasswordTooShort: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.',
+    registerPasswordWeak:
+      'يجب أن تحتوي كلمة المرور على حرف كبير وحرف صغير ورقم.',
   },
 
   account: {

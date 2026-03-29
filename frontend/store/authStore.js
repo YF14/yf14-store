@@ -54,7 +54,15 @@ const useAuthStore = create(
           set({ user: data.user, token: data.token, refreshToken: data.refreshToken });
           return { success: true };
         } catch (err) {
-          return { success: false, error: err.response?.data?.error || 'Registration failed' };
+          const apiErr = err.response?.data?.error;
+          const detail =
+            err.response?.data?.details?.[0]?.message ||
+            err.response?.data?.details?.[0]?.msg;
+          const fallback =
+            err.message && err.message !== 'Network Error'
+              ? err.message
+              : 'Registration failed';
+          return { success: false, error: detail || apiErr || fallback };
         } finally {
           set({ isLoading: false });
         }

@@ -15,6 +15,7 @@ import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD, catName } from '../../lib/currency';
 import { filterProductGallery, pickImageUrlForVariantColor, pickListingImageUrl } from '../../lib/productMedia';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
+import { trackViewContent } from '../../lib/analytics';
 
 const CREAM = '#faf8f5';
 const WARM_WHITE = '#f5f2ee';
@@ -58,6 +59,16 @@ export default function ProductDetailPage() {
   );
 
   const product = data?.product;
+
+  useEffect(() => {
+    if (!product?._id) return;
+    trackViewContent({
+      contentId: product._id,
+      contentName: product.name,
+      value: product.price,
+      currency: 'IQD',
+    });
+  }, [product?._id, product?.name, product?.price]);
 
   useEffect(() => {
     setActiveImg(0);

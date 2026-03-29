@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { trackAddToCart } from '../lib/analytics';
 
 // ─── Guest cart helpers ───────────────────────────────────────────────────────
 function loadGuestCart() {
@@ -85,6 +86,14 @@ const useCartStore = create((set, get) => ({
       saveGuestCart(updated);
       set({ guestItems: updated, isOpen: true });
       toast.success('تمت الإضافة للسلة');
+      const unit = Number(productData?.price) || 0;
+      trackAddToCart({
+        contentId: productId,
+        contentName: productData?.name || '',
+        value: unit * quantity,
+        quantity,
+        currency: 'IQD',
+      });
       return { success: true };
     }
 
@@ -102,6 +111,14 @@ const useCartStore = create((set, get) => ({
       });
       set({ cart: data.cart, isOpen: true });
       toast.success('تمت الإضافة للسلة');
+      const unit = Number(productData?.price) || 0;
+      trackAddToCart({
+        contentId: productId,
+        contentName: productData?.name || '',
+        value: unit * quantity,
+        quantity,
+        currency: 'IQD',
+      });
       return { success: true };
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to add to cart');

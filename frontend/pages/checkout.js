@@ -13,6 +13,7 @@ import { formatIQD } from '../lib/currency';
 import { DELIVERY_FEE_IQD } from '../lib/deliveryFee';
 import { resolveCartLineDisplay } from '../lib/cartLineDisplay';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../lib/remoteImage';
+import { trackPurchase } from '../lib/analytics';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -202,8 +203,21 @@ export default function CheckoutPage() {
         paymentMethod: 'cash',
       });
 
+      const order = data.order;
+      trackPurchase({
+        transactionId: String(order?._id || order?.orderNumber || data.orderNumber || ''),
+        value: Number(order?.total) || total,
+        currency: 'IQD',
+        items: (order?.items || []).map((i) => ({
+          id: String(i.product || ''),
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+        })),
+      });
+
       await clearCart();
-      setOrderNumber(data.order.orderNumber || data.orderNumber);
+      setOrderNumber(order?.orderNumber || data.orderNumber);
       setDone(true);
     } catch (err) {
       const msg = err.response?.data?.error || err.message || (isRTL ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Something went wrong');

@@ -13,6 +13,7 @@ import { formatIQD } from '../lib/currency';
 import { DELIVERY_FEE_IQD } from '../lib/deliveryFee';
 import { resolveCartLineDisplay } from '../lib/cartLineDisplay';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../lib/remoteImage';
+import { trackPurchase } from '../lib/analytics';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -222,8 +223,21 @@ export default function GuestCheckout() {
         promoCode: promoCode || undefined,
       });
 
+      const order = data.order;
+      trackPurchase({
+        transactionId: String(order?._id || order?.orderNumber || data.orderNumber || ''),
+        value: Number(order?.total) || total,
+        currency: 'IQD',
+        items: (order?.items || []).map((i) => ({
+          id: String(i.product || ''),
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+        })),
+      });
+
       await clearCart();
-      const num = data.orderNumber || '';
+      const num = data.orderNumber || order?.orderNumber || '';
       setOrderNumber(num);
       try {
         sessionStorage.setItem('guestOrderSuccess', JSON.stringify({

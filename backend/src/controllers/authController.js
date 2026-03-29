@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
+const logger = require('../config/logger');
 
 const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 const signRefreshToken = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' });
@@ -29,7 +30,8 @@ exports.register = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ error: 'Email already registered.' });
     const user = await User.create({ firstName, lastName, email, password });
-    await emailService.sendWelcome(user);
+    // Do not block signup on email delivery (Resend latency / failures).
+    emailService.sendWelcome(user).catch((err) => logger.error(`sendWelcome: ${err.message}`));
     sendTokens(user, 201, res);
   } catch (err) { next(err); }
 };

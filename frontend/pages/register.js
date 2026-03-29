@@ -6,6 +6,9 @@ import { NextSeo } from 'next-seo';
 import useAuthStore from '../store/authStore';
 import { useLang } from '../contexts/LanguageContext';
 
+/** Must match backend `auth.js` registerValidation password rule. */
+const REGISTER_PASSWORD_STRENGTH = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+
 function DarkInput({ type = 'text', value, onChange, placeholder, required, autoComplete, dir }) {
   return (
     <input
@@ -59,8 +62,18 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (form.password !== form.confirmPassword) {
+      setError(t.errors.passwordMismatch);
+      return;
+    }
+    if (form.password.length < 8) {
+      setError(t.errors.shortPassword);
+      return;
+    }
+    if (!REGISTER_PASSWORD_STRENGTH.test(form.password)) {
+      setError(t.auth.registerPasswordWeak);
+      return;
+    }
     const result = await register({ firstName: form.firstName, lastName: form.lastName, email: form.email, password: form.password });
     if (result.success) {
       const r = router.query.redirect;
@@ -186,6 +199,9 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   dir="ltr"
                 />
+                <p className="text-[11px] text-white/35 font-body mt-2 leading-relaxed">
+                  {t.auth.registerPasswordHint}
+                </p>
               </div>
 
               <div>

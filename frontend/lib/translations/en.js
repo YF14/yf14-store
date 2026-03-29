@@ -235,6 +235,11 @@ const en = {
     terms: 'Terms & Conditions',
     and: 'and',
     privacy: 'Privacy Policy',
+    registerPasswordHint:
+      'At least 8 characters, including one uppercase letter, one lowercase letter, and one number.',
+    registerPasswordTooShort: 'Password must be at least 8 characters.',
+    registerPasswordWeak:
+      'Password must include uppercase, lowercase, and a number.',
   },
 
   account: {
