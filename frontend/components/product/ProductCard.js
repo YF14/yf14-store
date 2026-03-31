@@ -85,7 +85,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
     >
       <Link href={`/products/${product.slug}`} className="group block">
         <div
-          className="relative aspect-square bg-gray-100 overflow-hidden rounded-t-xl mb-0"
+          className="relative aspect-square bg-brand-cream overflow-hidden rounded-t-xl mb-0"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onTouchStart={handleTouchStart}
@@ -191,7 +191,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
             const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free size'];
             sizes.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b));
             return (
-              <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 [@media(hover:none)]:translate-y-0 transition-transform duration-300 z-10">
+              <div className="absolute bottom-0 left-0 right-0 bg-brand-cream/95 backdrop-blur-sm py-2.5 px-3 translate-y-full group-hover:translate-y-0 [@media(hover:none)]:translate-y-0 transition-transform duration-300 z-10 border-t border-[#e8d0ee]/40">
                 {sizes.length > 0 ? (
                   <div className="flex items-center justify-center gap-1.5 flex-wrap">
                     {sizes.map(size => (
@@ -208,8 +208,8 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
           })()}
         </div>
 
-        {/* Info — soft lavender panel (name, price, swatches) */}
-        <div className="rounded-b-xl border border-brand-gold-light/35 bg-gradient-to-b from-brand-cream via-white to-brand-purple-light/60 px-3.5 pt-3 pb-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        {/* Info — same tint as shop section background (no white “card” slab) */}
+        <div className="rounded-b-xl border border-[#e8d0ee]/45 bg-brand-cream px-3.5 pt-3 pb-3">
           <h3 className="font-body text-sm font-medium text-brand-black group-hover:text-brand-gold transition-colors line-clamp-1">
             {product.name}
           </h3>

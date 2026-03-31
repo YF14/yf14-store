@@ -117,6 +117,7 @@ export default function AdminFeaturedProductsPage() {
       onSuccess: () => {
         refetch();
         queryClient.invalidateQueries(['products']);
+        queryClient.invalidateQueries(['admin-best-seller-product-count']);
         toast.success(a.productUpdated);
       },
       onError: () => toast.error(a.failedUpdate),
@@ -348,6 +349,11 @@ export default function AdminFeaturedProductsPage() {
                                 {a.newArrival}
                               </span>
                             )}
+                            {p.isBestSeller && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200">
+                                {a.bestSeller}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -407,6 +413,19 @@ export default function AdminFeaturedProductsPage() {
                           style={{ borderColor: BORDER, color: MUTED }}
                         >
                           {p.isNewArrival ? a.unmarkNew : a.markNew}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            patchProductMutation.mutate({
+                              productId: p._id,
+                              body: { isBestSeller: !p.isBestSeller },
+                            })
+                          }
+                          className="text-xs px-3 py-2 rounded-lg border hover:bg-white/5"
+                          style={{ borderColor: BORDER, color: MUTED }}
+                        >
+                          {p.isBestSeller ? a.unmarkBestSeller : a.markBestSeller}
                         </button>
                         <button
                           type="button"

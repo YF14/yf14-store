@@ -42,6 +42,7 @@ const ADMIN_PERMISSION_KEYS = Object.freeze([
   'sales',
   'featured',
   'newArrivals',
+  'bestSellers',
   'stock',
   'orders',
   'users',

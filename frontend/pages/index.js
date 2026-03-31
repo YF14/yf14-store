@@ -29,10 +29,7 @@ export default function HomePage() {
       <AnnouncementBar />
 
       {/* Filter + product grid — light page background */}
-      <section
-        className="relative z-10 w-full max-w-full min-w-0 overflow-x-clip border-t border-[#e8d0ee]/50 pt-0"
-        style={{ background: 'linear-gradient(180deg, #fdf4ff 0%, #ffffff 18%)' }}
-      >
+      <section className="relative z-10 w-full max-w-full min-w-0 overflow-x-clip border-t border-[#e8d0ee]/50 pt-0 bg-brand-cream">
         <ShopProductListing embed homeCompact />
       </section>
     </Layout>

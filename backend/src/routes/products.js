@@ -19,6 +19,7 @@ router.put('/reorder-category', protect, requireAdminOrPermission('categories'),
 router.put('/reorder-sale', protect, requireAdminOrPermission('sales'), productController.reorderSaleProducts);
 router.put('/reorder-featured', protect, requireAdminOrPermission('featured'), productController.reorderFeaturedProducts);
 router.put('/reorder-new-arrivals', protect, requireAdminOrPermission('newArrivals'), productController.reorderNewArrivalProducts);
+router.put('/reorder-best-sellers', protect, requireAdminOrPermission('bestSellers'), productController.reorderBestSellerProducts);
 router.put('/:id', protect, requireAdminOrPermission('products'), productController.updateProduct);
 router.delete('/:id', protect, requireAdminOrPermission('products'), productController.deleteProduct);
 router.patch('/:id/variants/:variantId/stock', protect, requireAdminOrPermission('stock'), productController.updateVariantStock);

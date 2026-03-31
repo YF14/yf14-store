@@ -21,6 +21,7 @@ export default function AdminLayout({ children }) {
     { href: '/admin/sales', label: a.salesAssortmentMenu, icon: '🏷️', permission: 'sales' },
     { href: '/admin/featured', label: a.featuredAssortmentMenu, icon: '✦', permission: 'featured' },
     { href: '/admin/new-arrivals', label: a.newArrivalsAssortmentMenu, icon: '✨', permission: 'newArrivals' },
+    { href: '/admin/best-sellers', label: a.bestSellersAssortmentMenu, icon: '⭐', permission: 'bestSellers' },
     { href: '/admin/stock', label: a.stockMenu, icon: '📋', permission: 'stock' },
     { href: '/admin/out-of-stock', label: a.outOfStockMenu || 'Out of Stock', icon: '🚫', permission: 'stock' },
     { href: '/admin/orders', label: a.orders, icon: '📦', permission: 'orders' },

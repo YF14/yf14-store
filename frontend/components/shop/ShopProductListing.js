@@ -55,6 +55,8 @@ export default function ShopProductListing({
   featuredMode = false,
   /** Dedicated /new-arrivals route */
   newArrivalMode = false,
+  /** Dedicated /best-sellers route */
+  bestSellerMode = false,
   /** Parent page provides NextSeo (e.g. /sale) */
   skipPageSeo = false,
 }) {
@@ -62,8 +64,16 @@ export default function ShopProductListing({
   const { t, isRTL } = useLang();
   const s = t.shop;
   const p = t.product;
-  const listPathname = saleMode ? '/sale' : featuredMode ? '/featured' : newArrivalMode ? '/new-arrivals' : '/products';
-  const isCollectionPage = saleMode || featuredMode || newArrivalMode;
+  const listPathname = saleMode
+    ? '/sale'
+    : featuredMode
+      ? '/featured'
+      : newArrivalMode
+        ? '/new-arrivals'
+        : bestSellerMode
+          ? '/best-sellers'
+          : '/products';
+  const isCollectionPage = saleMode || featuredMode || newArrivalMode || bestSellerMode;
 
   const SORT_OPTIONS = useMemo(() => {
     const base = [
@@ -82,15 +92,18 @@ export default function ShopProductListing({
     if (newArrivalMode) {
       return [{ value: 'newArrivalSortOrder', label: s.newArrivalCuratedOrder }, ...base];
     }
+    if (bestSellerMode) {
+      return [{ value: 'bestSellerSortOrder', label: s.bestSellerCuratedOrder }, ...base];
+    }
     return base;
-  }, [saleMode, featuredMode, newArrivalMode, s, p]);
+  }, [saleMode, featuredMode, newArrivalMode, bestSellerMode, s, p]);
 
   const [filterOpen,   setFilterOpen]   = useState(false);
   const [openSections, setOpenSections] = useState({ category: true, price: true, colour: true, size: true });
   const [filters, setFilters] = useState({
     category: '', minPrice: '', maxPrice: '',
     sizes: [], colors: [], sort: '-createdAt', search: '',
-    filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : '', // URL: ?filter=…
+    filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : bestSellerMode ? 'bestSeller' : '', // URL: ?filter=…
   });
   const [priceInput, setPriceInput] = useState({ min: 0, max: 1000000 });
 
@@ -156,8 +169,28 @@ export default function ShopProductListing({
       }));
       return;
     }
+    if (bestSellerMode) {
+      const { category, search, sort } = router.query;
+      const nextCat = category || '';
+      let nextSort = sort;
+      if (!nextSort) {
+        nextSort = nextCat ? 'categorySortOrder' : 'bestSellerSortOrder';
+      }
+      if (!nextCat && nextSort === 'categorySortOrder') {
+        nextSort = 'bestSellerSortOrder';
+      }
+      setFilters((f) => ({
+        ...f,
+        category: nextCat,
+        search: search || '',
+        sort: nextSort,
+        filter: 'bestSeller',
+      }));
+      return;
+    }
     const { category, search, sort, filter } = router.query;
-    const listFilter = filter === 'sale' || filter === 'new' || filter === 'featured' ? filter : '';
+    const listFilter =
+      filter === 'sale' || filter === 'new' || filter === 'featured' || filter === 'bestSeller' ? filter : '';
     const nextCat = category || '';
     let nextSort = sort;
     if (!nextSort) {
@@ -173,7 +206,7 @@ export default function ShopProductListing({
       sort: nextSort,
       filter: listFilter,
     }));
-  }, [router.query, embed, saleMode, featuredMode, newArrivalMode]);
+  }, [router.query, embed, saleMode, featuredMode, newArrivalMode, bestSellerMode]);
 
   // ── Products: infinite scroll (20 per page, “Load more”) ─
   const fetchProductsPage = async ({ pageParam = 1 }) => {
@@ -198,7 +231,11 @@ export default function ShopProductListing({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    ['products', embed ? 'home' : saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : 'page', filters],
+    [
+      'products',
+      embed ? 'home' : saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : bestSellerMode ? 'bestSeller' : 'page',
+      filters,
+    ],
     fetchProductsPage,
     {
       getNextPageParam: (lastPage) => {
@@ -324,7 +361,7 @@ export default function ShopProductListing({
       sizes: [],
       colors: [],
       sort: f.sort === 'categorySortOrder' ? '-createdAt' : f.sort,
-      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : f.filter,
+      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : bestSellerMode ? 'bestSeller' : f.filter,
     }));
     setPriceInput({ min: priceFloor, max: priceCeil });
     if (!embed) {
@@ -341,6 +378,9 @@ export default function ShopProductListing({
       } else if (newArrivalMode) {
         delete next.filter;
         router.replace({ pathname: '/new-arrivals', query: next }, undefined, { shallow: true });
+      } else if (bestSellerMode) {
+        delete next.filter;
+        router.replace({ pathname: '/best-sellers', query: next }, undefined, { shallow: true });
       } else {
         router.replace({ pathname: '/products', query: next }, undefined, { shallow: true });
       }
@@ -359,6 +399,7 @@ export default function ShopProductListing({
     if (filters.filter === 'sale')     return t.nav.sale;
     if (filters.filter === 'new')     return t.nav.newArrivals;
     if (filters.filter === 'featured') return t.home.featuredTitle;
+    if (filters.filter === 'bestSeller') return t.nav.bestSellers;
     return s.allDresses;
   })();
 
@@ -377,7 +418,7 @@ export default function ShopProductListing({
   const under50Active =
     String(filters.maxPrice || '') === '50000' &&
     !filters.category &&
-    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter));
+    (!filters.filter || ['sale', 'featured', 'new', 'bestSeller'].includes(filters.filter));
 
   const isHomeEmbed = embed && homeCompact;
   const stickyTopClass =
@@ -409,7 +450,7 @@ export default function ShopProductListing({
   const resetListFilters = (extra = {}) => {
     setFilters((f) => ({
       ...f,
-      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : '',
+      filter: saleMode ? 'sale' : featuredMode ? 'featured' : newArrivalMode ? 'new' : bestSellerMode ? 'bestSeller' : '',
       category: '',
       minPrice: '',
       maxPrice: '',
@@ -647,7 +688,9 @@ export default function ShopProductListing({
                 ? s.featuredPageDescription
                 : newArrivalMode
                   ? s.newArrivalsPageDescription
-                  : "Browse our complete collection of luxury women's dresses."
+                  : bestSellerMode
+                    ? s.bestSellersPageDescription
+                    : "Browse our complete collection of luxury women's dresses."
           }
         />
       )}
@@ -661,7 +704,7 @@ export default function ShopProductListing({
             </h1>
           </div>
         ) : !homeCompact ? (
-          <div className="text-center py-8 md:py-10 border-b border-gray-100/80 bg-white/40">
+          <div className="text-center py-8 md:py-10 border-b border-[#e8d0ee]/50 bg-brand-cream">
             <p className="section-subtitle mb-2">{h.shopAllSubtitle}</p>
             <h2 className="font-display text-3xl md:text-4xl font-light text-brand-black">
               {pageHeading}
@@ -673,7 +716,7 @@ export default function ShopProductListing({
         <div
           className={`border-b z-40 shadow-[0_1px_0_rgba(0,0,0,0.04)] ${
             isHomeEmbed
-              ? 'relative border-[#e8d0ee]/80 bg-white'
+              ? 'relative border-[#e8d0ee]/80 bg-brand-cream'
               : `sticky ${stickyTopClass} border-gray-200/90 bg-white/95 backdrop-blur-md`
           }`}
         >
@@ -733,7 +776,7 @@ export default function ShopProductListing({
                 onChange={e => setFilters(f => ({ ...f, sort: e.target.value }))}
                 className={
                   isHomeEmbed
-                    ? 'text-xs text-[#1a1a2e] bg-white border border-[#e8d0ee] rounded-lg px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 cursor-pointer outline-none font-body hover:border-[#a855c8]/50 touch-manipulation max-w-[min(100%,11rem)] sm:max-w-none'
+                    ? 'text-xs text-[#1a1a2e] bg-brand-cream border border-[#e8d0ee] rounded-lg px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 cursor-pointer outline-none font-body hover:border-[#a855c8]/50 touch-manipulation max-w-[min(100%,11rem)] sm:max-w-none'
                     : 'text-xs text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-brand-gold transition-colors min-h-[44px] sm:min-h-0 py-2 sm:py-0 touch-manipulation max-w-[min(100%,11rem)] sm:max-w-none'
                 }
               >
@@ -755,7 +798,7 @@ export default function ShopProductListing({
               <button
                 type="button"
                 onClick={() => {
-                  if (saleMode || featuredMode || newArrivalMode) {
+                  if (saleMode || featuredMode || newArrivalMode || bestSellerMode) {
                     setFilters({
                       category: '',
                       minPrice: '',
@@ -826,6 +869,19 @@ export default function ShopProductListing({
               >
                 {t.nav.featured}
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (bestSellerMode) return;
+                  resetListFilters({ filter: 'bestSeller' });
+                  const next = { ...router.query };
+                  delete next.filter;
+                  router.replace({ pathname: '/best-sellers', query: next }, undefined, { shallow: true });
+                }}
+                className={filters.filter === 'bestSeller' && !filters.category ? pillOn : pillOff}
+              >
+                {t.nav.bestSellers}
+              </button>
               {eveningCat && (
                 <button
                   type="button"
@@ -835,7 +891,7 @@ export default function ShopProductListing({
                   }}
                   className={
                     filters.category === eveningCat._id &&
-                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                    (!filters.filter || ['sale', 'featured', 'new', 'bestSeller'].includes(filters.filter))
                       ? pillOn
                       : pillOff
                   }
@@ -852,7 +908,7 @@ export default function ShopProductListing({
                   }}
                   className={
                     filters.category === casualCat._id &&
-                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                    (!filters.filter || ['sale', 'featured', 'new', 'bestSeller'].includes(filters.filter))
                       ? pillOn
                       : pillOff
                   }
@@ -869,7 +925,7 @@ export default function ShopProductListing({
                   }}
                   className={
                     filters.category === cocktailCat._id &&
-                    (!filters.filter || ['sale', 'featured', 'new'].includes(filters.filter))
+                    (!filters.filter || ['sale', 'featured', 'new', 'bestSeller'].includes(filters.filter))
                       ? pillOn
                       : pillOff
                   }
@@ -892,7 +948,7 @@ export default function ShopProductListing({
         </div>
 
         {isHomeEmbed && !isLoading && total > 0 && (
-          <div className="container-luxury pt-2 pb-3 bg-white border-b border-[#e8d0ee]/50">
+          <div className="container-luxury pt-2 pb-3 bg-brand-cream border-b border-[#e8d0ee]/50">
             <p className="text-xs text-[#6b6b8a] font-body">
               {s.showingOfTotal.replace('{shown}', String(products.length)).replace('{total}', String(total))}
             </p>
@@ -1018,7 +1074,7 @@ export default function ShopProductListing({
                     disabled={isFetchingNextPage}
                     className={
                       isHomeEmbed
-                        ? 'px-8 py-2.5 text-[13px] font-medium font-body rounded-[10px] border-[1.5px] border-[#a855c8] text-[#a855c8] bg-white hover:bg-[#a855c8] hover:text-white transition-colors disabled:opacity-45 disabled:cursor-not-allowed min-w-[200px]'
+                        ? 'px-8 py-2.5 text-[13px] font-medium font-body rounded-[10px] border-[1.5px] border-[#a855c8] text-[#a855c8] bg-brand-cream hover:bg-[#a855c8] hover:text-white transition-colors disabled:opacity-45 disabled:cursor-not-allowed min-w-[200px]'
                         : 'px-8 py-3.5 text-[11px] tracking-[0.2em] uppercase font-body font-medium rounded-lg border-2 border-brand-gold text-brand-gold bg-transparent hover:bg-brand-purple-light/25 transition-colors disabled:opacity-45 disabled:cursor-not-allowed min-w-[240px]'
                     }
                   >

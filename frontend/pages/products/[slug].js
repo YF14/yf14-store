@@ -16,6 +16,7 @@ import { formatIQD, catName } from '../../lib/currency';
 import { filterProductGallery, pickImageUrlForVariantColor, pickListingImageUrl } from '../../lib/productMedia';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 import { trackViewContent } from '../../lib/analytics';
+import { canAccessAdmin, hasAdminPermission } from '../../lib/adminAccess';
 
 const CREAM = '#faf8f5';
 const WARM_WHITE = '#f5f2ee';
@@ -242,6 +243,8 @@ export default function ProductDetailPage() {
   };
 
   const priceRowDir = isRTL ? 'flex-row-reverse justify-end' : 'flex-row justify-start';
+  const canEditProduct =
+    !!user && canAccessAdmin(user) && hasAdminPermission(user, 'products');
 
   return (
     <Layout>
@@ -381,9 +384,22 @@ export default function ProductDetailPage() {
               </p>
             )}
 
-            <h1 className="font-display text-[clamp(1.75rem,3vw,2.625rem)] font-light leading-[1.15] mb-5">
-              {product.name}
-            </h1>
+            <div
+              className={`flex flex-wrap items-start justify-between gap-3 mb-5 ${isRTL ? 'flex-row-reverse' : ''}`}
+            >
+              <h1 className="font-display text-[clamp(1.75rem,3vw,2.625rem)] font-light leading-[1.15] flex-1 min-w-0">
+                {product.name}
+              </h1>
+              {canEditProduct && (
+                <Link
+                  href={`/admin/products/${product._id}/edit`}
+                  className="shrink-0 text-sm px-4 py-2.5 rounded-md border font-medium tracking-wide transition-colors hover:bg-black/[0.04] touch-manipulation min-h-[44px] inline-flex items-center justify-center"
+                  style={{ borderColor: BORDER, color: CHARCOAL }}
+                >
+                  {t.admin.edit}
+                </Link>
+              )}
+            </div>
 
             <div className={`flex flex-wrap items-baseline gap-3 mb-3.5 ${priceRowDir}`}>
               <span className="font-display text-[2rem] font-normal" style={{ color: CHARCOAL }}>

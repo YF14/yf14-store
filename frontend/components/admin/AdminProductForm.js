@@ -414,6 +414,7 @@ export default function AdminProductForm({
       }
       queryClient.invalidateQueries(['products']);
       queryClient.invalidateQueries('categories');
+      queryClient.invalidateQueries(['admin-best-seller-product-count']);
       onSuccess?.();
     } catch (err) {
       toast.error(err.response?.data?.error || (isEdit ? a.failedUpdate : a.failedCreate));

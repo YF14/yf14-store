@@ -38,6 +38,7 @@ export default function Navbar({ scrolled }) {
   const navLinks = useMemo(() => [
     { label: t.nav.newArrivals, href: '/new-arrivals' },
     { label: t.nav.featured, href: '/featured' },
+    { label: t.nav.bestSellers, href: '/best-sellers' },
     {
       label: t.nav.collections,
       href: '/products',

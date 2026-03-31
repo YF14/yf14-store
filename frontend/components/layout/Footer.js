@@ -71,6 +71,7 @@ export default function Footer() {
       href: `/products?category=${cat.slug}`,
     })),
     { label: t.nav.featured, href: '/featured' },
+    { label: t.nav.bestSellers, href: '/best-sellers' },
     { label: t.nav.newArrivals, href: '/new-arrivals' },
     { label: t.nav.sale, href: '/sale' },
   ];

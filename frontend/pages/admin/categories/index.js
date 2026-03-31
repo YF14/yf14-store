@@ -280,6 +280,13 @@ export default function AdminCategoriesPage() {
   );
   const newArrivalProductTotal = newArrivalListMeta?.total ?? 0;
 
+  const { data: bestSellerListMeta } = useQuery(
+    ['admin-best-seller-product-count'],
+    () => api.get('/products?filter=bestSeller&showAll=1&limit=1').then((r) => r.data),
+    { enabled: catOk }
+  );
+  const bestSellerProductTotal = bestSellerListMeta?.total ?? 0;
+
   const flatAll = data?.categories || [];
 
   useEffect(() => {
@@ -631,6 +638,46 @@ export default function AdminCategoriesPage() {
               <div className="w-[5.5rem] sm:w-28 shrink-0 text-center">
                 <span className="text-[10px] px-2 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/25">
                   {t.nav.newArrivals}
+                </span>
+              </div>
+              <div className="w-[4.5rem] sm:w-24 shrink-0 flex justify-center">
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium text-emerald-300 bg-emerald-500/15">
+                  {a.statusLive}
+                </span>
+              </div>
+              <span
+                className="text-xs px-3 py-1.5 rounded-lg border shrink-0 transition-colors hover:bg-white/5"
+                style={{ borderColor: 'rgba(255,255,255,0.2)', color: MUTED }}
+              >
+                {a.open}
+              </span>
+            </Link>
+            <Link
+              href="/admin/best-sellers"
+              className="flex items-center gap-3 py-3 px-4 transition-colors hover:bg-white/[0.03] border-t"
+              style={{ borderColor: BORDER }}
+            >
+              <div className="w-6 shrink-0" />
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+                style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: `1px solid ${BORDER}` }}
+              >
+                ⭐
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate" style={{ color: TEXT }}>
+                  {a.bestSellersAssortmentRowTitle}
+                </p>
+                <p className="text-xs font-mono truncate mt-0.5" style={{ color: MUTED2 }}>
+                  {a.bestSellersAssortmentRowMeta.replace('{n}', String(bestSellerProductTotal))}
+                </p>
+              </div>
+              <span className="text-xs shrink-0 hidden sm:inline w-14 text-center" style={{ color: MUTED }}>
+                —
+              </span>
+              <div className="w-[5.5rem] sm:w-28 shrink-0 text-center">
+                <span className="text-[10px] px-2 py-1 rounded-md bg-amber-500/15 text-amber-200 border border-amber-500/25">
+                  {t.nav.bestSellers}
                 </span>
               </div>
               <div className="w-[4.5rem] sm:w-24 shrink-0 flex justify-center">

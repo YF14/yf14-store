@@ -11,11 +11,13 @@ const ALLOWED_SORT_KEYS = new Set([
   'saleSortOrder', '-saleSortOrder',
   'featuredSortOrder', '-featuredSortOrder',
   'newArrivalSortOrder', '-newArrivalSortOrder',
+  'bestSellerSortOrder', '-bestSellerSortOrder',
   'lastStockUpdateAt', '-lastStockUpdateAt',
 ]);
 
 const FEATURED_MATCH = { isFeatured: true };
 const NEW_ARRIVAL_MATCH = { isNewArrival: true };
+const BEST_SELLER_MATCH = { isBestSeller: true };
 
 const SALE_MATCH = { $expr: { $gt: ['$comparePrice', '$price'] } };
 
@@ -37,7 +39,7 @@ function canUseShowAllProducts(req) {
   if (u.role === 'admin') return true;
   if (u.role !== 'staff') return false;
   const p = u.adminPermissions || [];
-  return p.some((x) => ['products', 'stock', 'categories', 'sales', 'featured', 'newArrivals'].includes(x));
+  return p.some((x) => ['products', 'stock', 'categories', 'sales', 'featured', 'newArrivals', 'bestSellers'].includes(x));
 }
 
 function buildSort(sortParam) {
@@ -51,6 +53,8 @@ function buildSort(sortParam) {
   if (s === '-featuredSortOrder') return { featuredSortOrder: -1, createdAt: -1 };
   if (s === 'newArrivalSortOrder') return { newArrivalSortOrder: 1, createdAt: -1 };
   if (s === '-newArrivalSortOrder') return { newArrivalSortOrder: -1, createdAt: -1 };
+  if (s === 'bestSellerSortOrder') return { bestSellerSortOrder: 1, createdAt: -1 };
+  if (s === '-bestSellerSortOrder') return { bestSellerSortOrder: -1, createdAt: -1 };
   if (s === 'lastStockUpdateAt') return { lastStockUpdateAt: 1, createdAt: -1 };
   if (s === '-lastStockUpdateAt') return { lastStockUpdateAt: -1, createdAt: -1 };
   return s;
@@ -69,6 +73,8 @@ exports.getProducts = async (req, res, next) => {
       query.isNewArrival = true;
     } else if (filter === 'featured') {
       query.isFeatured = true;
+    } else if (filter === 'bestSeller') {
+      query.isBestSeller = true;
     }
 
     if (category) {
@@ -186,8 +192,8 @@ exports.getNewArrivals = async (req, res, next) => {
 
 exports.getBestSellers = async (req, res, next) => {
   try {
-    const raw = await Product.find({ isActive: true })
-      .sort('-totalSold')
+    const raw = await Product.find({ isActive: true, isBestSeller: true })
+      .sort({ bestSellerSortOrder: 1, createdAt: -1 })
       .limit(8)
       .select('-reviews')
       .populate('category', 'name slug');
@@ -214,6 +220,7 @@ exports.getProductPriceRange = async (req, res, next) => {
     if (filter === 'sale') applySaleFilter(match);
     else if (filter === 'new') match.isNewArrival = true;
     else if (filter === 'featured') match.isFeatured = true;
+    else if (filter === 'bestSeller') match.isBestSeller = true;
 
     const result = await Product.aggregate([
       { $match: match },
@@ -231,6 +238,7 @@ exports.getProductColors = async (req, res, next) => {
     if (filter === 'sale') applySaleFilter(match);
     else if (filter === 'new') match.isNewArrival = true;
     else if (filter === 'featured') match.isFeatured = true;
+    else if (filter === 'bestSeller') match.isBestSeller = true;
 
     if (category) {
       if (mongoose.Types.ObjectId.isValid(category)) {
@@ -266,6 +274,7 @@ exports.getProductSizes = async (req, res, next) => {
     if (filter === 'sale') applySaleFilter(match);
     else if (filter === 'new') match.isNewArrival = true;
     else if (filter === 'featured') match.isFeatured = true;
+    else if (filter === 'bestSeller') match.isBestSeller = true;
 
     if (category) {
       if (mongoose.Types.ObjectId.isValid(category)) {
@@ -326,6 +335,10 @@ exports.createProduct = async (req, res, next) => {
       const last = await Product.findOne(NEW_ARRIVAL_MATCH).sort({ newArrivalSortOrder: -1 }).select('newArrivalSortOrder').lean();
       req.body.newArrivalSortOrder = (last?.newArrivalSortOrder ?? -1) + 1;
     }
+    if (req.body.isBestSeller && req.body.bestSellerSortOrder === undefined) {
+      const last = await Product.findOne(BEST_SELLER_MATCH).sort({ bestSellerSortOrder: -1 }).select('bestSellerSortOrder').lean();
+      req.body.bestSellerSortOrder = (last?.bestSellerSortOrder ?? -1) + 1;
+    }
     const product = await Product.create(req.body);
     await recordAudit(req, 'product.created', {
       entityType: 'product',
@@ -340,7 +353,7 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const existing = await Product.findById(req.params.id).select(
-      'category comparePrice price saleSortOrder isFeatured isNewArrival featuredSortOrder newArrivalSortOrder name slug variants'
+      'category comparePrice price saleSortOrder isFeatured isNewArrival isBestSeller featuredSortOrder newArrivalSortOrder bestSellerSortOrder name slug variants'
     ).lean();
     if (!existing) return res.status(404).json({ error: 'Product not found' });
     const body = { ...req.body };
@@ -371,6 +384,12 @@ exports.updateProduct = async (req, res, next) => {
     if (willNewArrival && !wasNewArrival && body.newArrivalSortOrder === undefined) {
       const last = await Product.findOne(NEW_ARRIVAL_MATCH).sort({ newArrivalSortOrder: -1 }).select('newArrivalSortOrder').lean();
       body.newArrivalSortOrder = (last?.newArrivalSortOrder ?? -1) + 1;
+    }
+    const wasBestSeller = !!existing.isBestSeller;
+    const willBestSeller = body.isBestSeller !== undefined ? !!body.isBestSeller : wasBestSeller;
+    if (willBestSeller && !wasBestSeller && body.bestSellerSortOrder === undefined) {
+      const last = await Product.findOne(BEST_SELLER_MATCH).sort({ bestSellerSortOrder: -1 }).select('bestSellerSortOrder').lean();
+      body.bestSellerSortOrder = (last?.bestSellerSortOrder ?? -1) + 1;
     }
     const product = await Product.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
     await recordAudit(req, 'product.updated', {
@@ -509,6 +528,34 @@ exports.reorderNewArrivalProducts = async (req, res, next) => {
       orderedProductIds.map((id, i) => Product.updateOne({ _id: id }, { newArrivalSortOrder: i }))
     );
     await recordAudit(req, 'product.reorder_new_arrivals', {
+      entityType: 'product',
+      details: { productCount: orderedProductIds.length },
+    });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
+/** Admin: order for /best-sellers listing. */
+exports.reorderBestSellerProducts = async (req, res, next) => {
+  try {
+    const { orderedProductIds } = req.body;
+    if (!Array.isArray(orderedProductIds)) {
+      return res.status(400).json({ error: 'orderedProductIds[] is required' });
+    }
+    const list = await Product.find(BEST_SELLER_MATCH).select('_id').lean();
+    const valid = new Set(list.map((p) => String(p._id)));
+    if (orderedProductIds.length !== valid.size) {
+      return res.status(400).json({ error: 'orderedProductIds must list every best-seller product exactly once' });
+    }
+    for (const id of orderedProductIds) {
+      if (!valid.has(String(id))) {
+        return res.status(400).json({ error: 'Invalid product id or not marked best seller' });
+      }
+    }
+    await Promise.all(
+      orderedProductIds.map((id, i) => Product.updateOne({ _id: id }, { bestSellerSortOrder: i }))
+    );
+    await recordAudit(req, 'product.reorder_best_sellers', {
       entityType: 'product',
       details: { productCount: orderedProductIds.length },
     });

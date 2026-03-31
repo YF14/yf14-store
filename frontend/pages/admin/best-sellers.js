@@ -4,14 +4,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { NextSeo } from 'next-seo';
-import AdminLayout from '../../../components/admin/AdminLayout';
-import AdminProductForm from '../../../components/admin/AdminProductForm';
-import useAuthStore from '../../../store/authStore';
-import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../../lib/adminAccess';
-import { useLang } from '../../../contexts/LanguageContext';
-import api from '../../../lib/api';
+import AdminLayout from '../../components/admin/AdminLayout';
+import AdminProductForm from '../../components/admin/AdminProductForm';
+import useAuthStore from '../../store/authStore';
+import { canAccessAdmin, hasAdminPermission, getDefaultAdminPath } from '../../lib/adminAccess';
+import { useLang } from '../../contexts/LanguageContext';
+import api from '../../lib/api';
 import toast from 'react-hot-toast';
-import { catName, formatIQD } from '../../../lib/currency';
+import { catName, formatIQD } from '../../lib/currency';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -20,50 +20,42 @@ const TEXT = '#e8e8f0';
 const MUTED = '#9ca3af';
 const MUTED2 = '#6b7280';
 
-export default function AdminCategoryProductsPage() {
+export default function AdminBestSellerProductsPage() {
   const router = useRouter();
-  const { id: categoryId } = router.query;
   const user = useAuthStore((s) => s.user);
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t, isRTL } = useLang();
   const a = t.admin;
-  const s = t.shop;
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [items, setItems] = useState([]);
-  /** null | 'new' | product _id — full create/edit form in this page */
   const [productFormMode, setProductFormMode] = useState(null);
 
   useEffect(() => {
     if (!isAuthReady) return;
     if (!user) router.push('/login');
     else if (!canAccessAdmin(user)) router.push('/');
-    else if (!hasAdminPermission(user, 'categories')) router.replace(getDefaultAdminPath(user));
+    else if (!hasAdminPermission(user, 'bestSellers')) router.replace(getDefaultAdminPath(user));
   }, [user, isAuthReady, router]);
 
-  const catOk = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'categories');
+  const bsOk = !!user && canAccessAdmin(user) && hasAdminPermission(user, 'bestSellers');
 
-  const { data: catData, isLoading: catLoading } = useQuery(
+  const { data: catData } = useQuery(
     ['admin-categories-all'],
     () => api.get('/categories/admin/all').then((r) => r.data),
-    { enabled: catOk }
+    { enabled: bsOk }
   );
-  const category = useMemo(
-    () => (catData?.categories || []).find((c) => String(c._id) === String(categoryId)),
-    [catData, categoryId]
-  );
+  const allCategories = catData?.categories || [];
 
   const {
     data: prodData,
     isLoading,
     refetch,
   } = useQuery(
-    ['admin-category-products', categoryId],
+    ['admin-best-seller-products'],
     () =>
-      api
-        .get(`/products?category=${encodeURIComponent(categoryId)}&showAll=1&limit=500&sort=categorySortOrder`)
-        .then((r) => r.data),
-    { enabled: catOk && !!categoryId }
+      api.get('/products?filter=bestSeller&showAll=1&limit=500&sort=bestSellerSortOrder').then((r) => r.data),
+    { enabled: bsOk }
   );
 
   const products = prodData?.products || [];
@@ -76,7 +68,6 @@ export default function AdminCategoryProductsPage() {
     setItems((prev) => {
       if (prev.length === 0) return [...products];
       const byId = Object.fromEntries(products.map((p) => [String(p._id), p]));
-      // Keep local row order (unsaved ↑↓) but always refresh fields from the server (e.g. Mark new).
       const merged = prev.map((p) => byId[String(p._id)]).filter(Boolean);
       const prevIdSet = new Set(prev.map((p) => String(p._id)));
       const appended = products.filter((p) => !prevIdSet.has(String(p._id)));
@@ -90,9 +81,10 @@ export default function AdminCategoryProductsPage() {
     return items.filter(
       (p) =>
         p.name?.toLowerCase().includes(q) ||
-        p.slug?.toLowerCase().includes(q)
+        p.slug?.toLowerCase().includes(q) ||
+        catName(p.category, isRTL)?.toLowerCase().includes(q)
     );
-  }, [items, search]);
+  }, [items, search, isRTL]);
 
   const move = (index, dir) => {
     const j = index + dir;
@@ -106,15 +98,14 @@ export default function AdminCategoryProductsPage() {
 
   const saveOrderMutation = useMutation(
     () =>
-      api.put('/products/reorder-category', {
-        categoryId,
+      api.put('/products/reorder-best-sellers', {
         orderedProductIds: items.map((p) => p._id),
       }),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['admin-category-products', categoryId]);
+        queryClient.invalidateQueries(['admin-best-seller-products']);
         queryClient.invalidateQueries(['products']);
-        toast.success(a.orderSaved);
+        toast.success(a.bestSellersOrderSaved);
       },
       onError: (err) => toast.error(err.response?.data?.error || a.failedUpdate),
     }
@@ -145,40 +136,17 @@ export default function AdminCategoryProductsPage() {
     }
   );
 
-  const otherCategories = useMemo(
-    () => (catData?.categories || []).filter((c) => String(c._id) !== String(categoryId)),
-    [catData, categoryId]
-  );
-
-  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'categories')) return null;
-  if (!router.isReady || !categoryId) return null;
-
-  if (catLoading) {
-    return (
-      <AdminLayout>
-        <div className="p-8 text-white/60">…</div>
-      </AdminLayout>
-    );
-  }
-
-  if (catData && !category) {
-    return (
-      <AdminLayout>
-        <div className="p-8" style={{ color: TEXT }}>
-          <p>{a.categoryNotFound}</p>
-          <Link href="/admin/categories" className="text-violet-400 underline mt-4 inline-block">
-            {a.backToCategories}
-          </Link>
-        </div>
-      </AdminLayout>
-    );
-  }
+  if (!user || !canAccessAdmin(user) || !hasAdminPermission(user, 'bestSellers')) return null;
 
   const totalStock = (p) => p.variants?.reduce((s, v) => s + (v.stock || 0), 0) ?? 0;
+  const priceDiscount = (p) =>
+    p.comparePrice && p.comparePrice > p.price
+      ? Math.round(((p.comparePrice - p.price) / p.comparePrice) * 100)
+      : 0;
 
   return (
     <AdminLayout>
-      <NextSeo title={`${category ? catName(category, isRTL) : a.categoriesTitle} — ${a.products}`} />
+      <NextSeo title={`${a.bestSellersPageTitle} — Admin`} />
       <div
         className="-mx-8 -mt-8 -mb-8 px-6 sm:px-8 pt-8 pb-16 min-h-screen"
         style={{ backgroundColor: BG, color: TEXT }}
@@ -196,13 +164,13 @@ export default function AdminCategoryProductsPage() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex flex-wrap items-center gap-2">
-                  <span>{category ? catName(category, isRTL) : '—'}</span>
+                  <span>{a.bestSellersPageTitle}</span>
                   <span className="text-lg font-normal font-mono" style={{ color: MUTED2 }}>
-                    {category?.slug}
+                    /best-sellers
                   </span>
                 </h1>
                 <p className="text-sm mt-1" style={{ color: MUTED }}>
-                  {a.catProductsSubtitle.replace('{n}', String(items.length))}
+                  {a.bestSellersPageSubtitle.replace('{n}', String(items.length))}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -211,7 +179,7 @@ export default function AdminCategoryProductsPage() {
                   onClick={() => saveOrderMutation.mutate()}
                   disabled={saveOrderMutation.isLoading || items.length === 0}
                   className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-opacity"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }}
+                  style={{ background: 'linear-gradient(135deg,#d97706,#92400e)' }}
                 >
                   {a.saveOrder}
                 </button>
@@ -225,30 +193,28 @@ export default function AdminCategoryProductsPage() {
                     {a.addProductHere}
                   </button>
                   <Link
-                    href={`/admin/products/new?category=${categoryId}`}
+                    href="/admin/products/new"
                     className="text-xs underline-offset-2 hover:underline px-1"
                     style={{ color: MUTED2 }}
                   >
                     {a.catFullPageEditor}
                   </Link>
                 </div>
-                {category?.slug && (
-                  <a
-                    href={`/products?category=${encodeURIComponent(category.slug)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-white/5 inline-flex items-center justify-center"
-                    style={{ borderColor: 'rgba(255,255,255,0.25)', color: TEXT }}
-                  >
-                    {a.previewCategoryShop} ↗
-                  </a>
-                )}
+                <a
+                  href="/best-sellers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-white/5 inline-flex items-center justify-center"
+                  style={{ borderColor: 'rgba(255,255,255,0.25)', color: TEXT }}
+                >
+                  {a.bestSellersPreviewShop} ↗
+                </a>
               </div>
             </div>
           </div>
 
           <p className="text-xs mb-4" style={{ color: MUTED2 }}>
-            {a.reorderHint}
+            {a.bestSellersReorderHint}
           </p>
 
           {productFormMode && (
@@ -279,14 +245,14 @@ export default function AdminCategoryProductsPage() {
                 </div>
               </div>
               <AdminProductForm
-                key={productFormMode === 'new' ? `new-${categoryId}` : productFormMode}
+                key={productFormMode === 'new' ? 'new-best-sellers' : productFormMode}
                 productId={productFormMode === 'new' ? null : productFormMode}
-                fixedCategoryId={String(categoryId)}
                 onSuccess={() => {
                   setProductFormMode(null);
                   refetch();
                   queryClient.invalidateQueries(['products']);
                   queryClient.invalidateQueries({ queryKey: ['admin-product'] });
+                  queryClient.invalidateQueries(['admin-best-seller-product-count']);
                 }}
                 onCancel={() => setProductFormMode(null)}
               />
@@ -310,12 +276,13 @@ export default function AdminCategoryProductsPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="py-16 text-center text-sm px-4" style={{ color: MUTED }}>
-                {items.length === 0 ? a.noProductsInCategory : a.noSearchResults}
+                {items.length === 0 ? a.bestSellersNoProducts : a.noSearchResults}
               </div>
             ) : (
               <ul className="divide-y" style={{ borderColor: BORDER }}>
                 {filtered.map((p) => {
                   const idx = items.findIndex((x) => x._id === p._id);
+                  const disc = priceDiscount(p);
                   return (
                     <li
                       key={p._id}
@@ -358,10 +325,18 @@ export default function AdminCategoryProductsPage() {
                           <p className="text-xs font-mono truncate" style={{ color: MUTED2 }}>
                             {p.slug}
                           </p>
+                          <p className="text-[11px] truncate mt-0.5" style={{ color: MUTED }}>
+                            {a.salesColumnCategory}: {p.category ? catName(p.category, isRTL) : '—'}
+                          </p>
                           <div className="flex flex-wrap gap-2 mt-1.5">
                             {!p.isActive && (
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-300">
                                 {a.inactive}
+                              </span>
+                            )}
+                            {disc > 0 && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300">
+                                −{disc}%
                               </span>
                             )}
                             {p.isFeatured && (
@@ -386,6 +361,11 @@ export default function AdminCategoryProductsPage() {
                         <span className="text-sm font-medium tabular-nums" style={{ color: TEXT }}>
                           {formatIQD(p.price)}
                         </span>
+                        {p.comparePrice > p.price && (
+                          <span className="text-xs line-through tabular-nums" style={{ color: MUTED2 }}>
+                            {formatIQD(p.comparePrice)}
+                          </span>
+                        )}
                         <span className="text-xs px-2 py-1 rounded-lg bg-white/5" style={{ color: MUTED }}>
                           {a.stock}: {totalStock(p)}
                         </span>
@@ -402,7 +382,7 @@ export default function AdminCategoryProductsPage() {
                           style={{ borderColor: BORDER, color: MUTED }}
                         >
                           <option value="">{a.changeCategory}</option>
-                          {otherCategories.map((c) => (
+                          {allCategories.map((c) => (
                             <option key={c._id} value={c._id}>
                               {catName(c, isRTL)}
                             </option>

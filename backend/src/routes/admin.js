@@ -13,6 +13,7 @@ router.use(
     'sales',
     'featured',
     'newArrivals',
+    'bestSellers',
     'stock',
     'orders',
     'users',

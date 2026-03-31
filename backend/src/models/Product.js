@@ -34,6 +34,8 @@ const productSchema = new mongoose.Schema({
   featuredSortOrder: { type: Number, default: 0 },
   /** Order on /new-arrivals when sorting by curated order (admin New arrivals panel). */
   newArrivalSortOrder: { type: Number, default: 0 },
+  /** Order on /best-sellers when sorting by curated order (admin Best sellers panel). */
+  bestSellerSortOrder: { type: Number, default: 0 },
   /** Set when any variant stock is updated (admin stock page ordering). */
   lastStockUpdateAt: { type: Date },
   tags: [String],
@@ -83,6 +85,7 @@ productSchema.index({ category: 1, categorySortOrder: 1 });
 productSchema.index({ saleSortOrder: 1 });
 productSchema.index({ isFeatured: 1, featuredSortOrder: 1 });
 productSchema.index({ isNewArrival: 1, newArrivalSortOrder: 1 });
+productSchema.index({ isBestSeller: 1, bestSellerSortOrder: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ averageRating: -1 });
 productSchema.index({ totalSold: -1 });
