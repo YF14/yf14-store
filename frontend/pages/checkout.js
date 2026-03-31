@@ -787,10 +787,13 @@ export default function CheckoutPage() {
                         <span>−{formatIQD(discount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center pt-3.5 border-t text-[17px] font-bold" style={{ borderColor: BORDER, color: TEXT }}>
-                      <span>{copy.total}</span>
-                      <span>{formatIQD(total)}</span>
+                    <div className="flex justify-between items-center pt-3.5 border-t text-[17px] font-bold gap-3" style={{ borderColor: BORDER, color: TEXT }}>
+                      <span className="text-[15px] sm:text-base leading-snug">{t.cart.totalWithDelivery}</span>
+                      <span className="tabular-nums shrink-0">{formatIQD(total)}</span>
                     </div>
+                    <p className="text-sm font-semibold text-center leading-snug -mt-1" style={{ color: TEXT }} dir={isRTL ? 'rtl' : 'ltr'}>
+                      {t.cart.totalPriceWithDeliveryIs.replace('{amount}', formatIQD(total))}
+                    </p>
                   </div>
 
                   <button

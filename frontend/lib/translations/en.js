@@ -174,6 +174,8 @@ const en = {
     subtotal: 'Subtotal',
     shipping: 'Shipping',
     total: 'Total',
+    totalWithDelivery: 'Total price with delivery',
+    totalPriceWithDeliveryIs: 'Total price with delivery is {amount}.',
     checkout: 'Checkout',
     continueShopping: 'Continue Shopping',
     remove: 'Remove',

@@ -249,11 +249,15 @@ export default function CartDrawer() {
                       <span>−{formatIQD(discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-semibold text-brand-black pt-2 border-t border-brand-black/10">
-                    <span className="text-xs uppercase tracking-wider">{t.cart.total}</span>
-                    <span className="text-base">{formatIQD(total)}</span>
+                  <div className="flex justify-between font-semibold text-brand-black pt-2 border-t border-brand-black/10 gap-3">
+                    <span className="text-xs uppercase tracking-wider leading-snug">{t.cart.totalWithDelivery}</span>
+                    <span className="text-base tabular-nums shrink-0">{formatIQD(total)}</span>
                   </div>
                 </div>
+
+                <p className="text-sm font-medium text-brand-black text-center leading-snug" dir={isRTL ? 'rtl' : 'ltr'}>
+                  {t.cart.totalPriceWithDeliveryIs.replace('{amount}', formatIQD(total))}
+                </p>
 
                 <p className="text-xs text-brand-warm-gray text-center" dir={isRTL ? 'rtl' : 'ltr'}>
                   {isRTL

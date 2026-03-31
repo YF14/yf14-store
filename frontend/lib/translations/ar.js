@@ -174,6 +174,8 @@ const ar = {
     subtotal: 'المجموع الفرعي',
     shipping: 'الشحن',
     total: 'الإجمالي',
+    totalWithDelivery: 'إجمالي السعر مع التوصيل',
+    totalPriceWithDeliveryIs: 'إجمالي السعر مع التوصيل هو {amount}.',
     checkout: 'إتمام الشراء',
     continueShopping: 'مواصلة التسوق',
     remove: 'إزالة',
