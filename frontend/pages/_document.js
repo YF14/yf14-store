@@ -17,6 +17,7 @@ export default function Document() {
           rel="stylesheet"
         />
         <meta name="theme-color" content="#0a0a0a" />
+        <meta name="facebook-domain-verification" content="p68a2m40x3xim6vssyi3uctv4cqdrh" />
         {process.env.NEXT_PUBLIC_META_PIXEL_ID ? (
           <noscript>
             <img
