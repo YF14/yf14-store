@@ -12,6 +12,11 @@ const connectDB = async () => {
     const conn = await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      // Fail faster than default ~30s so load balancers don’t sit at p50 ≈ 30s on bad networks
+      serverSelectionTimeoutMS: 12_000,
+      connectTimeoutMS: 12_000,
+      socketTimeoutMS: 45_000,
+      maxPoolSize: 10,
     });
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

@@ -33,9 +33,6 @@ const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
-// Connect to MongoDB
-connectDB();
-
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
@@ -166,14 +163,24 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  setTimeout(() => {
-    emailService.getSmtpStatus().then((s) => {
-      if (!s.ok) logger.warn('SMTP check:', JSON.stringify(s));
-      else logger.info('SMTP check: OK (connection verified)');
-    });
-  }, 2000);
+let server;
+
+async function start() {
+  await connectDB();
+  server = app.listen(PORT, () => {
+    logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    setTimeout(() => {
+      emailService.getSmtpStatus().then((s) => {
+        if (!s.ok) logger.warn('SMTP check:', JSON.stringify(s));
+        else logger.info('SMTP check: OK (connection verified)');
+      });
+    }, 2000);
+  });
+}
+
+start().catch((err) => {
+  logger.error({ message: 'Failed to start server', err: err?.message, stack: err?.stack });
+  process.exit(1);
 });
 
 // Handle unhandled promise rejections
@@ -183,7 +190,8 @@ process.on('unhandledRejection', (reason) => {
     reason: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
   });
-  server.close(() => process.exit(1));
+  if (server) server.close(() => process.exit(1));
+  else process.exit(1);
 });
 
 process.on('uncaughtException', (err) => {
