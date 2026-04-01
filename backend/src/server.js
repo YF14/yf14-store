@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { once } = require('events');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -167,16 +168,19 @@ const PORT = process.env.PORT || 5000;
 let server;
 
 async function start() {
-  await connectDB();
-  server = app.listen(PORT, () => {
-    logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-    setTimeout(() => {
-      emailService.getSmtpStatus().then((s) => {
-        if (!s.ok) logger.warn('SMTP check:', JSON.stringify(s));
-        else logger.info('SMTP check: OK (connection verified)');
-      });
-    }, 2000);
-  });
+  // Bind HTTP before MongoDB so platform healthchecks (e.g. Railway) get 200 from /api/health while DB is still connecting.
+  server = app.listen(PORT);
+  await once(server, 'listening');
+  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+
+  await connectDB({ exitOnFailure: false });
+
+  setTimeout(() => {
+    emailService.getSmtpStatus().then((s) => {
+      if (!s.ok) logger.warn('SMTP check:', JSON.stringify(s));
+      else logger.info('SMTP check: OK (connection verified)');
+    });
+  }, 2000);
 }
 
 start().catch((err) => {

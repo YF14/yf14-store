@@ -99,7 +99,11 @@ mongoose.connection.on('error', (err) => {
   logger.error(`MongoDB connection error event: ${err.message}`);
 });
 
-const connectDB = async () => {
+/**
+ * @param {{ exitOnFailure?: boolean }} [options] - If false, start reconnect loop instead of exiting (for HTTP-first startup).
+ */
+const connectDB = async (options = {}) => {
+  const { exitOnFailure = true } = options;
   const mongoUri = getMongoUri();
   if (!mongoUri) {
     logger.error('MONGODB_URI is not set. Please configure MongoDB connection.');
@@ -112,7 +116,10 @@ const connectDB = async () => {
     logger.info(`MongoDB connected: ${mongoose.connection.host}`);
   } catch (error) {
     logger.error('MongoDB connection error:', error);
-    process.exit(1);
+    if (exitOnFailure) {
+      process.exit(1);
+    }
+    scheduleReconnectAttempt();
   }
 };
 
