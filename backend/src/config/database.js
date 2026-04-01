@@ -4,7 +4,7 @@ const logger = require('./logger');
 const MONGO_OPTIONS = {
   // Prefer IPv4 — many PaaS ↔ Atlas paths fail on IPv6 (secureConnect timeout / server selection errors)
   family: 4,
-  maxPoolSize: 5,
+  maxPoolSize: 10,
   minPoolSize: 1,
   serverSelectionTimeoutMS: 10_000,
   socketTimeoutMS: 45_000,
