@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -202,5 +203,28 @@ process.on('uncaughtException', (err) => {
   });
   process.exit(1);
 });
+
+function gracefulShutdown(signal) {
+  logger.info(`${signal} received, closing HTTP and MongoDB…`);
+  connectDB.setMongoShuttingDown(true);
+  const closeHttp = () =>
+    new Promise((resolve) => {
+      if (!server) return resolve();
+      server.close(() => resolve());
+    });
+  closeHttp()
+    .then(() => mongoose.connection.close(false))
+    .then(() => {
+      logger.info('Shutdown complete');
+      process.exit(0);
+    })
+    .catch((err) => {
+      logger.error('Shutdown error:', err);
+      process.exit(1);
+    });
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;
