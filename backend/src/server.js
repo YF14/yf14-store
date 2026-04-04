@@ -12,6 +12,9 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
+const injectionGuard = require('./middleware/injectionGuard');
+const requireDatabase = require('./middleware/requireDatabase');
+const { createBotLimiter } = require('./middleware/botThrottle');
 const { requestContext, accessLog } = require('./middleware/requestLog');
 const emailService = require('./services/emailService');
 
@@ -35,26 +38,12 @@ const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-app.use(mongoSanitize());
+if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
-// Rate limiting (do not throttle Telegram — shared IPs / webhooks)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500,
-  message: { error: 'Too many requests, please try again later.' },
-  skip: (req) =>
-    req.originalUrl?.includes('/telegram/webhook') ||
-    req.path?.includes('/telegram/webhook'),
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Too many authentication attempts.' }
-});
-app.use('/api/', limiter);
-app.use('/api/auth', authLimiter);
+// Security middleware (mongoSanitize must run AFTER body parsers — see below)
+app.use(helmet());
 
 // Stripe webhook (needs raw body before json parsing)
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
@@ -62,8 +51,43 @@ app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use((req, res, next) => {
+  if (Buffer.isBuffer(req.body)) return next();
+  return mongoSanitize({ replaceWith: '_' })(req, res, next);
+});
+app.use(injectionGuard);
 app.use(cookieParser());
 app.use(compression());
+
+// Rate limiting (correct client IP requires trust proxy behind Railway/Vercel/etc.)
+const apiMax =
+  Number(process.env.API_RATE_LIMIT_MAX) ||
+  (process.env.NODE_ENV === 'production' ? 280 : 500);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: apiMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => {
+    if (req.method === 'OPTIONS') return true;
+    return (
+      req.originalUrl?.includes('/telegram/webhook') || req.path?.includes('/telegram/webhook')
+    );
+  },
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts.' },
+  skip: (req) => req.method === 'OPTIONS',
+});
+const botLimiter = createBotLimiter();
+app.use('/api/', botLimiter);
+app.use('/api/', limiter);
+app.use('/api/auth', authLimiter);
 
 // CORS — production: only FRONTEND_URL (comma-separated allowed). Dev: any localhost / 127.0.0.1 port
 // (Next often uses 3001 if 3000 is taken; a single fixed origin caused "Network Error" in the browser.)
@@ -99,9 +123,25 @@ app.use(cors({
 app.use(requestContext);
 app.use(accessLog);
 
-// Health check
+// Liveness — always 200 when process listens (Railway / load balancer probes).
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Readiness — 503 until MongoDB is connected (storefront maintenance gate uses this).
+app.get('/api/health/ready', (req, res) => {
+  if (mongoose.connection.readyState === 1) {
+    return res.json({
+      status: 'ok',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+    });
+  }
+  return res.status(503).json({
+    status: 'degraded',
+    database: 'disconnected',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // SMTP diagnostics (no secrets). Use to verify Railway Variables.
@@ -134,6 +174,8 @@ app.get('/api/health/email/send-test', async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
+app.use(requireDatabase);
 
 // API Routes
 app.use('/api/auth', authRoutes);

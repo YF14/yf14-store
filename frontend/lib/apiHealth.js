@@ -1,10 +1,11 @@
 /**
- * Backend liveness check (GET /api/health). Uses fetch so we avoid axios interceptors.
+ * Backend readiness (GET /api/health/ready): 200 only when MongoDB is connected.
+ * Plain /api/health stays “alive” for hosting probes even while DB is down.
  */
 
 export function getHealthCheckUrl() {
   const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
-  return `${base}/health`;
+  return `${base}/health/ready`;
 }
 
 /**

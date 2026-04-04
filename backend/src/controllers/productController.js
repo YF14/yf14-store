@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { recordAudit, variantStockDiff } = require('../services/auditService');
+const cacheBust = require('../services/cacheInvalidation');
 
 const ALLOWED_SORT_KEYS = new Set([
   'createdAt', '-createdAt', 'price', '-price', 'name', '-name',
@@ -346,6 +347,7 @@ exports.createProduct = async (req, res, next) => {
       entityLabel: product.name,
       details: { slug: product.slug },
     });
+    cacheBust.bustProducts();
     res.status(201).json({ product });
   } catch (err) { next(err); }
 };
@@ -402,6 +404,7 @@ exports.updateProduct = async (req, res, next) => {
         stockChanges: variantStockDiff(existing.variants || [], product.variants || []),
       },
     });
+    cacheBust.bustProducts();
     res.json({ product });
   } catch (err) { next(err); }
 };
@@ -418,6 +421,7 @@ exports.deleteProduct = async (req, res, next) => {
         details: { slug: p.slug },
       });
     }
+    cacheBust.bustProducts();
     res.json({ message: 'Product deactivated' });
   } catch (err) { next(err); }
 };
@@ -447,6 +451,7 @@ exports.reorderCategoryProducts = async (req, res, next) => {
       entityId: categoryId,
       details: { productCount: orderedProductIds.length },
     });
+    cacheBust.bustProducts();
     res.json({ ok: true });
   } catch (err) { next(err); }
 };
@@ -475,6 +480,7 @@ exports.reorderSaleProducts = async (req, res, next) => {
       entityType: 'product',
       details: { productCount: orderedProductIds.length },
     });
+    cacheBust.bustProducts();
     res.json({ ok: true });
   } catch (err) { next(err); }
 };
@@ -503,6 +509,7 @@ exports.reorderFeaturedProducts = async (req, res, next) => {
       entityType: 'product',
       details: { productCount: orderedProductIds.length },
     });
+    cacheBust.bustProducts();
     res.json({ ok: true });
   } catch (err) { next(err); }
 };
@@ -531,6 +538,7 @@ exports.reorderNewArrivalProducts = async (req, res, next) => {
       entityType: 'product',
       details: { productCount: orderedProductIds.length },
     });
+    cacheBust.bustProducts();
     res.json({ ok: true });
   } catch (err) { next(err); }
 };
@@ -559,6 +567,7 @@ exports.reorderBestSellerProducts = async (req, res, next) => {
       entityType: 'product',
       details: { productCount: orderedProductIds.length },
     });
+    cacheBust.bustProducts();
     res.json({ ok: true });
   } catch (err) { next(err); }
 };
@@ -589,6 +598,7 @@ exports.updateVariantStock = async (req, res, next) => {
     const fresh = await Product.findById(product._id)
       .populate('category', 'name slug')
       .select('-reviews');
+    cacheBust.bustProducts();
     res.json({ product: fresh });
   } catch (err) { next(err); }
 };
@@ -643,6 +653,7 @@ exports.addReview = async (req, res, next) => {
     product.calculateRating();
     await product.save();
     await product.populate('reviews.user', 'firstName lastName avatar');
+    cacheBust.bustProducts();
     res.status(201).json({ reviews: product.reviews, averageRating: product.averageRating });
   } catch (err) { next(err); }
 };
@@ -658,6 +669,7 @@ exports.deleteReview = async (req, res, next) => {
     review.deleteOne();
     product.calculateRating();
     await product.save();
+    cacheBust.bustProducts();
     res.json({ message: 'Review deleted' });
   } catch (err) { next(err); }
 };

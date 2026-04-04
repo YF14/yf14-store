@@ -5,6 +5,7 @@ const Cart = require('../models/Cart');
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 const { recordAudit } = require('../services/auditService');
+const cacheBust = require('../services/cacheInvalidation');
 
 /** Flat delivery (IQD); optional env override. Frontend `lib/deliveryFee.js` should match. */
 const DELIVERY_FEE_IQD = Number(process.env.DELIVERY_FEE_IQD) || 5000;
@@ -104,6 +105,7 @@ exports.createOrder = async (req, res, next) => {
     await emailService.sendOrderConfirmation(populatedOrder);
     await telegramService.notifyNewOrder(populatedOrder);
 
+    cacheBust.bustProducts();
     res.status(201).json({ order, orderNumber: order.orderNumber });
   } catch (err) { next(err); }
 };
@@ -222,6 +224,7 @@ exports.createGuestOrder = async (req, res, next) => {
     // Confirmation email: customer + BCC store (or store-only if guest left no email)
     await emailService.sendOrderConfirmation(order);
 
+    cacheBust.bustProducts();
     res.status(201).json({ order, orderNumber: order.orderNumber });
   } catch (err) { next(err); }
 };
@@ -274,6 +277,7 @@ exports.cancelOrder = async (req, res, next) => {
       }
     }
 
+    cacheBust.bustProducts();
     res.json({ order });
   } catch (err) { next(err); }
 };

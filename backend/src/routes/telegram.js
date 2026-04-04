@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const telegramService = require('../services/telegramService');
 const emailService = require('../services/emailService');
 const logger = require('../config/logger');
+const cacheBust = require('../services/cacheInvalidation');
 
 function iqd(v) {
   return `${Number(v || 0).toLocaleString('en-US')} IQD`;
@@ -107,6 +108,7 @@ router.post('/webhook', async (req, res) => {
         );
       }
       await order.save();
+      cacheBust.bustProducts();
 
       emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 
@@ -210,6 +212,7 @@ router.post('/webhook', async (req, res) => {
         );
       }
       await order.save();
+      cacheBust.bustProducts();
 
       emailService.sendOrderStatusUpdate(order).catch((e) => logger.error('Email error:', e));
 

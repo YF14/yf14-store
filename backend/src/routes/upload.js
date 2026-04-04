@@ -12,6 +12,7 @@ const {
   uploadToCloudflareStream,
   deleteCloudflareStreamVideo,
 } = require('../config/cloudflareMedia');
+const cacheBust = require('../services/cacheInvalidation');
 
 // Upload up to 10 product images → Cloudflare Images
 router.post('/product', protect, requireAdminOrPermission('products'), uploadProduct.array('images', 10), async (req, res) => {
@@ -29,6 +30,7 @@ router.post('/product', protect, requireAdminOrPermission('products'), uploadPro
         }))
       )
     );
+    cacheBust.bustProducts();
     res.json({ images: uploads });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -53,6 +55,7 @@ router.post('/store-logo', protect, requireAdminOrPermission('settings'), upload
       { $set: { logoUrl: result.url, logoFileId: result.fileId || '' } },
       { upsert: true, new: true }
     );
+    cacheBust.bustSettings();
     res.json({ logoUrl: result.url, fileId: result.fileId });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -82,6 +85,7 @@ router.post('/video', protect, requireAdminOrPermission('products'), uploadVideo
       readyToStream: result.readyToStream,
       resourceType: 'video',
     });
+    cacheBust.bustProducts();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -93,6 +97,7 @@ router.delete('/image', protect, requireAdminOrPermission('products'), async (re
     const { fileId } = req.body;
     if (!fileId) return res.status(400).json({ error: 'fileId required' });
     await deleteCloudflareImage(fileId);
+    cacheBust.bustProducts();
     res.json({ message: 'Image deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -105,6 +110,7 @@ router.delete('/video', protect, requireAdminOrPermission('products'), async (re
     const { fileId } = req.body;
     if (!fileId) return res.status(400).json({ error: 'fileId required' });
     await deleteCloudflareStreamVideo(fileId);
+    cacheBust.bustProducts();
     res.json({ message: 'Video deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

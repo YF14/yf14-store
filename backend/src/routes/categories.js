@@ -3,8 +3,13 @@ const router = express.Router();
 const { protect, requireAdminOrPermission } = require('../middleware/auth');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const { responseCache } = require('../middleware/responseCache');
+const cacheBust = require('../services/cacheInvalidation');
 
-router.get('/', async (req, res) => {
+const TTL_CATEGORIES_MS = Number(process.env.CACHE_TTL_CATEGORIES_MS) || 120_000;
+const categoryCache = responseCache({ prefix: 'api:categories:', ttlMs: TTL_CATEGORIES_MS });
+
+router.get('/', categoryCache, async (req, res) => {
   try {
     // Never expose hidden categories to the public storefront
     const categories = await Category.find({ isActive: true, isHidden: { $ne: true } }).sort('sortOrder');
@@ -46,6 +51,7 @@ router.post('/hidden/:id/products', protect, requireAdminOrPermission('categorie
       { _id: { $in: productIds } },
       { $addToSet: { hiddenCategories: req.params.id } }
     );
+    cacheBust.bustProductsAndCategories();
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -59,11 +65,12 @@ router.delete('/hidden/:id/products/:productId', protect, requireAdminOrPermissi
       { _id: req.params.productId },
       { $pull: { hiddenCategories: category._id } }
     );
+    cacheBust.bustProductsAndCategories();
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/:slug', async (req, res) => {
+router.get('/:slug', categoryCache, async (req, res) => {
   try {
     // Hidden categories are invisible to the public — return 404 so nothing leaks
     const category = await Category.findOne({ slug: req.params.slug, isActive: true, isHidden: { $ne: true } });
@@ -75,6 +82,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/', protect, requireAdminOrPermission('categories'), async (req, res) => {
   try {
     const category = await Category.create(req.body);
+    cacheBust.bustProductsAndCategories();
     res.status(201).json({ category });
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -83,6 +91,7 @@ router.put('/:id', protect, requireAdminOrPermission('categories'), async (req, 
   try {
     const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!category) return res.status(404).json({ error: 'Category not found' });
+    cacheBust.bustProductsAndCategories();
     res.json({ category });
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -98,6 +107,7 @@ router.delete('/:id', protect, requireAdminOrPermission('categories'), async (re
       return res.status(400).json({ error: `Cannot delete: ${productCount} product(s) use this category.` });
     }
     await Category.findByIdAndDelete(req.params.id);
+    cacheBust.bustProductsAndCategories();
     res.json({ message: 'Category deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

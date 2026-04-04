@@ -46,6 +46,29 @@ export default function AdminStoreSettingsPage() {
     else if (!hasAdminPermission(user, 'settings')) router.replace(getDefaultAdminPath(user));
   }, [user, isAuthReady, router]);
 
+  const [cacheScope, setCacheScope] = useState('all');
+
+  const {
+    data: cacheStats,
+    refetch: refetchCacheStats,
+    isError: cacheStatsError,
+  } = useQuery(
+    ['admin-cache-stats'],
+    () => api.get('/admin/cache/stats').then((r) => r.data),
+    { enabled: !!user && hasAdminPermission(user, 'settings'), staleTime: 10_000, retry: false }
+  );
+
+  const clearCacheMutation = useMutation(
+    (scope) => api.post('/admin/cache/clear', { scope }),
+    {
+      onSuccess: () => {
+        refetchCacheStats();
+        toast.success(a.cacheCleared);
+      },
+      onError: (err) => toast.error(err.response?.data?.error || a.cacheClearError),
+    }
+  );
+
   const saveAnnouncementsMutation = useMutation(
     () =>
       api.put('/settings', {
@@ -161,6 +184,71 @@ export default function AdminStoreSettingsPage() {
             >
               {saveAnnouncementsMutation.isLoading ? '…' : a.announcementBarSave}
             </button>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="font-display text-xl font-light text-brand-black mb-2">{a.cacheTitle}</h2>
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">{a.cacheHelp}</p>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+            {cacheStats && !cacheStatsError ? (
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-gray-500">{a.cacheEnabled}</dt>
+                  <dd className="font-medium text-brand-black mt-1">
+                    {cacheStats.enabled ? a.cacheOn : a.cacheOff}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-gray-500">{a.cacheEntries}</dt>
+                  <dd className="font-medium text-brand-black mt-1">{cacheStats.entries}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-gray-500">{a.cacheHitRate}</dt>
+                  <dd className="font-medium text-brand-black mt-1">
+                    {Math.round((cacheStats.hitRate || 0) * 100)}%
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-gray-500">{a.cacheHits}</dt>
+                  <dd className="font-medium text-brand-black mt-1">{cacheStats.hits}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-gray-500">{a.cacheMisses}</dt>
+                  <dd className="font-medium text-brand-black mt-1">{cacheStats.misses}</dd>
+                </div>
+              </dl>
+            ) : cacheStatsError ? (
+              <p className="text-sm text-gray-500">{a.cacheLoadError}</p>
+            ) : (
+              <p className="text-sm text-gray-500">…</p>
+            )}
+
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 pt-2">
+              <div className="flex-1">
+                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">{a.cacheClearScope}</label>
+                <select
+                  value={cacheScope}
+                  onChange={(e) => setCacheScope(e.target.value)}
+                  className="input-luxury w-full sm:max-w-xs text-sm"
+                >
+                  <option value="all">{a.cacheClearAll}</option>
+                  <option value="products">{a.cacheClearProducts}</option>
+                  <option value="categories">{a.cacheClearCategories}</option>
+                  <option value="settings">{a.cacheClearSettings}</option>
+                  <option value="colors">{a.cacheClearColors}</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                disabled={clearCacheMutation.isLoading}
+                onClick={() => clearCacheMutation.mutate(cacheScope)}
+                className="btn-secondary disabled:opacity-50 whitespace-nowrap"
+              >
+                {clearCacheMutation.isLoading ? '…' : a.cacheClearButton}
+              </button>
+            </div>
           </div>
         </section>
       </div>

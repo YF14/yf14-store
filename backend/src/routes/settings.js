@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const StoreSettings = require('../models/StoreSettings');
 const { protect, requireAdminOrPermission } = require('../middleware/auth');
+const { responseCache } = require('../middleware/responseCache');
+const cacheBust = require('../services/cacheInvalidation');
+
+const TTL_SETTINGS_MS = Number(process.env.CACHE_TTL_SETTINGS_MS) || 60_000;
+const settingsCache = responseCache({ prefix: 'api:settings:', ttlMs: TTL_SETTINGS_MS });
 
 const { DEFAULT_ANNOUNCEMENT_EN, DEFAULT_ANNOUNCEMENT_AR } = StoreSettings;
 
@@ -25,7 +30,7 @@ function resolveAnnouncements(doc) {
 }
 
 /** Public: storefront reads logo + rotating announcements */
-router.get('/', async (req, res) => {
+router.get('/', settingsCache, async (req, res) => {
   try {
     const doc = await StoreSettings.findOne({ key: 'site' }).lean();
     const ann = resolveAnnouncements(doc);
@@ -67,6 +72,7 @@ router.put('/', protect, requireAdminOrPermission('settings'), async (req, res) 
       { $set: update },
       { upsert: true, new: true }
     ).lean();
+    cacheBust.bustSettings();
     res.json({
       logoUrl: doc?.logoUrl || null,
       ...resolveAnnouncements(doc),

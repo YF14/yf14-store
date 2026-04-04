@@ -1,0 +1,11 @@
+# Storefront — allow product indexing; keep admin and auth out of crawlers.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+Disallow: /account
+Disallow: /checkout
+Disallow: /guest-checkout
+Disallow: /auth/
