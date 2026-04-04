@@ -12,6 +12,7 @@ import { useLang } from '../../../contexts/LanguageContext';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
 import { catName, formatIQD } from '../../../lib/currency';
+import { invalidateProductCaches } from '../../../lib/invalidateProductCaches';
 
 const BG = '#0f1117';
 const CARD = '#1a1d2e';
@@ -113,7 +114,7 @@ export default function AdminCategoryProductsPage() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['admin-category-products', categoryId]);
-        queryClient.invalidateQueries(['products']);
+        invalidateProductCaches(queryClient);
         toast.success(a.orderSaved);
       },
       onError: (err) => toast.error(err.response?.data?.error || a.failedUpdate),
@@ -125,8 +126,7 @@ export default function AdminCategoryProductsPage() {
     {
       onSuccess: () => {
         refetch();
-        queryClient.invalidateQueries(['products']);
-        queryClient.invalidateQueries(['admin-best-seller-product-count']);
+        invalidateProductCaches(queryClient);
         toast.success(a.productUpdated);
       },
       onError: () => toast.error(a.failedUpdate),
@@ -138,7 +138,7 @@ export default function AdminCategoryProductsPage() {
     {
       onSuccess: () => {
         refetch();
-        queryClient.invalidateQueries(['products']);
+        invalidateProductCaches(queryClient);
         toast.success(a.movedToCategory);
       },
       onError: (err) => toast.error(err.response?.data?.error || a.failedUpdate),
@@ -285,8 +285,6 @@ export default function AdminCategoryProductsPage() {
                 onSuccess={() => {
                   setProductFormMode(null);
                   refetch();
-                  queryClient.invalidateQueries(['products']);
-                  queryClient.invalidateQueries({ queryKey: ['admin-product'] });
                 }}
                 onCancel={() => setProductFormMode(null)}
               />

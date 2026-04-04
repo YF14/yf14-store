@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { NextSeo } from 'next-seo';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import useAuthStore from '../../../store/authStore';
@@ -11,6 +11,7 @@ import { useLang } from '../../../contexts/LanguageContext';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
 import { formatIQD } from '../../../lib/currency';
+import { invalidateProductCaches } from '../../../lib/invalidateProductCaches';
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function AdminProductsPage() {
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
   const { t } = useLang();
   const a = t.admin;
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
@@ -46,7 +48,8 @@ export default function AdminProductsPage() {
     if (!confirm(a.deleteProductConfirm.replace('%s', name))) return;
     try {
       await api.delete(`/products/${id}`);
-      toast.success(a.productDeactivated);
+      toast.success(a.productDeletedPermanently);
+      invalidateProductCaches(queryClient);
       refetch();
     } catch (err) {
       toast.error(err.response?.data?.error || a.productDeleteFailed);

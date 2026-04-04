@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
+const Cart = require('../models/Cart');
+const User = require('../models/User');
+const PromoCode = require('../models/PromoCode');
 const { recordAudit, variantStockDiff } = require('../services/auditService');
 const cacheBust = require('../services/cacheInvalidation');
 
@@ -411,18 +414,30 @@ exports.updateProduct = async (req, res, next) => {
 
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const p = await Product.findById(req.params.id).select('name slug').lean();
-    await Product.findByIdAndUpdate(req.params.id, { isActive: false });
-    if (p) {
-      await recordAudit(req, 'product.deactivated', {
-        entityType: 'product',
-        entityId: p._id,
-        entityLabel: p.name,
-        details: { slug: p.slug },
-      });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid product id' });
     }
+    const oid = new mongoose.Types.ObjectId(id);
+    const p = await Product.findById(id).select('name slug').lean();
+    if (!p) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    await Cart.updateMany({ 'items.product': oid }, { $pull: { items: { product: oid } } });
+    await User.updateMany({ wishlist: oid }, { $pull: { wishlist: oid } });
+    await PromoCode.updateMany({ applicableProducts: oid }, { $pull: { applicableProducts: oid } });
+
+    await Product.deleteOne({ _id: oid });
+
+    await recordAudit(req, 'product.deleted', {
+      entityType: 'product',
+      entityId: oid,
+      entityLabel: p.name,
+      details: { slug: p.slug, permanent: true },
+    });
     cacheBust.bustProducts();
-    res.json({ message: 'Product deactivated' });
+    res.json({ message: 'Product deleted permanently' });
   } catch (err) { next(err); }
 };
 

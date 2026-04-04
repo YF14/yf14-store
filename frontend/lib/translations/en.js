@@ -701,12 +701,12 @@ const en = {
     deactivate: 'Deactivate',
     deleteProduct: 'Delete',
     deleteProductConfirm:
-      'Delete "%s" from the store? It will be hidden from shoppers. You can make it visible again later by editing the product and enabling "Active (visible on store)".',
-    deleteProductSection: 'Remove product',
+      'Permanently delete "%s"? This cannot be undone. Past orders keep a copy of the item details; carts and wishlists will be updated.',
+    deleteProductSection: 'Delete product',
     deleteProductEditHint:
-      'Deletes this product from the storefront (same as turning off "Active"). Customers will no longer see it.',
+      'Permanently removes this product from the database. Carts and wishlists are cleaned up. This cannot be undone.',
     deleteProductEditConfirm:
-      'Remove this product from the store? It will be hidden from shoppers. You can show it again later by editing and enabling "Active (visible on store)".',
+      'Permanently delete this product? This cannot be undone. Past orders still show the item as it was when purchased.',
     activate: 'Activate',
     noProductsFound: 'No products found',
     featured: 'Featured',
@@ -752,6 +752,7 @@ const en = {
     failedCreate: 'Failed to create product',
     failedUpdate: 'Failed to update product',
     productDeactivated: 'Product removed from store',
+    productDeletedPermanently: 'Product deleted permanently',
     productDeleteFailed: 'Could not delete product',
 
     // Categories
@@ -980,6 +981,7 @@ const en = {
       'product.created': 'Product created',
       'product.updated': 'Product updated',
       'product.deactivated': 'Product deactivated',
+      'product.deleted': 'Product deleted',
       'product.stock_updated': 'Stock changed',
       'product.reorder_category': 'Category order changed',
       'product.reorder_sale': 'Sale order changed',

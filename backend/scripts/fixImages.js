@@ -5,8 +5,8 @@ const Product = require('../src/models/Product');
 // Proper dress images from Unsplash (verified dress photos)
 const imageUpdates = {
   'velvet-midnight-gown': [
-    { url: 'https://images.unsplash.com/photo-1566479179817-0b2d6ff88b2f?w=800&q=85', alt: 'Velvet Midnight Gown', isPrimary: true },
-    { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=85', alt: 'Velvet Midnight Gown back' },
+    { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=85', alt: 'Velvet Midnight Gown', isPrimary: true },
+    { url: 'https://images.unsplash.com/photo-1596783074918-c84cb06531ca?w=800&q=85', alt: 'Velvet Midnight Gown back' },
   ],
   'crystal-embellished-evening-dress': [
     { url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=85', alt: 'Crystal Evening Dress', isPrimary: true },

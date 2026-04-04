@@ -146,7 +146,7 @@ export default function AdminStockPage() {
                 key={i}
                 className="bg-white border border-brand-black/10 rounded-lg overflow-hidden"
               >
-                <div className="h-40 skeleton" />
+                <div className="h-48 sm:h-40 skeleton" />
                 <div className="p-3 space-y-2">
                   <div className="h-4 skeleton w-3/4" />
                   <div className="h-3 skeleton w-1/2" />
@@ -179,14 +179,14 @@ export default function AdminStockPage() {
                       : 'border-brand-black/10'
                   }`}
                 >
-                  <div className="relative h-40 w-full bg-gray-100">
+                  <div className="relative h-48 sm:h-40 w-full bg-neutral-100">
                     {imgUrl ? (
                       <Image
                         src={imgUrl}
                         alt={p.name || ''}
                         fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 50vw, 200px"
+                        className="object-contain object-center p-2 sm:p-1.5"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 220px"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-brand-warm-gray text-xs">

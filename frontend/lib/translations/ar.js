@@ -700,12 +700,12 @@ const ar = {
     deactivate: 'تعطيل',
     deleteProduct: 'حذف',
     deleteProductConfirm:
-      'حذف "%s" من المتجر؟ لن يظهر للعملاء. يمكنك إظهاره لاحقاً من صفحة التعديل بتفعيل "نشط (ظاهر في المتجر)".',
-    deleteProductSection: 'إزالة المنتج',
+      'حذف "%s" نهائياً؟ لا يمكن التراجع. الطلبات السابقة تحتفظ بنسخة من تفاصيل السطر؛ تُنظَّف السلات والمفضلة.',
+    deleteProductSection: 'حذف المنتج',
     deleteProductEditHint:
-      'يحذف المنتج من واجهة المتجر (مثل إيقاف "نشط"). لن يراه الزبائن.',
+      'يزيل المنتج نهائياً من قاعدة البيانات وينظّف السلات والمفضلة. لا يمكن التراجع.',
     deleteProductEditConfirm:
-      'إزالة هذا المنتج من المتجر؟ لن يظهر للعملاء. يمكنك إظهاره لاحقاً من التعديل بتفعيل "نشط (ظاهر في المتجر)".',
+      'حذف هذا المنتج نهائياً؟ لا يمكن التراجع. الطلبات القديمة ما زالت تعرض السطر كما كان وقت الشراء.',
     activate: 'تفعيل',
     noProductsFound: 'لا توجد منتجات',
     featured: 'مميز',
@@ -751,6 +751,7 @@ const ar = {
     failedCreate: 'فشل في إنشاء المنتج',
     failedUpdate: 'فشل في تحديث المنتج',
     productDeactivated: 'تمت إزالة المنتج من المتجر',
+    productDeletedPermanently: 'تم حذف المنتج نهائياً',
     productDeleteFailed: 'تعذر حذف المنتج',
 
     // Categories
@@ -979,6 +980,7 @@ const ar = {
       'product.created': 'إنشاء منتج',
       'product.updated': 'تحديث منتج',
       'product.deactivated': 'تعطيل منتج',
+      'product.deleted': 'حذف منتج',
       'product.stock_updated': 'تغيير مخزون',
       'product.reorder_category': 'ترتيب التصنيف',
       'product.reorder_sale': 'ترتيب التخفيضات',

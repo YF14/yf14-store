@@ -55,7 +55,7 @@ const seed = async () => {
         category: createdCategories[0]._id,
         tags: ['evening', 'velvet', 'luxury', 'black'],
         images: [
-          { url: 'https://images.unsplash.com/photo-1566479179817-0b2d6ff88b2f?w=800', alt: 'Velvet Midnight Gown', isPrimary: true },
+          { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800', alt: 'Velvet Midnight Gown', isPrimary: true },
           { url: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800', alt: 'Velvet Midnight Gown Detail' },
         ],
         variants: [

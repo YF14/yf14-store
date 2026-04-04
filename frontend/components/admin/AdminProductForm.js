@@ -8,6 +8,8 @@ import api from '../../lib/api';
 import { classifyProductMediaFile } from '../../lib/mediaClassify';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 import { catName } from '../../lib/currency';
+import { hasAdminPermission } from '../../lib/adminAccess';
+import { invalidateProductCaches } from '../../lib/invalidateProductCaches';
 import toast from 'react-hot-toast';
 import VideoPreviewThumb from './VideoPreviewThumb';
 
@@ -80,7 +82,9 @@ export default function AdminProductForm({
   const [customColorCode, setCustomColorCode] = useState('#000000');
   const [deletingColorId, setDeletingColorId] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [loaded, setLoaded] = useState(false);
+  /** Edit mode: wait until server snapshot is applied to local state (incl. after refetch). */
+  const [editReady, setEditReady] = useState(false);
+  const lastHydrationSnapRef = useRef('');
 
   const isEdit = !!productId;
 
@@ -94,10 +98,11 @@ export default function AdminProductForm({
     data: productData,
     isLoading: productLoading,
     isError: productError,
+    dataUpdatedAt,
   } = useQuery(
     ['admin-product', productId],
     () => api.get(`/products/admin/${productId}`).then((r) => r.data),
-    { enabled: isEdit && !!productId && !!user && user.role === 'admin' }
+    { enabled: isEdit && !!productId && !!user && hasAdminPermission(user, 'products') }
   );
 
   const fixedCategory = useMemo(
@@ -106,7 +111,8 @@ export default function AdminProductForm({
   );
 
   useEffect(() => {
-    setLoaded(false);
+    lastHydrationSnapRef.current = '';
+    setEditReady(false);
     if (!isEdit) {
       setForm(emptyForm());
       setImages([]);
@@ -129,7 +135,10 @@ export default function AdminProductForm({
 
   useEffect(() => {
     const p = productData?.product;
-    if (!isEdit || !p || loaded) return;
+    if (!isEdit || !p) return;
+    const snap = `${productId}:${dataUpdatedAt}`;
+    if (lastHydrationSnapRef.current === snap) return;
+    lastHydrationSnapRef.current = snap;
     setForm({
       name: p.name || '',
       shortDescription: p.shortDescription || p.description || '',
@@ -174,8 +183,8 @@ export default function AdminProductForm({
           }))
         : []
     );
-    setLoaded(true);
-  }, [productData, loaded, isEdit, fixedCategoryId]);
+    setEditReady(true);
+  }, [productData, dataUpdatedAt, isEdit, productId, fixedCategoryId]);
 
   const colorGroups = groupByColor(variants);
   const usedColors = colorGroups.map((g) => g.color);
@@ -412,9 +421,7 @@ export default function AdminProductForm({
         await api.post('/products', { ...payload, slug });
         toast.success(a.productCreated);
       }
-      queryClient.invalidateQueries(['products']);
-      queryClient.invalidateQueries('categories');
-      queryClient.invalidateQueries(['admin-best-seller-product-count']);
+      invalidateProductCaches(queryClient);
       onSuccess?.();
     } catch (err) {
       toast.error(err.response?.data?.error || (isEdit ? a.failedUpdate : a.failedCreate));
@@ -433,7 +440,7 @@ export default function AdminProductForm({
   if (isEdit && (productError || !productData?.product)) {
     return <p className="text-sm text-red-500 py-8 text-center">{t.product.productNotFound}</p>;
   }
-  if (isEdit && !loaded) {
+  if (isEdit && productData?.product && !editReady) {
     return (
       <div className="flex justify-center py-16">
         <div className="animate-spin w-10 h-10 border-2 border-brand-gold border-t-transparent rounded-full" />

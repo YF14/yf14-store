@@ -25,7 +25,7 @@ export default function EditProductPage() {
     setDeleting(true);
     try {
       await api.delete(`/products/${id}`);
-      toast.success(a.productDeactivated);
+      toast.success(a.productDeletedPermanently);
       router.push('/admin/products');
     } catch (err) {
       toast.error(err.response?.data?.error || a.productDeleteFailed);

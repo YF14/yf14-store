@@ -76,13 +76,30 @@ const limiter = rateLimit({
     );
   },
 });
+/** Only throttle unauthenticated credential endpoints — not OAuth, /me, refresh, or logout. */
+function shouldThrottleAuthCredentials(req) {
+  if (req.method === 'OPTIONS') return false;
+  const path = (req.originalUrl || '').split('?')[0];
+  if (!path.startsWith('/api/auth')) return false;
+  const rest = path.slice('/api/auth'.length) || '/';
+  if (req.method === 'POST' && rest === '/login') return true;
+  if (req.method === 'POST' && rest === '/register') return true;
+  if (req.method === 'POST' && rest === '/forgot-password') return true;
+  if (req.method === 'POST' && rest.startsWith('/reset-password/')) return true;
+  return false;
+}
+
+const authLimiterMax =
+  Number(process.env.AUTH_RATE_LIMIT_MAX) ||
+  (process.env.NODE_ENV === 'production' ? 40 : 80);
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: authLimiterMax,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts.' },
-  skip: (req) => req.method === 'OPTIONS',
+  skip: (req) => !shouldThrottleAuthCredentials(req),
 });
 const botLimiter = createBotLimiter();
 app.use('/api/', botLimiter);
