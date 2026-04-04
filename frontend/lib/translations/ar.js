@@ -698,6 +698,14 @@ const ar = {
     actions: 'الإجراءات',
     edit: 'تعديل',
     deactivate: 'تعطيل',
+    deleteProduct: 'حذف',
+    deleteProductConfirm:
+      'حذف "%s" من المتجر؟ لن يظهر للعملاء. يمكنك إظهاره لاحقاً من صفحة التعديل بتفعيل "نشط (ظاهر في المتجر)".',
+    deleteProductSection: 'إزالة المنتج',
+    deleteProductEditHint:
+      'يحذف المنتج من واجهة المتجر (مثل إيقاف "نشط"). لن يراه الزبائن.',
+    deleteProductEditConfirm:
+      'إزالة هذا المنتج من المتجر؟ لن يظهر للعملاء. يمكنك إظهاره لاحقاً من التعديل بتفعيل "نشط (ظاهر في المتجر)".',
     activate: 'تفعيل',
     noProductsFound: 'لا توجد منتجات',
     featured: 'مميز',
@@ -742,7 +750,8 @@ const ar = {
     productUpdated: 'تم تحديث المنتج!',
     failedCreate: 'فشل في إنشاء المنتج',
     failedUpdate: 'فشل في تحديث المنتج',
-    productDeactivated: 'تم تعطيل المنتج',
+    productDeactivated: 'تمت إزالة المنتج من المتجر',
+    productDeleteFailed: 'تعذر حذف المنتج',
 
     // Categories
     open: 'فتح',

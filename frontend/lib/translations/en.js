@@ -699,6 +699,14 @@ const en = {
     actions: 'Actions',
     edit: 'Edit',
     deactivate: 'Deactivate',
+    deleteProduct: 'Delete',
+    deleteProductConfirm:
+      'Delete "%s" from the store? It will be hidden from shoppers. You can make it visible again later by editing the product and enabling "Active (visible on store)".',
+    deleteProductSection: 'Remove product',
+    deleteProductEditHint:
+      'Deletes this product from the storefront (same as turning off "Active"). Customers will no longer see it.',
+    deleteProductEditConfirm:
+      'Remove this product from the store? It will be hidden from shoppers. You can show it again later by editing and enabling "Active (visible on store)".',
     activate: 'Activate',
     noProductsFound: 'No products found',
     featured: 'Featured',
@@ -743,7 +751,8 @@ const en = {
     productUpdated: 'Product updated!',
     failedCreate: 'Failed to create product',
     failedUpdate: 'Failed to update product',
-    productDeactivated: 'Product deactivated',
+    productDeactivated: 'Product removed from store',
+    productDeleteFailed: 'Could not delete product',
 
     // Categories
     open: 'Open',

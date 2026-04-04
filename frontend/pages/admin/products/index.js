@@ -43,13 +43,13 @@ export default function AdminProductsPage() {
   const total = data?.total || 0;
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`${a.deactivate} "${name}"?`)) return;
+    if (!confirm(a.deleteProductConfirm.replace('%s', name))) return;
     try {
       await api.delete(`/products/${id}`);
       toast.success(a.productDeactivated);
       refetch();
-    } catch {
-      toast.error(a.failedUpdate);
+    } catch (err) {
+      toast.error(err.response?.data?.error || a.productDeleteFailed);
     }
   };
 
@@ -139,8 +139,8 @@ export default function AdminProductsPage() {
                         <Link href={`/admin/products/${product._id}/edit`} className="text-xs px-3 py-1 border border-brand-black/20 hover:border-brand-gold text-brand-warm-gray hover:text-brand-gold transition-colors">
                           {a.edit}
                         </Link>
-                        <button onClick={() => handleDelete(product._id, product.name)} className="text-xs px-3 py-1 border border-red-200 text-red-400 hover:border-red-400 hover:text-red-600 transition-colors">
-                          {a.deactivate}
+                        <button type="button" onClick={() => handleDelete(product._id, product.name)} className="text-xs px-3 py-1 border border-red-200 text-red-400 hover:border-red-400 hover:text-red-600 transition-colors">
+                          {a.deleteProduct}
                         </button>
                       </div>
                     </td>
