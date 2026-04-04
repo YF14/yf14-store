@@ -12,6 +12,7 @@ import { LanguageProvider, useLang } from '../contexts/LanguageContext';
 import RouteAnalytics from './RouteAnalytics';
 import GtagScripts from './analytics/GtagScripts';
 import GoogleAnalyticsApp from './app/GoogleAnalyticsApp';
+import ApiAvailabilityGate from './ApiAvailabilityGate';
 import { META_PIXEL_ID } from '../lib/analytics';
 
 const queryClient = new QueryClient({
@@ -110,8 +111,10 @@ export default function AppProviders({ children, appRouterRoot = false }) {
   return (
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthBootstrap />
-        <AppChrome appRouterRoot={appRouterRoot}>{children}</AppChrome>
+        <ApiAvailabilityGate>
+          <AuthBootstrap />
+          <AppChrome appRouterRoot={appRouterRoot}>{children}</AppChrome>
+        </ApiAvailabilityGate>
       </QueryClientProvider>
     </LanguageProvider>
   );

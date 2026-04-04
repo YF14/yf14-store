@@ -62,6 +62,15 @@ const en = {
     showMore: 'Show More',
   },
 
+  maintenance: {
+    kicker: 'Unavailable',
+    title: 'We’ll be back shortly',
+    body:
+      'Our store is temporarily unreachable — the service may be updating or your connection may be interrupted. You can try again in a moment.',
+    retry: 'Try again',
+    checking: 'Connecting…',
+  },
+
   home: {
     heroSeason: 'New Season Collection',
     heroTitle: 'Your Outfit,',

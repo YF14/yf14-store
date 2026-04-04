@@ -11,6 +11,12 @@ const MONGO_OPTIONS = {
   connectTimeoutMS: 10_000,
 };
 
+/** After `disconnected`, wait this long before scheduling reconnect (avoids flapping). */
+const MONGO_DISCONNECT_DEBOUNCE_MS = 2000;
+/** Exponential backoff between reconnect attempts: base * 2^n, capped below. */
+const MONGO_RECONNECT_BASE_MS = 2000;
+const MONGO_RECONNECT_MAX_MS = 60_000;
+
 let reconnectTimer = null;
 let reconnectAttempt = 0;
 let isShuttingDown = false;
@@ -29,7 +35,7 @@ function getMongoUri() {
 
 /**
  * After a drop, explicitly call connect again (driver does not always recover every failure mode).
- * Backoff caps at 60s between attempts.
+ * Backoff: 0ms on first try after schedule, then MONGO_RECONNECT_BASE_MS * 2^n up to MONGO_RECONNECT_MAX_MS.
  */
 function scheduleReconnectAttempt() {
   if (isShuttingDown) return;
@@ -38,7 +44,10 @@ function scheduleReconnectAttempt() {
   const delay =
     reconnectAttempt === 0
       ? 0
-      : Math.min(60_000, 2000 * 2 ** Math.min(reconnectAttempt, 5));
+      : Math.min(
+          MONGO_RECONNECT_MAX_MS,
+          MONGO_RECONNECT_BASE_MS * 2 ** Math.min(reconnectAttempt, 5)
+        );
   reconnectTimer = setTimeout(async () => {
     reconnectTimer = null;
     if (isShuttingDown) return;
@@ -79,7 +88,7 @@ mongoose.connection.on('disconnected', () => {
     if (mongoose.connection.readyState === 1) return;
     reconnectAttempt = 0;
     scheduleReconnectAttempt();
-  }, 2000);
+  }, MONGO_DISCONNECT_DEBOUNCE_MS);
 });
 
 mongoose.connection.on('connected', () => {
