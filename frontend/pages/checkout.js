@@ -281,11 +281,11 @@ export default function CheckoutPage() {
       <Layout>
         <NextSeo title={isRTL ? 'تم الطلب' : 'Order placed'} />
         <div
-          className="min-h-screen flex flex-col items-center px-5 sm:px-6 pt-20 sm:pt-28 pb-16"
+          className="w-full flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 pb-[max(3rem,env(safe-area-inset-bottom,0px)+1.5rem)] min-h-[calc(100dvh-5.5rem-env(safe-area-inset-top,0px))] lg:min-h-[calc(100dvh-7.75rem-env(safe-area-inset-top,0px))]"
           style={{ backgroundColor: BG, color: TEXT }}
           dir={isRTL ? 'rtl' : 'ltr'}
         >
-          <div className="w-full max-w-[420px] mx-auto text-center animate-fade-up">
+          <div className="w-full max-w-[420px] mx-auto self-center text-center animate-fade-up">
             <div
               className="w-[5.25rem] h-[5.25rem] rounded-full flex items-center justify-center mx-auto mb-3 border-2"
               style={{

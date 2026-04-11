@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from 'react-query';
@@ -10,6 +10,8 @@ import HlsVideo from '../media/HlsVideo';
 import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
 
 const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
+/** Below this count, duplicating the row for a “seamless” loop shows the same cards twice on wide screens. */
+const MIN_PRODUCTS_FOR_SEAMLESS_LOOP = 8;
 
 function MarqueeCard({ product, priority = false }) {
   const [hovered, setHovered] = useState(false);
@@ -104,10 +106,26 @@ export default function HomeProductMarquee() {
     api.get('/products?filter=featured&sort=featuredSortOrder&page=1&limit=24').then((r) => r.data)
   );
 
-  const products = data?.products || [];
-  const total    = data?.total ?? 0;
-  // Duplicate for seamless infinite loop
-  const loop = products.length ? [...products, ...products] : [];
+  const products = useMemo(() => {
+    const raw = data?.products || [];
+    const seen = new Set();
+    return raw.filter((p) => {
+      const id = p?._id != null ? String(p._id) : '';
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [data?.products]);
+
+  const total = data?.total ?? 0;
+  const useSeamlessDoubling = products.length >= MIN_PRODUCTS_FOR_SEAMLESS_LOOP;
+  const loop = useMemo(() => {
+    if (!products.length) return [];
+    return useSeamlessDoubling ? [...products, ...products] : products;
+  }, [products, useSeamlessDoubling]);
+
+  const useSeamlessDoublingRef = useRef(useSeamlessDoubling);
+  useSeamlessDoublingRef.current = useSeamlessDoubling;
 
   /* ── Auto-scroll via requestAnimationFrame ──
      Run once on mount; the tick checks scrollRef on every frame so it
@@ -118,9 +136,13 @@ export default function HomeProductMarquee() {
       const el = scrollRef.current;
       if (el && !paused.current && el.scrollWidth > el.clientWidth) {
         el.scrollLeft += SCROLL_SPEED;
-        // Seamless loop: once past the first copy, jump back silently
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) el.scrollLeft -= half;
+        if (useSeamlessDoublingRef.current) {
+          const half = el.scrollWidth / 2;
+          if (el.scrollLeft >= half) el.scrollLeft -= half;
+        } else {
+          const maxScroll = el.scrollWidth - el.clientWidth;
+          if (el.scrollLeft >= maxScroll - 1) el.scrollLeft = 0;
+        }
       }
       raf = requestAnimationFrame(tick);
     };
