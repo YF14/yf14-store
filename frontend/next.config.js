@@ -29,8 +29,10 @@ const nextConfig = {
     remotePatterns,
     formats: ['image/avif', 'image/webp'],
   },
+  // Critters-based CSS optimization spikes memory; small Railway build VMs OOM with WorkerError.
+  // Opt in locally/CI with NEXT_OPTIMIZE_CSS=1 if you want inlined critical CSS.
   experimental: {
-    optimizeCss: true,
+    ...(process.env.NEXT_OPTIMIZE_CSS === '1' ? { optimizeCss: true } : {}),
   },
   async headers() {
     return [
