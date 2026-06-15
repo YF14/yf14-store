@@ -107,15 +107,27 @@ app.use('/api/', limiter);
 app.use('/api/auth', authLimiter);
 
 // CORS — production: only FRONTEND_URL (comma-separated allowed). Dev: any localhost / 127.0.0.1 port
+// www ↔ non-www variants of each listed origin are allowed automatically.
 // (Next often uses 3001 if 3000 is taken; a single fixed origin caused "Network Error" in the browser.)
 function buildCorsOrigin() {
   const listed = (process.env.FRONTEND_URL || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  const allowed = new Set(listed);
+  for (const url of listed) {
+    try {
+      const u = new URL(url);
+      if (u.hostname.startsWith('www.')) {
+        allowed.add(`${u.protocol}//${u.hostname.slice(4)}`);
+      } else {
+        allowed.add(`${u.protocol}//www.${u.hostname}`);
+      }
+    } catch { /* ignore */ }
+  }
   return (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (listed.includes(origin)) return callback(null, true);
+    if (allowed.has(origin)) return callback(null, true);
     if (process.env.NODE_ENV !== 'production') {
       try {
         const { hostname } = new URL(origin);
