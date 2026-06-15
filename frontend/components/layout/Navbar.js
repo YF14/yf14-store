@@ -10,7 +10,6 @@ import { canAccessAdmin, getDefaultAdminPath } from '../../lib/adminAccess';
 import { useLang } from '../../contexts/LanguageContext';
 import { catName } from '../../lib/currency';
 import api from '../../lib/api';
-import StoreLogoImage from './StoreLogoImage';
 
 export default function Navbar({ scrolled }) {
   const router = useRouter();
@@ -88,19 +87,11 @@ export default function Navbar({ scrolled }) {
               </button>
             </div>
 
-            {/* Center: Logo — vertically centered in navy row so it doesn’t sit in the announcement bar */}
+            {/* Center: brand name — vertically centered in navy row so it doesn’t sit in the announcement bar */}
             <Link
               href="/"
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
             >
-              <span className="relative block w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-full overflow-hidden bg-nav-navy shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
-                <StoreLogoImage
-                  fill
-                  className="object-contain object-center p-[3px] rounded-full"
-                  sizes="(max-width: 768px) 44px, 48px"
-                  priority
-                />
-              </span>
               <h1 className="font-display text-xl md:text-2xl tracking-[0.18em] font-light text-white">
                 {t.siteName}
               </h1>
