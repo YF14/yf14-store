@@ -13,7 +13,7 @@ import {
   pickListingVideoThumbnail,
 } from '../../lib/productMedia';
 import HlsVideo from '../media/HlsVideo';
-import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc, isCloudflareImagesUrl } from '../../lib/remoteImage';
 import { useLang } from '../../contexts/LanguageContext';
 
 const DEFAULT_IMAGE_SIZES = '(max-width: 640px) 50vw, 33vw';
@@ -110,6 +110,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
               priority={index < 6}
               placeholder="blur"
               blurDataURL={IMAGE_BLUR_DATA_URL}
+              unoptimized={isCloudflareImagesUrl(primaryImg)}
             />
           )}
 
@@ -125,6 +126,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
               sizes={imageSizes}
               placeholder="blur"
               blurDataURL={IMAGE_BLUR_DATA_URL}
+              unoptimized={isCloudflareImagesUrl(hoverImg)}
             />
           )}
 

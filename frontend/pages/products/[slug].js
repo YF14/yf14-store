@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD, catName } from '../../lib/currency';
 import { filterProductGallery, pickImageUrlForVariantColor, pickListingImageUrl } from '../../lib/productMedia';
-import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc, isCloudflareImagesUrl } from '../../lib/remoteImage';
 import { trackViewContent } from '../../lib/analytics';
 import { canAccessAdmin, hasAdminPermission } from '../../lib/adminAccess';
 
@@ -292,6 +292,7 @@ export default function ProductDetailPage() {
                     loading="lazy"
                     placeholder="blur"
                     blurDataURL={IMAGE_BLUR_DATA_URL}
+                    unoptimized={isCloudflareImagesUrl(img.url)}
                   />
                   {i === 0 && (
                     <span className="absolute top-1 end-1 flex flex-col gap-0.5 items-end pointer-events-none">
@@ -342,6 +343,7 @@ export default function ProductDetailPage() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   placeholder="blur"
                   blurDataURL={IMAGE_BLUR_DATA_URL}
+                  unoptimized={isCloudflareImagesUrl(galleryImages[activeImg]?.url || galleryImages[0]?.url)}
                 />
               ) : (
                 <HlsVideo
@@ -727,6 +729,7 @@ export default function ProductDetailPage() {
                           loading={relIdx < 2 ? undefined : 'lazy'}
                           placeholder="blur"
                           blurDataURL={IMAGE_BLUR_DATA_URL}
+                          unoptimized={isCloudflareImagesUrl(img)}
                         />
                       )}
                       {relDiscount > 0 && (

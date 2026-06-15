@@ -7,7 +7,7 @@ import { useLang } from '../../contexts/LanguageContext';
 import { formatIQD } from '../../lib/currency';
 import { pickListingImageUrl, pickListingVideoUrl, pickListingVideoThumbnail } from '../../lib/productMedia';
 import HlsVideo from '../media/HlsVideo';
-import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc } from '../../lib/remoteImage';
+import { IMAGE_BLUR_DATA_URL, optimizeRemoteImageSrc, isCloudflareImagesUrl } from '../../lib/remoteImage';
 
 const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
 /** Below this count, duplicating the row for a “seamless” loop shows the same cards twice on wide screens. */
@@ -54,6 +54,7 @@ function MarqueeCard({ product, priority = false }) {
             priority={priority}
             placeholder="blur"
             blurDataURL={IMAGE_BLUR_DATA_URL}
+            unoptimized={isCloudflareImagesUrl(primaryImg)}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#2a1f3d] to-[#0f0f1a]" />

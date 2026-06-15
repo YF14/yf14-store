@@ -12,6 +12,24 @@ function isImageKitHost(hostname) {
 }
 
 /**
+ * True for Cloudflare Images delivery URLs (imagedelivery.net). These are already
+ * optimized, format-negotiated (WebP/AVIF) and CDN-cached at Cloudflare's edge, so
+ * routing them through Next's server-side image optimizer (on Railway) only adds
+ * latency. Pass `unoptimized` to <Image> for these so they load straight from the CDN.
+ *
+ * @param {string} url
+ * @returns {boolean}
+ */
+export function isCloudflareImagesUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    return new URL(url).hostname === 'imagedelivery.net';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Append ImageKit transform (width, quality, auto format) when missing — for old ImageKit URLs only.
  * Skips blob/data URLs and non-ImageKit hosts.
  *
