@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Build marker: domain migration to skyfashion.style (forces fresh build so NEXT_PUBLIC_* re-bake).
 const remotePatterns = [
   { protocol: 'https', hostname: 'ik.imagekit.io' },
   { protocol: 'https', hostname: 'images.unsplash.com' },
