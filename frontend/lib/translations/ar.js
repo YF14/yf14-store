@@ -1,5 +1,5 @@
 const ar = {
-  siteName: 'YF14 Store',
+  siteName: 'Sky Fashion',
   dir: 'rtl',
   lang: 'ar',
 
@@ -338,7 +338,7 @@ const ar = {
   shippingPage: {
     metaTitle: 'سياسة التوصيل',
     metaDesc: 'توصيل في اليوم التالي لجميع أنحاء العراق. مواعيد الطلب والمناطق وسياسة التوصيل.',
-    eyebrow: 'YF14 Store',
+    eyebrow: 'Sky Fashion',
     title: 'سياسة التوصيل',
     subtitle: 'توصيل سريع في اليوم التالي لجميع أنحاء العراق.',
     bannerTitle: 'توصيل في اليوم التالي — في كل أنحاء العراق',
@@ -367,8 +367,8 @@ const ar = {
   returnsPage: {
     metaTitle: 'الإرجاع والاستبدال',
     metaDesc:
-      'سياسة الإرجاع في YF14 Store: الإرجاع فور التسليم فقط، متى يمكن الإرجاع، وما لا نقبل إرجاعه.',
-    eyebrow: 'YF14 Store',
+      'سياسة الإرجاع في Sky Fashion: الإرجاع فور التسليم فقط، متى يمكن الإرجاع، وما لا نقبل إرجاعه.',
+    eyebrow: 'Sky Fashion',
     title: 'الإرجاع والاستبدال',
     subtitle: 'يرجى القراءة بعناية قبل إتمام الطلب',
     heroTitle: 'نقبل الإرجاع — عند الباب، قبل استلام الطلب',
@@ -392,7 +392,7 @@ const ar = {
 
   contactPage: {
     metaTitle: 'تواصلي معنا',
-    metaDesc: 'تواصلي مع متجر YF14 — واتساب، إنستغرام، وفيسبوك.',
+    metaDesc: 'تواصلي مع متجر Sky Fashion — واتساب، إنستغرام، وفيسبوك.',
     pageTitle: 'تواصلي معنا',
     pageSub: 'يسعدنا مساعدتك في أي وقت',
     waCardTitle: 'نرد عليك بسرعة عبر واتساب',
@@ -443,7 +443,7 @@ const ar = {
 
   privacyPage: {
     metaTitle: 'سياسة الخصوصية',
-    metaDesc: 'كيف يجمع متجر YF14 معلوماتك ويستخدمها ويحميها.',
+    metaDesc: 'كيف يجمع متجر Sky Fashion معلوماتك ويستخدمها ويحميها.',
     eyebrow: 'قانوني',
     title: 'سياسة الخصوصية',
     lastUpdated: 'آخر تحديث: مارس 2025',
@@ -483,7 +483,7 @@ const ar = {
 
   termsPage: {
     metaTitle: 'الشروط والأحكام',
-    metaDesc: 'شروط استخدام التسوق من متجر YF14.',
+    metaDesc: 'شروط استخدام التسوق من متجر Sky Fashion.',
     eyebrow: 'قانوني',
     title: 'الشروط والأحكام',
     lastUpdated: 'آخر تحديث: مارس 2025',

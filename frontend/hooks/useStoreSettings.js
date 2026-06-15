@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import api from '../lib/api';
 
-export const STORE_LOGO_FALLBACK = '/logo-yf14.png';
+export const STORE_LOGO_FALLBACK = '/logo-skyfashion.png';
 
 export function useStoreSettings() {
   return useQuery(

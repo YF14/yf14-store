@@ -10,9 +10,9 @@ function getResend() {
   return resendClient;
 }
 
-const EMAIL_FROM = () => process.env.EMAIL_FROM || 'YF14 Store <orders@yf14.store>';
+const EMAIL_FROM = () => process.env.EMAIL_FROM || 'Sky Fashion <orders@skyfashion.style>';
 const STORE_INBOX = () => process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
-const STORE_NAME = () => process.env.STORE_NAME || 'YF14 Store';
+const STORE_NAME = () => process.env.STORE_NAME || 'Sky Fashion';
 
 let _cachedLogoUrl = null;
 let _logoCachedAt = 0;

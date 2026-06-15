@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const DEFAULT_ANNOUNCEMENT_EN = [
   'Delivery to Baghdad & 5 provinces',
   'New collections arrive every week',
-  'Order via Instagram DM — @yf14_store',
+  'Order via Instagram DM — @skyfashion__1',
 ];
 const DEFAULT_ANNOUNCEMENT_AR = [
   'التوصيل لبغداد و5 محافظات',

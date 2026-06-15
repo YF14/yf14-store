@@ -84,7 +84,7 @@ exports.notifyNewOrder = async (order) => {
     const address = buildAddress(order);
 
     const text =
-      `🛍️ *طلب جديد — YF14 Store*${isGuest ? ' 👤 زائر' : ''}\n\n` +
+      `🛍️ *طلب جديد — Sky Fashion*${isGuest ? ' 👤 زائر' : ''}\n\n` +
       `📦 رقم الطلب: \`${order.orderNumber}\`\n` +
       `👤 العميل: ${customerName}\n` +
       `📞 الهاتف: ${phone}\n` +

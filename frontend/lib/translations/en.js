@@ -1,5 +1,5 @@
 const en = {
-  siteName: 'YF14 Store',
+  siteName: 'Sky Fashion',
   dir: 'ltr',
   lang: 'en',
 
@@ -337,8 +337,8 @@ const en = {
 
   shippingPage: {
     metaTitle: 'Delivery policy',
-    metaDesc: 'Next-day delivery across Iraq. Order cutoff, zones, and delivery policy for YF14 Store.',
-    eyebrow: 'YF14 STORE',
+    metaDesc: 'Next-day delivery across Iraq. Order cutoff, zones, and delivery policy for Sky Fashion.',
+    eyebrow: 'SKY FASHION',
     title: 'Delivery policy',
     subtitle: 'Fast next-day delivery across all of Iraq.',
     bannerTitle: 'Next-day delivery — everywhere in Iraq',
@@ -367,8 +367,8 @@ const en = {
   returnsPage: {
     metaTitle: 'Returns & exchanges',
     metaDesc:
-      'YF14 Store returns policy: on-the-spot returns only, when you can return, and what we do not accept.',
-    eyebrow: 'YF14 STORE',
+      'Sky Fashion returns policy: on-the-spot returns only, when you can return, and what we do not accept.',
+    eyebrow: 'SKY FASHION',
     title: 'Returns & exchanges',
     subtitle: 'Please read carefully before placing your order',
     heroTitle: 'We accept returns — on the spot only',
@@ -392,7 +392,7 @@ const en = {
 
   contactPage: {
     metaTitle: 'Contact us',
-    metaDesc: 'Contact YF14 Store — WhatsApp, Instagram, and Facebook.',
+    metaDesc: 'Contact Sky Fashion — WhatsApp, Instagram, and Facebook.',
     pageTitle: 'Contact us',
     pageSub: "We're happy to help anytime",
     waCardTitle: 'We reply quickly on WhatsApp',
@@ -443,7 +443,7 @@ const en = {
 
   privacyPage: {
     metaTitle: 'Privacy policy',
-    metaDesc: 'How YF14 Store collects, uses, and protects your personal information.',
+    metaDesc: 'How Sky Fashion collects, uses, and protects your personal information.',
     eyebrow: 'Legal',
     title: 'Privacy policy',
     lastUpdated: 'Last updated: March 2025',
@@ -483,7 +483,7 @@ const en = {
 
   termsPage: {
     metaTitle: 'Terms & conditions',
-    metaDesc: 'Terms of use for shopping at YF14 Store.',
+    metaDesc: 'Terms of use for shopping at Sky Fashion.',
     eyebrow: 'Legal',
     title: 'Terms & conditions',
     lastUpdated: 'Last updated: March 2025',

@@ -54,7 +54,7 @@ export default function AdminLayout({ children }) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link href="/" className="font-display text-xl text-brand-gold tracking-[0.15em]">
-              YF14 Store
+              Sky Fashion
             </Link>
             <p className="text-xs text-white/40 mt-1 tracking-widest uppercase">{a.panelTitle}</p>
           </div>

@@ -116,7 +116,7 @@ export default function Footer() {
 
             <div className="flex gap-2">
               <a
-                href="https://www.instagram.com/yf14_store"
+                href="https://www.instagram.com/skyfashion__1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={iconWrap}
