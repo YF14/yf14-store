@@ -38,7 +38,16 @@ const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
-if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
+// Behind Railway's proxy the X-Forwarded-For header is always set; trust the first
+// hop so express-rate-limit sees real client IPs (and stops throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+// Detect Railway explicitly so this holds even if NODE_ENV isn't "production".
+if (
+  process.env.TRUST_PROXY === '1' ||
+  process.env.NODE_ENV === 'production' ||
+  process.env.RAILWAY_ENVIRONMENT ||
+  process.env.RAILWAY_SERVICE_ID ||
+  process.env.RAILWAY_PROJECT_ID
+) {
   app.set('trust proxy', 1);
 }
 
@@ -188,8 +197,12 @@ app.get('/api/health/email/send-test', async (req, res) => {
   if (req.query.secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  const required = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM'];
+  // Resend (HTTPS API) — no SMTP host/password. Recipient is EMAIL_USER or ORDER_NOTIFY_EMAIL.
+  const required = ['RESEND_API_KEY', 'EMAIL_FROM'];
   const missing = required.filter((k) => !process.env[k]);
+  if (!process.env.EMAIL_USER && !process.env.ORDER_NOTIFY_EMAIL) {
+    missing.push('EMAIL_USER (or ORDER_NOTIFY_EMAIL)');
+  }
   if (missing.length) {
     return res.status(400).json({ ok: false, missingEnv: missing });
   }
