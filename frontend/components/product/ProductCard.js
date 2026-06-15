@@ -159,8 +159,8 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
             ) : (
               <>
                 {discount > 0 && <span className="badge badge-sale">−{discount}%</span>}
-                {product.isNewArrival && <span className="badge badge-new">New</span>}
-                {product.isBestSeller && <span className="badge badge-bestseller">Best Seller</span>}
+                {product.isNewArrival && <span className="badge badge-new">{t.product.badgeNew}</span>}
+                {product.isBestSeller && <span className="badge badge-bestseller">{t.product.badgeBestSeller}</span>}
               </>
             )}
             {videoUrl && (

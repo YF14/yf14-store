@@ -14,6 +14,7 @@ const SCROLL_SPEED = 0.4; // px per frame at 60 fps ≈ 24 px/s
 const MIN_PRODUCTS_FOR_SEAMLESS_LOOP = 8;
 
 function MarqueeCard({ product, priority = false }) {
+  const { t } = useLang();
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef(null);
   const primaryImg = optimizeRemoteImageSrc(pickListingImageUrl(product), { maxWidth: 420, quality: 75 });
@@ -75,8 +76,8 @@ function MarqueeCard({ product, priority = false }) {
 
       <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-[2]">
         {discount > 0 && <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#db2777] text-white">−{discount}%</span>}
-        {product.isNewArrival && <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#1a1a2e] text-[#d4a0dc]">New</span>}
-        {product.isBestSeller && <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#a855c8] text-[#fdf0ff]">Best seller</span>}
+        {product.isNewArrival && <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#1a1a2e] text-[#d4a0dc]">{t.product.badgeNew}</span>}
+        {product.isBestSeller && <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#a855c8] text-[#fdf0ff]">{t.product.badgeBestSeller}</span>}
         {videoUrl && <span className="text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">▶ Video</span>}
       </div>
 

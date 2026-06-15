@@ -147,6 +147,7 @@ const ar = {
     productNotFound: 'المنتج غير موجود',
     browseCollection: 'تصفحي المجموعة',
     badgeNew: 'جديد',
+    badgeBestSeller: 'الأكثر مبيعاً',
     reviewsWord: 'تقييمات',
     adding: 'جاري الإضافة...',
     addToBag: 'أضيفي إلى السلة',

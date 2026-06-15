@@ -147,6 +147,7 @@ const en = {
     productNotFound: 'Product Not Found',
     browseCollection: 'Browse Collection',
     badgeNew: 'New',
+    badgeBestSeller: 'Best Seller',
     reviewsWord: 'reviews',
     adding: 'Adding...',
     addToBag: 'Add to Bag',
