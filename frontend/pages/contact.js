@@ -16,7 +16,7 @@ const YELLOW_BG = 'rgba(234,179,8,0.1)';
 const YELLOW_BORDER = 'rgba(234,179,8,0.18)';
 
 const IG_DEFAULT = 'https://www.instagram.com/skyfashion__1';
-const FB_DEFAULT = 'https://www.facebook.com/yf14store';
+const FB_DEFAULT = 'https://www.facebook.com/share/1M65bbCyAZ/';
 
 export default function ContactPage() {
   const { t, isRTL } = useLang();
@@ -29,7 +29,7 @@ export default function ContactPage() {
   const waDigits = waRaw.replace(/\D/g, '');
   const waUrl = waDigits ? `https://wa.me/${waDigits}` : null;
   const igHandle = process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || '@skyfashion__1';
-  const fbDisplay = process.env.NEXT_PUBLIC_FACEBOOK_DISPLAY || 'facebook.com/yf14store';
+  const fbDisplay = process.env.NEXT_PUBLIC_FACEBOOK_DISPLAY || 'Sky Fashion';
   const waDisplay = process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY || (waDigits ? `+${waDigits}` : 'WhatsApp');
 
   const rowBase =

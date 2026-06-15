@@ -56,7 +56,7 @@ export default function Footer() {
     ? `https://wa.me/${whatsappRaw.replace(/\D/g, '')}`
     : '/contact';
 
-  const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://www.facebook.com/yf14store';
+  const facebookUrl = process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://www.facebook.com/share/1M65bbCyAZ/';
 
   const { data: catData } = useQuery(
     'categories',
