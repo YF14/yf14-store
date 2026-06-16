@@ -28,6 +28,17 @@ function saveGuestPromo(code, discount) {
   if (code) localStorage.setItem('guestPromo', JSON.stringify({ code, discount: Number(discount) || 0 }));
   else localStorage.removeItem('guestPromo');
 }
+// The server cart doesn't store the applied promo. Re-attach the session promo
+// (localStorage) whenever we replace the cart from the server, so it survives
+// navigation, refetch, and quantity changes. Re-validated server-side at checkout.
+function attachPersistedPromo(cart) {
+  if (!cart) return cart;
+  const promo = loadGuestPromo();
+  if (promo.code && !cart.promoCode) {
+    return { ...cart, promoCode: promo.code, promoDiscount: promo.discount };
+  }
+  return cart;
+}
 
 function guestLineKey(variantId, heightCm, weightKg) {
   const h = heightCm != null && !Number.isNaN(Number(heightCm)) ? String(Number(heightCm)) : '';
@@ -59,7 +70,7 @@ const useCartStore = create((set, get) => ({
   fetchCart: async () => {
     try {
       const { data } = await api.get('/cart');
-      set({ cart: data.cart });
+      set({ cart: attachPersistedPromo(data.cart) });
     } catch {}
   },
 
@@ -125,7 +136,7 @@ const useCartStore = create((set, get) => ({
         ...(h != null && !Number.isNaN(h) ? { customerHeightCm: h } : {}),
         ...(w != null && !Number.isNaN(w) ? { customerWeightKg: w } : {}),
       });
-      set({ cart: data.cart, isOpen: true });
+      set({ cart: attachPersistedPromo(data.cart), isOpen: true });
       toast.success('تمت الإضافة للسلة');
       const unit = Number(productData?.price) || 0;
       trackAddToCart({
@@ -163,7 +174,7 @@ const useCartStore = create((set, get) => ({
     }
     try {
       const { data } = await api.put(`/cart/item/${itemId}`, { quantity });
-      set({ cart: data.cart });
+      set({ cart: attachPersistedPromo(data.cart) });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update cart');
     }
@@ -181,7 +192,7 @@ const useCartStore = create((set, get) => ({
     }
     try {
       const { data } = await api.delete(`/cart/item/${itemId}`);
-      set({ cart: data.cart });
+      set({ cart: attachPersistedPromo(data.cart) });
       toast.success('تم الحذف');
     } catch {
       toast.error('Failed to remove item');
@@ -211,7 +222,6 @@ const useCartStore = create((set, get) => ({
 
       if (!token) {
         set({ guestPromoCode: data.code, guestPromoDiscount: data.discount });
-        saveGuestPromo(data.code, data.discount);
       } else {
         set((state) => ({
           cart: {
@@ -223,6 +233,8 @@ const useCartStore = create((set, get) => ({
           },
         }));
       }
+      // Persist for both guest and logged-in so it survives navigation/refetch.
+      saveGuestPromo(data.code, data.discount);
       toast.success(`تم تطبيق الكوبون! ${saved}`);
       return { success: true, discount: data.discount };
     } catch (err) {
@@ -235,12 +247,12 @@ const useCartStore = create((set, get) => ({
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       set({ guestPromoCode: null, guestPromoDiscount: 0 });
-      saveGuestPromo(null);
     } else {
       set((state) => ({
         cart: { ...state.cart, promoCode: null, promoDiscount: 0, promoType: null, promoValue: null },
       }));
     }
+    saveGuestPromo(null);
     toast.success('تم إزالة الكوبون');
   },
 
