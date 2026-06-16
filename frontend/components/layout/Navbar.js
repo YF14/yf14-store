@@ -1,7 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from 'react-query';
 import useAuthStore from '../../store/authStore';
@@ -12,14 +10,7 @@ import { catName } from '../../lib/currency';
 import api from '../../lib/api';
 
 export default function Navbar({ scrolled }) {
-  const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [portalReady, setPortalReady] = useState(false);
-
-  useEffect(() => {
-    setPortalReady(true);
-  }, []);
 
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -49,18 +40,6 @@ export default function Navbar({ scrolled }) {
     { label: t.nav.sale, href: '/sale' },
   ], [t, isRTL, categories]);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [router.pathname]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.body.style.overflow = mobileOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileOpen]);
-
   return (
     <>
       <header
@@ -72,20 +51,8 @@ export default function Navbar({ scrolled }) {
         <div className="container-luxury">
           <div className="relative flex items-center justify-between min-h-16 md:min-h-20 py-1.5 md:py-2">
 
-            {/* Left: mobile hamburger (balances logo row on desktop) */}
-            <div className="flex items-center gap-2 min-w-0 lg:min-w-[4.5rem]">
-              <button
-                type="button"
-                className="lg:hidden flex flex-col gap-1.5 justify-center items-center min-h-[44px] min-w-[44px] -ms-1 rounded-md border border-transparent hover:border-white/15 active:bg-white/5"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-expanded={mobileOpen}
-                aria-label="Menu"
-              >
-                <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'w-6 rotate-45 translate-y-[8px]' : 'w-6'}`} />
-                <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'opacity-0 w-0' : 'w-4'}`} />
-                <span className={`h-px bg-white transition-all duration-300 ${mobileOpen ? 'w-6 -rotate-45 -translate-y-[8px]' : 'w-6'}`} />
-              </button>
-            </div>
+            {/* Left spacer — balances the right-side icons so the absolutely-centered brand stays centered */}
+            <div className="flex items-center min-w-[2.5rem] lg:min-w-[4.5rem]" aria-hidden />
 
             {/* Center: brand name — vertically centered in navy row so it doesn’t sit in the announcement bar */}
             <Link
@@ -123,6 +90,17 @@ export default function Navbar({ scrolled }) {
                 </Link>
               )}
 
+              {/* Mobile account/login icon (replaces the burger menu's account links) */}
+              <Link
+                href={user ? '/account' : '/login'}
+                className="sm:hidden text-white/85 hover:text-brand-gold-light transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] touch-manipulation"
+                aria-label={user ? 'Account' : 'Login'}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </Link>
+
               <button
                 type="button"
                 onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
@@ -152,10 +130,10 @@ export default function Navbar({ scrolled }) {
           </div>
         </div>
 
-        {/* ── Row 2: Desktop Nav Categories ──────── */}
-        <div className="hidden lg:block border-t border-white/10">
+        {/* ── Row 2: Nav Categories (all screens; scrolls horizontally on mobile) ── */}
+        <div className="block border-t border-white/10">
           <div className="container-luxury">
-            <nav className="flex items-center justify-center h-10 gap-8">
+            <nav className="flex items-center justify-start lg:justify-center h-10 gap-5 sm:gap-7 lg:gap-8 overflow-x-auto lg:overflow-visible scrollbar-none whitespace-nowrap px-1">
               {navLinks.map((link) => (
                 <div
                   key={link.label}
@@ -202,98 +180,6 @@ export default function Navbar({ scrolled }) {
           </div>
         </div>
       </header>
-
-      {/* ── Mobile full-screen menu ─────────────── */}
-      {portalReady &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {mobileOpen && (
-              <>
-                <motion.button
-                  type="button"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 z-[200] bg-black/50 lg:hidden touch-manipulation"
-                  aria-label="Close menu"
-                  onClick={() => setMobileOpen(false)}
-                />
-                <motion.div
-                  initial={{ x: isRTL ? '100%' : '-100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: isRTL ? '100%' : '-100%' }}
-                  transition={{ type: 'tween', duration: 0.28 }}
-                  className={`fixed inset-y-0 z-[210] w-[min(100%,20rem)] max-w-[85vw] bg-nav-navy overflow-y-auto overscroll-contain lg:hidden shadow-2xl ${
-                    isRTL ? 'right-0' : 'left-0'
-                  } pt-[calc(1rem+env(safe-area-inset-top,0px))] px-5 sm:px-8 pb-[max(2rem,env(safe-area-inset-bottom,0px))]`}
-                  role="dialog"
-                  aria-modal="true"
-                >
-                  <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-[10px] tracking-[0.2em] uppercase text-white/50">{t.siteName}</span>
-                    <button
-                      type="button"
-                      onClick={() => setMobileOpen(false)}
-                      className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-white/20 text-white/90 hover:bg-white/10 touch-manipulation"
-                      aria-label="Close menu"
-                    >
-                      ✕
-                    </button>
-                  </div>
-            <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <div key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="block py-3.5 min-h-[44px] flex items-center text-xs tracking-widest uppercase text-white/85 border-b border-white/10 hover:text-brand-gold-light transition-colors touch-manipulation"
-                  >
-                    {link.label}
-                  </Link>
-                  {link.children && (
-                    <div className="pl-4 py-1">
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.label}
-                          href={child.href}
-                          className="block py-2 text-xs tracking-wider text-white/55 hover:text-brand-gold-light transition-colors"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <div className="mt-6 flex flex-col gap-3">
-                {user ? (
-                  <>
-                    <Link href="/account"  className="btn-outline text-center">{t.nav.myAccount}</Link>
-                    <button type="button" onClick={logout} className="btn-ghost text-center min-h-[44px] touch-manipulation">{t.nav.signOut}</button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login"    className="btn-primary text-center">{t.nav.signIn}</Link>
-                    <Link href="/register" className="btn-outline text-center">{t.nav.createAccount}</Link>
-                  </>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
-                  className="btn-ghost text-center text-sm min-h-[44px] touch-manipulation"
-                >
-                  {locale === 'ar' ? '🌐 English' : '🌐 العربية'}
-                </button>
-              </div>
-            </nav>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
     </>
   );
 }
