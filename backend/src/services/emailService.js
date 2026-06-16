@@ -10,7 +10,25 @@ function getResend() {
   return resendClient;
 }
 
-const EMAIL_FROM = () => process.env.EMAIL_FROM || 'Sky Fashion <orders@skyfashion.style>';
+const FALLBACK_FROM = 'Sky Fashion <orders@skyfashion.style>';
+
+/**
+ * Build a Resend-valid `from` from EMAIL_FROM, tolerating common env mistakes
+ * (wrapping quotes, stray spaces, non-ASCII brackets). Extracts the email and an
+ * optional display name and rebuilds a clean `Name <email>` (or just `email`).
+ * Falls back to the default if no valid email can be found.
+ */
+function sanitizeFrom(raw) {
+  const v = String(raw || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
+  const emailMatch = v.match(/([^\s<>@"']+@[^\s<>@"']+\.[^\s<>@"']+)/);
+  if (!emailMatch) return FALLBACK_FROM;
+  const email = emailMatch[1];
+  const lt = v.indexOf('<');
+  let name = (lt > 0 ? v.slice(0, lt) : '').trim().replace(/^['"]+|['"]+$/g, '').trim();
+  return name ? `${name} <${email}>` : email;
+}
+
+const EMAIL_FROM = () => sanitizeFrom(process.env.EMAIL_FROM) || FALLBACK_FROM;
 const STORE_INBOX = () => process.env.ORDER_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
 const STORE_NAME = () => process.env.STORE_NAME || 'Sky Fashion';
 
