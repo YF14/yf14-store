@@ -11,6 +11,7 @@ import api from '../../lib/api';
 
 export default function Navbar({ scrolled }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [mobileCatsOpen, setMobileCatsOpen] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -47,31 +48,18 @@ export default function Navbar({ scrolled }) {
           scrolled ? 'shadow-[0_8px_28px_rgba(0,0,0,0.35)]' : 'border-b border-white/10'
         }`}
       >
-        {/* ── Row 1: Logo + Icons ────────────────── */}
+        {/* ── Row 1: Account · Brand · Lang/Cart (3-col grid keeps brand centered, no overlap) ── */}
         <div className="container-luxury">
-          <div className="relative flex items-center justify-between min-h-16 md:min-h-20 py-1.5 md:py-2">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 min-h-16 md:min-h-20 py-1.5 md:py-2">
 
-            {/* Left spacer — balances the right-side icons so the absolutely-centered brand stays centered */}
-            <div className="flex items-center min-w-[2.5rem] lg:min-w-[4.5rem]" aria-hidden />
-
-            {/* Center: brand name — vertically centered in navy row so it doesn’t sit in the announcement bar */}
-            <Link
-              href="/"
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-            >
-              <h1 className="font-display text-xl md:text-2xl tracking-[0.18em] font-light text-white">
-                {t.siteName}
-              </h1>
-            </Link>
-
-            {/* Right: Account / Lang / Cart */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
+            {/* Start: Account / Login */}
+            <div className="flex items-center justify-self-start">
               {user ? (
                 <div className="relative group hidden sm:block">
-                  <Link href="/account" className="text-white/85 hover:text-brand-gold-light transition-colors text-xs tracking-wide hidden md:block">
+                  <Link href="/account" className="text-white/85 hover:text-brand-gold-light transition-colors text-xs tracking-wide">
                     {isRTL ? 'حسابي' : 'Account'}
                   </Link>
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full hidden group-hover:block bg-white border border-gray-100 shadow-lg py-2 min-w-[160px] z-50`}>
+                  <div className={`absolute ${isRTL ? 'right-0' : 'left-0'} top-full hidden group-hover:block bg-white border border-gray-100 shadow-lg py-2 min-w-[160px] z-50`}>
                     <Link href="/account"        className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.myAccount}</Link>
                     <Link href="/account/orders"  className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.orders}</Link>
                     <Link href="/account/wishlist" className="block px-5 py-2 text-xs tracking-wider hover:text-brand-gold">{t.nav.wishlist}</Link>
@@ -90,17 +78,27 @@ export default function Navbar({ scrolled }) {
                 </Link>
               )}
 
-              {/* Mobile account/login icon (replaces the burger menu's account links) */}
+              {/* Mobile account/login icon */}
               <Link
                 href={user ? '/account' : '/login'}
-                className="sm:hidden text-white/85 hover:text-brand-gold-light transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] touch-manipulation"
+                className="sm:hidden text-white/85 hover:text-brand-gold-light transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] -ms-2 touch-manipulation"
                 aria-label={user ? 'Account' : 'Login'}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </Link>
+            </div>
 
+            {/* Center: brand name */}
+            <Link href="/" className="justify-self-center flex flex-col items-center">
+              <h1 className="font-display text-xl md:text-2xl tracking-[0.18em] font-light text-white whitespace-nowrap">
+                {t.siteName}
+              </h1>
+            </Link>
+
+            {/* End: Lang / Cart */}
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 justify-self-end">
               <button
                 type="button"
                 onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
@@ -143,11 +141,26 @@ export default function Navbar({ scrolled }) {
                 >
                   <Link
                     href={link.href}
+                    onClick={(e) => {
+                      // On phones/tablets, tapping a parent link expands its categories inline
+                      // (the hover dropdown only works on desktop). Desktop navigates as normal.
+                      if (
+                        link.children &&
+                        typeof window !== 'undefined' &&
+                        window.matchMedia('(max-width: 1023px)').matches
+                      ) {
+                        e.preventDefault();
+                        setMobileCatsOpen((o) => !o);
+                      }
+                    }}
                     className="text-[11px] tracking-widest uppercase text-white/70 hover:text-brand-gold-light transition-colors flex items-center gap-1"
                   >
                     {link.label}
                     {link.children && (
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg
+                        className={`w-2.5 h-2.5 transition-transform ${mobileCatsOpen ? 'rotate-180 lg:rotate-0' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     )}
@@ -179,6 +192,28 @@ export default function Navbar({ scrolled }) {
             </nav>
           </div>
         </div>
+
+        {/* ── Mobile category panel (tap “Collections” to expand) ── */}
+        {mobileCatsOpen && (() => {
+          const cats = navLinks.find((l) => l.children)?.children || [];
+          if (!cats.length) return null;
+          return (
+            <div className="lg:hidden border-t border-white/10 bg-nav-navy">
+              <div className="container-luxury py-3 flex flex-wrap gap-x-5 gap-y-2.5">
+                {cats.map((child) => (
+                  <Link
+                    key={child.label}
+                    href={child.href}
+                    onClick={() => setMobileCatsOpen(false)}
+                    className="text-[11px] tracking-wider uppercase text-white/70 hover:text-brand-gold-light transition-colors"
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </header>
     </>
   );
