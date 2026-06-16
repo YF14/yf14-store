@@ -14,6 +14,21 @@ function saveGuestCart(items) {
   localStorage.setItem('guestCart', JSON.stringify(items));
 }
 
+// Guest promo persists across page loads/navigation (the store itself is in-memory only).
+// The final discount is re-validated server-side on order creation; this is for display/carry-over.
+function loadGuestPromo() {
+  if (typeof window === 'undefined') return { code: null, discount: 0 };
+  try {
+    const p = JSON.parse(localStorage.getItem('guestPromo') || 'null');
+    return p && p.code ? { code: p.code, discount: Number(p.discount) || 0 } : { code: null, discount: 0 };
+  } catch { return { code: null, discount: 0 }; }
+}
+function saveGuestPromo(code, discount) {
+  if (typeof window === 'undefined') return;
+  if (code) localStorage.setItem('guestPromo', JSON.stringify({ code, discount: Number(discount) || 0 }));
+  else localStorage.removeItem('guestPromo');
+}
+
 function guestLineKey(variantId, heightCm, weightKg) {
   const h = heightCm != null && !Number.isNaN(Number(heightCm)) ? String(Number(heightCm)) : '';
   const w = weightKg != null && !Number.isNaN(Number(weightKg)) ? String(Number(weightKg)) : '';
@@ -34,9 +49,10 @@ const useCartStore = create((set, get) => ({
 
   setOpen: (open) => set({ isOpen: open }),
 
-  // Load guest cart from localStorage on boot
+  // Load guest cart + promo from localStorage on boot
   initGuest: () => {
-    set({ guestItems: loadGuestCart() });
+    const promo = loadGuestPromo();
+    set({ guestItems: loadGuestCart(), guestPromoCode: promo.code, guestPromoDiscount: promo.discount });
   },
 
   // ── Server cart ────────────────────────────────────────────────────────────
@@ -176,6 +192,7 @@ const useCartStore = create((set, get) => ({
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       saveGuestCart([]);
+      saveGuestPromo(null);
       set({ guestItems: [], guestPromoCode: null, guestPromoDiscount: 0 });
       return;
     }
@@ -194,6 +211,7 @@ const useCartStore = create((set, get) => ({
 
       if (!token) {
         set({ guestPromoCode: data.code, guestPromoDiscount: data.discount });
+        saveGuestPromo(data.code, data.discount);
       } else {
         set((state) => ({
           cart: {
@@ -217,6 +235,7 @@ const useCartStore = create((set, get) => ({
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       set({ guestPromoCode: null, guestPromoDiscount: 0 });
+      saveGuestPromo(null);
     } else {
       set((state) => ({
         cart: { ...state.cart, promoCode: null, promoDiscount: 0, promoType: null, promoValue: null },
