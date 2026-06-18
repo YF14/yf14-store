@@ -3,7 +3,6 @@ import { useQuery } from 'react-query';
 import { useLang } from '../../contexts/LanguageContext';
 import { catName } from '../../lib/currency';
 import api from '../../lib/api';
-import StoreLogoImage from './StoreLogoImage';
 
 const ftHeading = 'text-[10px] tracking-[0.2em] uppercase text-[#a78bfa]/90 mb-2.5 font-medium';
 
@@ -97,17 +96,7 @@ export default function Footer() {
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 md:gap-8 lg:gap-6 lg:gap-x-10 xl:gap-x-12">
           <div className="sm:col-span-2 lg:col-span-1 flex flex-col items-start">
             <div className="flex items-center gap-2 mb-3">
-              <Link
-                href="/"
-                className="relative flex-shrink-0 block w-12 h-12 rounded-full overflow-hidden bg-[#0a0a12] shadow-[0_2px_12px_rgba(0,0,0,0.35)]"
-              >
-                <StoreLogoImage
-                  fill
-                  className="object-contain object-center p-[3px] rounded-full"
-                  sizes="48px"
-                />
-              </Link>
-              <span className="font-display text-base text-white/95 font-light tracking-[0.14em]">{t.siteName}</span>
+              <Link href="/" className="font-display text-base text-white/95 font-light tracking-[0.14em]">{t.siteName}</Link>
             </div>
 
             <p className="font-display text-xl md:text-2xl text-white/85 leading-snug tracking-wide max-w-xs mb-4">
