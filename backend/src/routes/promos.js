@@ -14,7 +14,15 @@ router.post('/validate', optionalAuth, async (req, res) => {
     const validity = promo.isValid(req.user?._id || null, orderAmount, locale);
     if (!validity.valid) return res.status(400).json({ error: validity.message });
     const discount = promo.calculateDiscount(orderAmount);
-    res.json({ valid: true, discount, type: promo.type, value: promo.value, code: promo.code });
+    res.json({
+      valid: true,
+      discount,
+      type: promo.type,
+      value: promo.value,
+      code: promo.code,
+      maxDiscount: promo.maxDiscount ?? null,
+      minOrderAmount: promo.minOrderAmount ?? 0,
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

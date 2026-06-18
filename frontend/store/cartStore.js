@@ -15,29 +15,42 @@ function saveGuestCart(items) {
   localStorage.setItem('guestCart', JSON.stringify(items));
 }
 
-// Guest promo persists across page loads/navigation (the store itself is in-memory only).
-// The final discount is re-validated server-side on order creation; this is for display/carry-over.
-function loadGuestPromo() {
-  if (typeof window === 'undefined') return { code: null, discount: 0 };
+// Applied promo persists across page loads/navigation (the store is in-memory only).
+// We store the coupon RULE (type/value/caps), NOT a fixed discount amount, and compute
+// the discount from the CURRENT subtotal every time — so it stays correct when the cart
+// changes (add/remove/qty). Re-validated server-side on order creation.
+function loadPromoMeta() {
+  if (typeof window === 'undefined') return null;
   try {
     const p = JSON.parse(localStorage.getItem('guestPromo') || 'null');
-    return p && p.code ? { code: p.code, discount: Number(p.discount) || 0 } : { code: null, discount: 0 };
-  } catch { return { code: null, discount: 0 }; }
+    return p && p.code ? p : null;
+  } catch { return null; }
 }
-function saveGuestPromo(code, discount) {
+function savePromoMeta(meta) {
   if (typeof window === 'undefined') return;
-  if (code) localStorage.setItem('guestPromo', JSON.stringify({ code, discount: Number(discount) || 0 }));
+  if (meta && meta.code) localStorage.setItem('guestPromo', JSON.stringify(meta));
   else localStorage.removeItem('guestPromo');
 }
-// The server cart doesn't store the applied promo. Re-attach the session promo
-// (localStorage) whenever we replace the cart from the server, so it survives
-// navigation, refetch, and quantity changes. Re-validated server-side at checkout.
+/** Discount for the active coupon at a given subtotal (mirrors backend calculateDiscount + min-order gate). */
+function computePromoDiscount(meta, subtotal) {
+  if (!meta || !meta.code || !subtotal || subtotal <= 0) return 0;
+  if (meta.minOrderAmount && subtotal < Number(meta.minOrderAmount)) return 0;
+  let d = 0;
+  if (meta.type === 'percentage') {
+    d = (subtotal * Number(meta.value)) / 100;
+    if (meta.maxDiscount) d = Math.min(d, Number(meta.maxDiscount));
+  } else {
+    d = Math.min(Number(meta.value), subtotal);
+  }
+  return Math.round(d);
+}
+// The server cart doesn't store the applied promo. Re-attach just the code when we
+// replace the cart from the server so the UI shows it active; the amount is always
+// recomputed from the current subtotal.
 function attachPersistedPromo(cart) {
   if (!cart) return cart;
-  const promo = loadGuestPromo();
-  if (promo.code && !cart.promoCode) {
-    return { ...cart, promoCode: promo.code, promoDiscount: promo.discount };
-  }
+  const meta = loadPromoMeta();
+  if (meta?.code && !cart.promoCode) return { ...cart, promoCode: meta.code };
   return cart;
 }
 
@@ -55,16 +68,15 @@ const useCartStore = create((set, get) => ({
   guestItems: [],
   isLoading: false,
   isOpen: false,
-  // Guest promo
+  // Active promo code (the rule + amount are derived from localStorage; see computePromoDiscount)
   guestPromoCode: null,
-  guestPromoDiscount: 0,
 
   setOpen: (open) => set({ isOpen: open }),
 
   // Load guest cart + promo from localStorage on boot
   initGuest: () => {
-    const promo = loadGuestPromo();
-    set({ guestItems: loadGuestCart(), guestPromoCode: promo.code, guestPromoDiscount: promo.discount });
+    const meta = loadPromoMeta();
+    set({ guestItems: loadGuestCart(), guestPromoCode: meta?.code || null });
   },
 
   // ── Server cart ────────────────────────────────────────────────────────────
@@ -204,8 +216,8 @@ const useCartStore = create((set, get) => ({
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       saveGuestCart([]);
-      saveGuestPromo(null);
-      set({ guestItems: [], guestPromoCode: null, guestPromoDiscount: 0 });
+      savePromoMeta(null);
+      set({ guestItems: [], guestPromoCode: null });
       return;
     }
     try {
@@ -221,21 +233,20 @@ const useCartStore = create((set, get) => ({
       const { data } = await api.post('/promos/validate', { code, orderAmount: subtotal });
       const saved = data.type === 'percentage' ? `${data.value}%` : formatIQD(data.discount);
 
+      // Mark the coupon active (reactive), and persist its RULE so the discount can be
+      // recomputed from the live subtotal whenever the cart changes.
       if (!token) {
-        set({ guestPromoCode: data.code, guestPromoDiscount: data.discount });
+        set({ guestPromoCode: data.code });
       } else {
-        set((state) => ({
-          cart: {
-            ...state.cart,
-            promoCode: data.code,
-            promoDiscount: data.discount,
-            promoType: data.type,
-            promoValue: data.value,
-          },
-        }));
+        set((state) => ({ cart: { ...state.cart, promoCode: data.code } }));
       }
-      // Persist for both guest and logged-in so it survives navigation/refetch.
-      saveGuestPromo(data.code, data.discount);
+      savePromoMeta({
+        code: data.code,
+        type: data.type,
+        value: data.value,
+        maxDiscount: data.maxDiscount ?? null,
+        minOrderAmount: data.minOrderAmount ?? 0,
+      });
       toast.success(tToast('couponApplied').replace('{saved}', saved));
       return { success: true, discount: data.discount };
     } catch (err) {
@@ -247,13 +258,11 @@ const useCartStore = create((set, get) => ({
   removePromo: () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
-      set({ guestPromoCode: null, guestPromoDiscount: 0 });
+      set({ guestPromoCode: null });
     } else {
-      set((state) => ({
-        cart: { ...state.cart, promoCode: null, promoDiscount: 0, promoType: null, promoValue: null },
-      }));
+      set((state) => ({ cart: { ...state.cart, promoCode: null } }));
     }
-    saveGuestPromo(null);
+    savePromoMeta(null);
     toast.success(tToast('couponRemoved'));
   },
 
@@ -294,9 +303,11 @@ const useCartStore = create((set, get) => ({
     return token ? get().cart?.promoCode : get().guestPromoCode;
   },
 
+  // Always derived from the current subtotal, so it tracks cart changes and never
+  // over-discounts after items are removed.
   activePromoDiscount: () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    return token ? (get().cart?.promoDiscount || 0) : (get().guestPromoDiscount || 0);
+    if (!get().activePromoCode()) return 0;
+    return computePromoDiscount(loadPromoMeta(), get().subtotal());
   },
 }));
 
