@@ -155,7 +155,7 @@ app.use(cors({
   origin: buildCorsOrigin(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Locale'],
 }));
 
 app.use(requestContext);
