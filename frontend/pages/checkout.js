@@ -145,6 +145,11 @@ export default function CheckoutPage() {
     if (user?.id) useCartStore.getState().fetchCart();
   }, [user?.id]);
 
+  // When the order succeeds, jump to the top so the confirmation starts at the top.
+  useEffect(() => {
+    if (done && typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [done]);
+
   const total = subtotal - discount + DELIVERY_FEE_IQD;
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 

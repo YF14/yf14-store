@@ -168,6 +168,11 @@ export default function GuestCheckout() {
     useCartStore.getState().initGuest();
   }, []);
 
+  // When the order succeeds, jump to the top so the confirmation starts at the top.
+  useEffect(() => {
+    if (done && typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [done]);
+
   const hasItems = guestItems.length > 0;
   const displaySubtotal = subtotal > 0 ? subtotal : guestItems.reduce((s, i) => s + (i.price || 0) * (i.quantity || 0), 0);
   const total = displaySubtotal - discount + DELIVERY_FEE_IQD;
