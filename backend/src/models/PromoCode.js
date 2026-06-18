@@ -26,8 +26,11 @@ promoCodeSchema.methods.isValid = function (userId, orderAmount, locale = 'ar') 
   if (this.endDate && now > this.endDate) return { valid: false, message: t(locale, 'promoExpired') };
   if (this.usageLimit && this.usedCount >= this.usageLimit) return { valid: false, message: t(locale, 'promoUsageLimit') };
   if (orderAmount < this.minOrderAmount) return { valid: false, message: t(locale, 'promoMinOrder', { amount: iqd(this.minOrderAmount) }) };
-  const userUsageCount = this.usedBy.filter(id => id.toString() === userId.toString()).length;
-  if (userUsageCount >= this.perUserLimit) return { valid: false, message: t(locale, 'promoAlreadyUsed') };
+  // Per-user limit only applies to logged-in users; guests (userId null) skip it.
+  if (userId) {
+    const userUsageCount = this.usedBy.filter(id => id.toString() === userId.toString()).length;
+    if (userUsageCount >= this.perUserLimit) return { valid: false, message: t(locale, 'promoAlreadyUsed') };
+  }
   return { valid: true };
 };
 
