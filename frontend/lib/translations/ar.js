@@ -1070,6 +1070,23 @@ const ar = {
     orderPlaced: 'تم تقديم طلبك بنجاح',
     resetEmailSent: 'تم إرسال رابط إعادة التعيين',
   },
+
+  // رسائل تُعرض من خارج React (مخازن zustand) — تُجلب عبر lib/uiToast حسب اللغة.
+  toasts: {
+    addedToCart: 'تمت الإضافة للسلة',
+    removedFromCart: 'تم الحذف',
+    couponApplied: 'تم تطبيق الكوبون! {saved}',
+    addToCartFailed: 'تعذّرت الإضافة للسلة',
+    updateCartFailed: 'تعذّر تحديث السلة',
+    removeItemFailed: 'تعذّر حذف المنتج',
+    couponRemoved: 'تم إزالة الكوبون',
+    invalidCoupon: 'كوبون غير صالح',
+    loggedOut: 'تم تسجيل الخروج بنجاح',
+    loginToSave: 'سجّلي الدخول لحفظ المنتجات',
+    loginToWishlist: 'سجّلي الدخول لاستخدام المفضلة',
+    addedToWishlist: 'أُضيف إلى المفضلة',
+    removedFromWishlist: 'أُزيل من المفضلة',
+  },
 };
 
 export default ar;

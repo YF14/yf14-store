@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { trackAddToCart } from '../lib/analytics';
+import { tToast } from '../lib/uiToast';
+import { formatIQD } from '../lib/currency';
 
 // ─── Guest cart helpers ───────────────────────────────────────────────────────
 function loadGuestCart() {
@@ -112,7 +113,7 @@ const useCartStore = create((set, get) => ({
       }
       saveGuestCart(updated);
       set({ guestItems: updated, isOpen: true });
-      toast.success('تمت الإضافة للسلة');
+      toast.success(tToast('addedToCart'));
       const unit = Number(productData?.price) || 0;
       trackAddToCart({
         contentId: productId,
@@ -137,7 +138,7 @@ const useCartStore = create((set, get) => ({
         ...(w != null && !Number.isNaN(w) ? { customerWeightKg: w } : {}),
       });
       set({ cart: attachPersistedPromo(data.cart), isOpen: true });
-      toast.success('تمت الإضافة للسلة');
+      toast.success(tToast('addedToCart'));
       const unit = Number(productData?.price) || 0;
       trackAddToCart({
         contentId: productId,
@@ -148,7 +149,7 @@ const useCartStore = create((set, get) => ({
       });
       return { success: true };
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to add to cart');
+      toast.error(err.response?.data?.error || tToast('addToCartFailed'));
       return { success: false };
     } finally {
       set({ isLoading: false });
@@ -176,7 +177,7 @@ const useCartStore = create((set, get) => ({
       const { data } = await api.put(`/cart/item/${itemId}`, { quantity });
       set({ cart: attachPersistedPromo(data.cart) });
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update cart');
+      toast.error(err.response?.data?.error || tToast('updateCartFailed'));
     }
   },
 
@@ -187,15 +188,15 @@ const useCartStore = create((set, get) => ({
       const updated = get().guestItems.filter(i => (i._id || i.variantId) !== itemId);
       saveGuestCart(updated);
       set({ guestItems: updated });
-      toast.success('تم الحذف');
+      toast.success(tToast('removedFromCart'));
       return;
     }
     try {
       const { data } = await api.delete(`/cart/item/${itemId}`);
       set({ cart: attachPersistedPromo(data.cart) });
-      toast.success('تم الحذف');
+      toast.success(tToast('removedFromCart'));
     } catch {
-      toast.error('Failed to remove item');
+      toast.error(tToast('removeItemFailed'));
     }
   },
 
@@ -218,7 +219,7 @@ const useCartStore = create((set, get) => ({
     try {
       const subtotal = get().subtotal();
       const { data } = await api.post('/promos/validate', { code, orderAmount: subtotal });
-      const saved = data.type === 'percentage' ? `${data.value}% off` : `$${data.discount.toFixed(2)} off`;
+      const saved = data.type === 'percentage' ? `${data.value}%` : formatIQD(data.discount);
 
       if (!token) {
         set({ guestPromoCode: data.code, guestPromoDiscount: data.discount });
@@ -235,10 +236,10 @@ const useCartStore = create((set, get) => ({
       }
       // Persist for both guest and logged-in so it survives navigation/refetch.
       saveGuestPromo(data.code, data.discount);
-      toast.success(`تم تطبيق الكوبون! ${saved}`);
+      toast.success(tToast('couponApplied').replace('{saved}', saved));
       return { success: true, discount: data.discount };
     } catch (err) {
-      toast.error(err.response?.data?.error || 'كوبون غير صالح');
+      toast.error(err.response?.data?.error || tToast('invalidCoupon'));
       return { success: false };
     }
   },
@@ -253,7 +254,7 @@ const useCartStore = create((set, get) => ({
       }));
     }
     saveGuestPromo(null);
-    toast.success('تم إزالة الكوبون');
+    toast.success(tToast('couponRemoved'));
   },
 
   // ── Computed ───────────────────────────────────────────────────────────────

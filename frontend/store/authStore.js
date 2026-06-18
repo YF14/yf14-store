@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { tToast } from '../lib/uiToast';
 
 const useAuthStore = create(
   persist(
@@ -76,7 +77,7 @@ const useAuthStore = create(
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('auth-store');
         set({ user: null, token: null, refreshToken: null });
-        toast.success('Logged out successfully');
+        toast.success(tToast('loggedOut'));
       },
 
       fetchMe: async () => {

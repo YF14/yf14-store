@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { tToast } from '../lib/uiToast';
 
 const useWishlistStore = create((set, get) => ({
   wishlist: [],
@@ -19,9 +20,9 @@ const useWishlistStore = create((set, get) => ({
       const isNowWishlisted = data.wishlist.some(
         (item) => (item._id || item) === productId
       );
-      toast.success(isNowWishlisted ? 'Added to wishlist' : 'Removed from wishlist');
+      toast.success(isNowWishlisted ? tToast('addedToWishlist') : tToast('removedFromWishlist'));
     } catch {
-      toast.error('Please log in to use wishlist');
+      toast.error(tToast('loginToWishlist'));
     }
   },
 

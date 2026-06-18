@@ -1071,6 +1071,23 @@ const en = {
     orderPlaced: 'Order placed successfully',
     resetEmailSent: 'Reset link sent to your email',
   },
+
+  // Toasts fired from outside React (zustand stores) — looked up via lib/uiToast by locale.
+  toasts: {
+    addedToCart: 'Added to cart',
+    removedFromCart: 'Removed',
+    couponApplied: 'Coupon applied! {saved}',
+    addToCartFailed: 'Could not add to cart',
+    updateCartFailed: 'Could not update cart',
+    removeItemFailed: 'Could not remove item',
+    couponRemoved: 'Coupon removed',
+    invalidCoupon: 'Invalid coupon',
+    loggedOut: 'Logged out successfully',
+    loginToSave: 'Please log in to save items',
+    loginToWishlist: 'Please log in to use the wishlist',
+    addedToWishlist: 'Added to wishlist',
+    removedFromWishlist: 'Removed from wishlist',
+  },
 };
 
 export default en;

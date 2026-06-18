@@ -52,7 +52,7 @@ export default function ProductCard({ product, index = 0, imageSizes = DEFAULT_I
 
   const handleWishlist = (e) => {
     e.preventDefault();
-    if (!user) { toast.error('Please log in to save items'); return; }
+    if (!user) { toast.error(t.toasts.loginToSave); return; }
     toggle(product._id);
   };
 
