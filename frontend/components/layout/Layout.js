@@ -25,7 +25,7 @@ export default function Layout({ children }) {
         className={`flex flex-1 flex-col min-h-0 min-w-0 w-full bg-page-lavender ${
           isHome
             ? 'pt-0'
-            : 'pt-[calc(5.5rem+env(safe-area-inset-top,0px))] lg:pt-[calc(7.75rem+env(safe-area-inset-top,0px))]'
+            : 'pt-[calc(5.5rem+env(safe-area-inset-top,0px))] lg:pt-[calc(7.5rem+env(safe-area-inset-top,0px))]'
         }`}
       >
         {children}
