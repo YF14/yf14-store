@@ -2,13 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { protect, requireAdminOrPermission } = require('../middleware/auth');
 const PromoCode = require('../models/PromoCode');
+const { t, localeOf } = require('../utils/messages');
 
 router.post('/validate', protect, async (req, res) => {
   try {
+    const locale = localeOf(req);
     const { code, orderAmount } = req.body;
     const promo = await PromoCode.findOne({ code: code.toUpperCase() });
-    if (!promo) return res.status(404).json({ error: 'Invalid promo code.' });
-    const validity = promo.isValid(req.user._id, orderAmount);
+    if (!promo) return res.status(404).json({ error: t(locale, 'invalidPromo') });
+    const validity = promo.isValid(req.user._id, orderAmount, locale);
     if (!validity.valid) return res.status(400).json({ error: validity.message });
     const discount = promo.calculateDiscount(orderAmount);
     res.json({ valid: true, discount, type: promo.type, value: promo.value, code: promo.code });

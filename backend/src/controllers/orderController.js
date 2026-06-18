@@ -6,12 +6,14 @@ const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 const { recordAudit } = require('../services/auditService');
 const cacheBust = require('../services/cacheInvalidation');
+const { t, localeOf } = require('../utils/messages');
 
 /** Flat delivery (IQD); optional env override. Frontend `lib/deliveryFee.js` should match. */
 const DELIVERY_FEE_IQD = Number(process.env.DELIVERY_FEE_IQD) || 5000;
 
 exports.createOrder = async (req, res, next) => {
   try {
+    const locale = localeOf(req);
     const { items, shippingAddress, promoCode, paymentMethod = 'cash' } = req.body;
 
     // Validate & reserve stock
@@ -20,15 +22,15 @@ exports.createOrder = async (req, res, next) => {
 
     for (const item of items) {
       const product = await Product.findById(item.product);
-      if (!product || !product.isActive) return res.status(400).json({ error: `Product ${item.product} not available.` });
+      if (!product || !product.isActive) return res.status(400).json({ error: t(locale, 'productNotAvailable') });
 
       const variant = product.variants.id(item.variantId);
-      if (!variant) return res.status(400).json({ error: `Variant not found for ${product.name}.` });
+      if (!variant) return res.status(400).json({ error: t(locale, 'variantNotFound', { name: product.name }) });
 
       // Products tagged to a hidden category have unlimited stock — skip the check
       const isUnlimited = Array.isArray(product.hiddenCategories) && product.hiddenCategories.length > 0;
       if (!isUnlimited && variant.stock < item.quantity) {
-        return res.status(400).json({ error: `Insufficient stock for ${product.name} (${variant.size}/${variant.color}).` });
+        return res.status(400).json({ error: t(locale, 'insufficientStock', { name: product.name, size: variant.size, color: variant.color }) });
       }
 
       const price = variant.price || product.price;
@@ -56,7 +58,7 @@ exports.createOrder = async (req, res, next) => {
     if (promoCode) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase() });
       if (promo) {
-        const validity = promo.isValid(req.user._id, subtotal);
+        const validity = promo.isValid(req.user._id, subtotal, locale);
         if (validity.valid) {
           promoDiscount = promo.calculateDiscount(subtotal);
           appliedPromoCode = promo.code;
@@ -112,18 +114,19 @@ exports.createOrder = async (req, res, next) => {
 
 exports.createGuestOrder = async (req, res, next) => {
   try {
+    const locale = localeOf(req);
     const { guestInfo, items, promoCode } = req.body;
 
     if (!guestInfo?.name || !guestInfo?.phone || !guestInfo?.city || !guestInfo?.town) {
-      return res.status(400).json({ error: 'Name, phone, city and town are required.' });
+      return res.status(400).json({ error: t(locale, 'requiredOrderFields') });
     }
     const phoneClean = guestInfo.phone.replace(/\s|-/g, '');
     if (!/^(07\d{9}|7\d{9})$/.test(phoneClean)) {
-      return res.status(400).json({ error: 'Invalid phone number. Must be 07xxxxxxxxx or 7xxxxxxxxx.' });
+      return res.status(400).json({ error: t(locale, 'invalidPhone') });
     }
 
     if (!items || items.length === 0) {
-      return res.status(400).json({ error: 'Cart is empty.' });
+      return res.status(400).json({ error: t(locale, 'cartEmpty') });
     }
 
     // Validate & reserve stock
@@ -132,15 +135,15 @@ exports.createGuestOrder = async (req, res, next) => {
 
     for (const item of items) {
       const product = await Product.findById(item.product);
-      if (!product || !product.isActive) return res.status(400).json({ error: `Product not available.` });
+      if (!product || !product.isActive) return res.status(400).json({ error: t(locale, 'productNotAvailable') });
 
       const variant = product.variants.id(item.variantId);
-      if (!variant) return res.status(400).json({ error: `Variant not found for ${product.name}.` });
+      if (!variant) return res.status(400).json({ error: t(locale, 'variantNotFound', { name: product.name }) });
 
       // Products tagged to a hidden category have unlimited stock — skip the check
       const isUnlimited = Array.isArray(product.hiddenCategories) && product.hiddenCategories.length > 0;
       if (!isUnlimited && variant.stock < item.quantity) {
-        return res.status(400).json({ error: `Only ${variant.stock} left for ${product.name} (${variant.size}/${variant.color}).` });
+        return res.status(400).json({ error: t(locale, 'onlyNLeft', { n: variant.stock, name: product.name, size: variant.size, color: variant.color }) });
       }
 
       const price = variant.price || product.price;
@@ -168,7 +171,7 @@ exports.createGuestOrder = async (req, res, next) => {
     if (promoCode) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase() });
       if (promo) {
-        const validity = promo.isValid(null, subtotal);
+        const validity = promo.isValid(null, subtotal, locale);
         if (validity.valid) {
           promoDiscount = promo.calculateDiscount(subtotal);
           appliedPromoCode = promo.code;
@@ -244,9 +247,9 @@ exports.getMyOrders = async (req, res, next) => {
 exports.getOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id).populate('user', 'firstName lastName email');
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (!order) return res.status(404).json({ error: t(localeOf(req), 'orderNotFound') });
     if (order.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Not authorized' });
+      return res.status(403).json({ error: t(localeOf(req), 'notAuthorized') });
     }
     res.json({ order });
   } catch (err) { next(err); }
@@ -254,10 +257,11 @@ exports.getOrder = async (req, res, next) => {
 
 exports.cancelOrder = async (req, res, next) => {
   try {
+    const locale = localeOf(req);
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    if (order.user.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
-    if (!['pending', 'confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order cannot be cancelled at this stage.' });
+    if (!order) return res.status(404).json({ error: t(locale, 'orderNotFound') });
+    if (order.user.toString() !== req.user.id) return res.status(403).json({ error: t(locale, 'notAuthorized') });
+    if (!['pending', 'confirmed'].includes(order.status)) return res.status(400).json({ error: t(locale, 'orderCannotCancel') });
 
     order.status = 'cancelled';
     order.statusHistory.push({ status: 'cancelled', note: 'Cancelled by customer', updatedBy: req.user.id });

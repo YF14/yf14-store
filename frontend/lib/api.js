@@ -12,6 +12,8 @@ api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    // Tell the API which language to return customer-facing error messages in.
+    config.headers['X-Locale'] = localStorage.getItem('locale') === 'en' ? 'en' : 'ar';
   }
   return config;
 });

@@ -1,6 +1,7 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const PromoCode = require('../models/PromoCode');
+const { t, localeOf } = require('../utils/messages');
 
 const populateCart = (cart) => cart.populate({ path: 'items.product', select: 'name images price slug isActive variants' });
 
@@ -27,10 +28,10 @@ exports.addToCart = async (req, res, next) => {
     const height = rawH != null && Number.isFinite(rawH) ? rawH : null;
     const weight = rawW != null && Number.isFinite(rawW) ? rawW : null;
     const product = await Product.findById(productId);
-    if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
+    if (!product || !product.isActive) return res.status(404).json({ error: t(localeOf(req), 'productNotFound') });
     const variant = product.variants.id(variantId);
-    if (!variant) return res.status(404).json({ error: 'Variant not found' });
-    if (variant.stock < quantity) return res.status(400).json({ error: 'Insufficient stock' });
+    if (!variant) return res.status(404).json({ error: t(localeOf(req), 'variantNotFound', { name: product.name }) });
+    if (variant.stock < quantity) return res.status(400).json({ error: t(localeOf(req), 'insufficientStockShort') });
 
     let cart = await Cart.findOne({ user: req.user.id });
     if (!cart) cart = await Cart.create({ user: req.user.id, items: [] });
@@ -42,7 +43,7 @@ exports.addToCart = async (req, res, next) => {
     );
     if (existingItem) {
       const newQty = existingItem.quantity + quantity;
-      if (variant.stock < newQty) return res.status(400).json({ error: 'Insufficient stock' });
+      if (variant.stock < newQty) return res.status(400).json({ error: t(localeOf(req), 'insufficientStockShort') });
       existingItem.quantity = newQty;
     } else {
       cart.items.push({
@@ -67,15 +68,15 @@ exports.updateCartItem = async (req, res, next) => {
   try {
     const { quantity } = req.body;
     const cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) return res.status(404).json({ error: 'Cart not found' });
+    if (!cart) return res.status(404).json({ error: t(localeOf(req), 'cartNotFound') });
     const item = cart.items.id(req.params.itemId);
-    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (!item) return res.status(404).json({ error: t(localeOf(req), 'itemNotFound') });
     if (quantity <= 0) {
       item.deleteOne();
     } else {
       const product = await Product.findById(item.product);
       const variant = product?.variants.id(item.variantId);
-      if (variant && variant.stock < quantity) return res.status(400).json({ error: 'Insufficient stock' });
+      if (variant && variant.stock < quantity) return res.status(400).json({ error: t(localeOf(req), 'insufficientStockShort') });
       item.quantity = quantity;
     }
     await cart.save();
@@ -87,7 +88,7 @@ exports.updateCartItem = async (req, res, next) => {
 exports.removeFromCart = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) return res.status(404).json({ error: 'Cart not found' });
+    if (!cart) return res.status(404).json({ error: t(localeOf(req), 'cartNotFound') });
     cart.items = cart.items.filter(i => i._id.toString() !== req.params.itemId);
     await cart.save();
     await populateCart(cart);
@@ -105,12 +106,13 @@ exports.clearCart = async (req, res, next) => {
 exports.applyPromo = async (req, res, next) => {
   try {
     const { code } = req.body;
+    const locale = localeOf(req);
     const cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) return res.status(404).json({ error: 'Cart not found' });
+    if (!cart) return res.status(404).json({ error: t(locale, 'cartNotFound') });
     const subtotal = cart.items.reduce((s, i) => s + i.price * i.quantity, 0);
     const promo = await PromoCode.findOne({ code: code.toUpperCase() });
-    if (!promo) return res.status(404).json({ error: 'Invalid promo code.' });
-    const validity = promo.isValid(req.user._id, subtotal);
+    if (!promo) return res.status(404).json({ error: t(locale, 'invalidPromo') });
+    const validity = promo.isValid(req.user._id, subtotal, locale);
     if (!validity.valid) return res.status(400).json({ error: validity.message });
     cart.promoCode = promo.code;
     cart.promoDiscount = promo.calculateDiscount(subtotal);

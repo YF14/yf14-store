@@ -18,15 +18,16 @@ const promoCodeSchema = new mongoose.Schema({
   applicableProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
 }, { timestamps: true });
 
-promoCodeSchema.methods.isValid = function (userId, orderAmount) {
+promoCodeSchema.methods.isValid = function (userId, orderAmount, locale = 'ar') {
+  const { t, iqd } = require('../utils/messages');
   const now = new Date();
-  if (!this.isActive) return { valid: false, message: 'This promo code is no longer active.' };
-  if (this.startDate && now < this.startDate) return { valid: false, message: 'This promo code is not yet active.' };
-  if (this.endDate && now > this.endDate) return { valid: false, message: 'This promo code has expired.' };
-  if (this.usageLimit && this.usedCount >= this.usageLimit) return { valid: false, message: 'This promo code has reached its usage limit.' };
-  if (orderAmount < this.minOrderAmount) return { valid: false, message: `Minimum order amount is $${this.minOrderAmount}.` };
+  if (!this.isActive) return { valid: false, message: t(locale, 'promoInactive') };
+  if (this.startDate && now < this.startDate) return { valid: false, message: t(locale, 'promoNotYetActive') };
+  if (this.endDate && now > this.endDate) return { valid: false, message: t(locale, 'promoExpired') };
+  if (this.usageLimit && this.usedCount >= this.usageLimit) return { valid: false, message: t(locale, 'promoUsageLimit') };
+  if (orderAmount < this.minOrderAmount) return { valid: false, message: t(locale, 'promoMinOrder', { amount: iqd(this.minOrderAmount) }) };
   const userUsageCount = this.usedBy.filter(id => id.toString() === userId.toString()).length;
-  if (userUsageCount >= this.perUserLimit) return { valid: false, message: 'You have already used this promo code.' };
+  if (userUsageCount >= this.perUserLimit) return { valid: false, message: t(locale, 'promoAlreadyUsed') };
   return { valid: true };
 };
 
