@@ -173,13 +173,13 @@ export default function Navbar({ scrolled }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 6 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 bg-white border border-gray-100 shadow-lg py-3 min-w-[190px] z-50"
+                        className="hidden lg:block absolute top-full start-0 bg-nav-navy border border-white/10 shadow-xl py-3 min-w-[190px] z-50"
                       >
                         {link.children.map((child) => (
                           <Link
                             key={child.label}
                             href={child.href}
-                            className="block px-5 py-2 text-[11px] tracking-wider text-gray-600 hover:text-brand-gold hover:bg-brand-purple-light/30 transition-colors"
+                            className="block px-5 py-2 text-[11px] tracking-wider text-white/70 hover:text-brand-gold-light hover:bg-white/5 transition-colors"
                           >
                             {child.label}
                           </Link>
